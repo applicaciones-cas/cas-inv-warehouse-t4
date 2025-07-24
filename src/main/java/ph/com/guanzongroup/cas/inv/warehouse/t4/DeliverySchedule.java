@@ -2,6 +2,7 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -11,6 +12,7 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.parameter.model.Model_Branch;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
@@ -18,6 +20,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleM
 
 public class DeliverySchedule extends Transaction {
 
+    private List<Model> paClusterBranch;
 
     public Model_Delivery_Schedule_Master getMaster() {
         return (Model_Delivery_Schedule_Master) poMaster;
@@ -236,7 +239,7 @@ public class DeliverySchedule extends Transaction {
         poJSON.put("message", "Transaction saved successfully.");
         return poJSON;
     }
-    
+
     @Override
     public JSONObject searchTransaction(String value, boolean byCode) {
         try {
@@ -266,6 +269,48 @@ public class DeliverySchedule extends Transaction {
             poJSON.put("message", "No record loaded.");
             return poJSON;
         }
+    }
+
+    public JSONObject loadBranchList(String fsCluster) throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (fsCluster == null || fsCluster.isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Cluster is not set.");
+            return poJSON;
+        }
+
+        String lsSQL = "SELECT"
+                + "  sClustrID"
+                + " FROM Delivery_Schedule_Detail"
+                + " WHERE sClustrID = " + SQLUtil.toSQL(fsCluster)
+                + " ORDER BY sClustrID";
+
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        if (MiscUtil.RecordCount(loRS) <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No participants registered on this contest.");
+            return poJSON;
+        }
+
+        paClusterBranch.clear();
+
+        while (loRS.next()) {
+            Model_Branch loBranch = new DeliveryScheduleModels(poGRider).Branch();
+
+            poJSON = loBranch.openRecord(loRS.getString("sClustrID"));
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                paClusterBranch.add((Model) loBranch);
+            } else {
+                return poJSON;
+            }
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
     }
 
 }
