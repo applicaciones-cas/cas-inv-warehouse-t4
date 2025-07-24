@@ -1,0 +1,271 @@
+package ph.com.guanzongroup.cas.inv.warehouse.t4;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.guanzon.appdriver.agent.ShowDialogFX;
+import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.agent.services.Transaction;
+import org.guanzon.appdriver.base.GuanzonException;
+import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
+import org.guanzon.appdriver.constant.EditMode;
+import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
+
+public class DeliverySchedule extends Transaction {
+
+
+    public Model_Delivery_Schedule_Master getMaster() {
+        return (Model_Delivery_Schedule_Master) poMaster;
+    }
+
+    public Model_Delivery_Schedule_Detail getDetail(String clusterID) {
+        if (getMaster().getTransactionNo().isEmpty()
+                || getMaster().getIndustryId().isEmpty()) {
+            return null;
+        }
+
+        if (clusterID == "" || clusterID == null) {
+            return null;
+        }
+
+        Model_Delivery_Schedule_Detail loDetail;
+
+        //find the criteria record
+        for (int lnCtr = 0; lnCtr <= paDetail.size() - 1; lnCtr++) {
+            loDetail = (Model_Delivery_Schedule_Detail) paDetail.get(lnCtr);
+
+            if (loDetail.getClusterID() == clusterID) {
+                return loDetail;
+            }
+        }
+
+        //no record found, so create a new record for the criteria
+        loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        loDetail.newRecord();
+        loDetail.setTransactionNo(getMaster().getTransactionNo());
+        loDetail.setClusterID(clusterID);
+        paDetail.add(loDetail);
+
+        return loDetail;
+    }
+
+    public JSONObject initTransaction() throws GuanzonException, SQLException {
+        SOURCE_CODE = "Tbln";
+
+        poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
+        poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+
+        return super.initialize();
+    }
+
+    public JSONObject openTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
+        if (transactionNo.isEmpty()) {
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction must not empty.");
+            return poJSON;
+        }
+
+        poJSON = poMaster.openRecord(transactionNo);
+
+        if (!"success".equals((String) poJSON.get("result"))) {
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Unable to Open Transaction Record.");
+            return poJSON;
+        }
+
+        poMaster.updateRecord();
+
+        paDetail.clear();
+
+        String lsSQL = "SELECT * FROM " + poDetail.getTable()
+                + " WHERE sTransNox = " + SQLUtil.toSQL(transactionNo);
+
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        if (MiscUtil.RecordCount(loRS) > 0) {
+            while (loRS.next()) {
+                Model loDetail = (Model) poDetail.clone();
+                loDetail.newRecord();
+                poJSON = loDetail.openRecord(transactionNo, loRS.getInt("sClustrID"));
+
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poJSON.put("message", "Unable to open transaction detail record.");
+                    clear();
+                    return poJSON;
+                }
+                loDetail.updateRecord();
+
+                paDetail.add(loDetail);
+            }
+        }
+        poEvent = new JSONObject();
+        poEvent.put("event", "UPDATE");
+
+        pnEditMode = EditMode.UPDATE;
+        pbRecordExist = true;
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    @Override
+    protected JSONObject newTransaction() throws CloneNotSupportedException {
+        if (!pbInitTran) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Object is not initialized.");
+            return poJSON;
+        }
+
+        poMaster.initialize();
+        poMaster.newRecord();
+
+        poDetail.initialize();
+        poDetail.newRecord();
+
+        paDetail.clear();
+
+        poJSON = initFields();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        pnEditMode = EditMode.ADDNEW;
+
+        poEvent = new JSONObject();
+        poEvent.put("event", "ADD NEW");
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    @Override
+    public JSONObject saveTransaction() throws CloneNotSupportedException, SQLException, GuanzonException {
+        poJSON = new JSONObject();
+
+        if (!pbInitTran) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Object is not initialized.");
+            return poJSON;
+        }
+
+        if (pnEditMode == EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Saving of unmodified transaction is not allowed.");
+            return poJSON;
+        }
+
+        poJSON = willSave();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        if (getEditMode() == EditMode.ADDNEW) {
+            pdModified = poGRider.getServerDate();
+            //poMaster.setValue("sModified", poGRider.Encrypt(poGRider.getUserID()));
+        }
+
+        poJSON = save();
+
+        if (!pbWthParent) {
+            poGRider.beginTrans((String) poEvent.get("event"),
+                    poMaster.getTable(),
+                    SOURCE_CODE,
+                    String.valueOf(poMaster.getValue(1)));
+        }
+
+        if ("success".equals((String) poJSON.get("result"))) {
+            //save master and detail
+            if (pbVerifyEntryNo) {
+                poMaster.setValue("nEntryNox", paDetail.size());
+            }
+
+            if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
+                poMaster.setValue("dModified", pdModified);
+                poJSON = poMaster.saveRecord();
+
+                if ("error".equals((String) poJSON.get("result"))) {
+                    if (!pbWthParent) {
+                        poGRider.rollbackTrans();
+                    }
+                    return poJSON;
+                }
+
+                for (int lnCtr = 0; lnCtr <= paDetail.size() - 1; lnCtr++) {
+                    //paDetail.get(lnCtr).setValue("dModified", pdModified);
+                    poJSON = paDetail.get(lnCtr).saveRecord();
+
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        if (!pbWthParent) {
+                            poGRider.rollbackTrans();
+                        }
+                        return poJSON;
+                    }
+                }
+            } else {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Edit mode is not allowed to save transaction.");
+                return poJSON;
+            }
+        } else {
+            if (!pbWthParent) {
+                poGRider.rollbackTrans();
+            }
+
+            return poJSON;
+        }
+
+        if (!pbWthParent) {
+            poGRider.commitTrans();
+        }
+
+        pnEditMode = EditMode.UNKNOWN;
+        pbRecordExist = true;
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction saved successfully.");
+        return poJSON;
+    }
+    
+    @Override
+    public JSONObject searchTransaction(String value, boolean byCode) {
+        try {
+            String lsSQL = SQL_BROWSE;
+
+            poJSON = ShowDialogFX.Search(poGRider,
+                    lsSQL,
+                    value,
+                    "Transaction No»dTransact»sIndstCdx",
+                    "sTransNox»dTransact»sIndstCdx",
+                    "sTransNox»dTransact»sIndstCdx",
+                    byCode ? 0 : 1);
+
+            if (poJSON != null) {
+                return openTransaction((String) poJSON.get("sTransNox"));
+
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record loaded.");
+                return poJSON;
+            }
+        } catch (CloneNotSupportedException | SQLException | GuanzonException ex) {
+            Logger.getLogger(DeliverySchedule.class.getName()).log(Level.SEVERE, null, ex);
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+
+}
