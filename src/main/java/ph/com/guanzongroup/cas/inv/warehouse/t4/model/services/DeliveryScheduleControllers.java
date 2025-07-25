@@ -1,8 +1,6 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4.model.services;
 
-import java.sql.SQLException;
 import org.guanzon.appdriver.base.GRiderCAS;
-import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.LogWrapper;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.DeliverySchedule;
 

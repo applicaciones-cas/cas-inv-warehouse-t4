@@ -3,16 +3,10 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.model;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
-import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.cas.parameter.model.Model_Branch;
-import org.guanzon.cas.parameter.model.Model_Category;
-import org.guanzon.cas.parameter.model.Model_Company;
-import org.guanzon.cas.parameter.model.Model_Industry;
-import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.status.DeliverySchedule;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.status.DeliveryScheduleStatus;
 
 /**
  *
@@ -33,7 +27,7 @@ public class Model_Delivery_Schedule_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateString("cTranStat", DeliverySchedule.OPEN);
+            poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();

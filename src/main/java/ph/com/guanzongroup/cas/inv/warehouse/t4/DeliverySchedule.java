@@ -20,40 +20,67 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleM
 
 public class DeliverySchedule extends Transaction {
 
+    private String psIndustryID = "";
+    private String psCompanyID = "";
+    private String psCategorCD = "";
     private List<Model> paClusterBranch;
+
+    public List<Model> ClusterBranches(int fnRow) {
+        return paClusterBranch;
+    }
+
+    public void setIndustryID(String industryId) {
+        psIndustryID = industryId;
+    }
+
+    public void setCompanyID(String companyId) {
+        psCompanyID = companyId;
+    }
+
+    public void setCategoryID(String categoryId) {
+        psCategorCD = categoryId;
+    }
 
     public Model_Delivery_Schedule_Master getMaster() {
         return (Model_Delivery_Schedule_Master) poMaster;
     }
 
-    public Model_Delivery_Schedule_Detail getDetail(String clusterID) {
+    public Model_Delivery_Schedule_Detail getDetail(int clusterRow) {
         if (getMaster().getTransactionNo().isEmpty()
                 || getMaster().getIndustryId().isEmpty()) {
             return null;
         }
 
-        if (clusterID == "" || clusterID == null) {
-            return null;
-        }
-
         Model_Delivery_Schedule_Detail loDetail;
 
-        //find the criteria record
+        // If index is invalid or out of range, add a new detail
+        if (clusterRow < 0 || clusterRow >= paDetail.size()) {
+            loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            loDetail.newRecord();
+            loDetail.setTransactionNo(getMaster().getTransactionNo());
+
+            paDetail.add(loDetail);
+            return loDetail;
+        }
+
+        // Safe to get the selected detail
+        Model_Delivery_Schedule_Detail loDetailSelected = (Model_Delivery_Schedule_Detail) paDetail.get(clusterRow);
+
+        // Find a match by ClusterID
         for (int lnCtr = 0; lnCtr <= paDetail.size() - 1; lnCtr++) {
             loDetail = (Model_Delivery_Schedule_Detail) paDetail.get(lnCtr);
 
-            if (loDetail.getClusterID() == clusterID) {
+            if (loDetail.getClusterID() == loDetailSelected.getClusterID()) {
                 return loDetail;
             }
         }
 
-        //no record found, so create a new record for the criteria
+        // No match found — create new
         loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
         loDetail.newRecord();
         loDetail.setTransactionNo(getMaster().getTransactionNo());
-        loDetail.setClusterID(clusterID);
-        paDetail.add(loDetail);
 
+        paDetail.add(loDetail);
         return loDetail;
     }
 
@@ -62,8 +89,37 @@ public class DeliverySchedule extends Transaction {
 
         poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
         poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
-
         return super.initialize();
+    }
+
+    public JSONObject searchTransaction(String value, boolean byCode, boolean byExact) {
+        try {
+            String lsSQL = SQL_BROWSE;
+
+            poJSON = ShowDialogFX.Search(poGRider,
+                    lsSQL,
+                    value,
+                    "Transaction No»Date»Schedule Date",
+                    "sTransNox»dTransact»dSchedule",
+                    "sTransNox»dTransact»dSchedule",
+                    byExact ? (byCode ? 0 : 1) : 3);
+
+            if (poJSON != null) {
+                return openTransaction((String) poJSON.get("sTransNox"));
+
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record loaded.");
+                return poJSON;
+            }
+        } catch (CloneNotSupportedException | SQLException | GuanzonException ex) {
+            Logger.getLogger(DeliverySchedule.class.getName()).log(Level.SEVERE, null, ex);
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
     }
 
     public JSONObject openTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -83,9 +139,6 @@ public class DeliverySchedule extends Transaction {
             poJSON.put("message", "Unable to Open Transaction Record.");
             return poJSON;
         }
-
-        poMaster.updateRecord();
-
         paDetail.clear();
 
         String lsSQL = "SELECT * FROM " + poDetail.getTable()
@@ -112,7 +165,7 @@ public class DeliverySchedule extends Transaction {
         poEvent = new JSONObject();
         poEvent.put("event", "UPDATE");
 
-        pnEditMode = EditMode.UPDATE;
+        pnEditMode = EditMode.READY;
         pbRecordExist = true;
 
         poJSON = new JSONObject();
@@ -240,35 +293,8 @@ public class DeliverySchedule extends Transaction {
         return poJSON;
     }
 
-    @Override
-    public JSONObject searchTransaction(String value, boolean byCode) {
-        try {
-            String lsSQL = SQL_BROWSE;
-
-            poJSON = ShowDialogFX.Search(poGRider,
-                    lsSQL,
-                    value,
-                    "Transaction No»dTransact»sIndstCdx",
-                    "sTransNox»dTransact»sIndstCdx",
-                    "sTransNox»dTransact»sIndstCdx",
-                    byCode ? 0 : 1);
-
-            if (poJSON != null) {
-                return openTransaction((String) poJSON.get("sTransNox"));
-
-            } else {
-                poJSON = new JSONObject();
-                poJSON.put("result", "error");
-                poJSON.put("message", "No record loaded.");
-                return poJSON;
-            }
-        } catch (CloneNotSupportedException | SQLException | GuanzonException ex) {
-            Logger.getLogger(DeliverySchedule.class.getName()).log(Level.SEVERE, null, ex);
-            poJSON = new JSONObject();
-            poJSON.put("result", "error");
-            poJSON.put("message", "No record loaded.");
-            return poJSON;
-        }
+    public JSONObject UpdateTransaction() {
+        return updateTransaction();
     }
 
     public JSONObject loadBranchList(String fsCluster) throws SQLException, GuanzonException, CloneNotSupportedException {

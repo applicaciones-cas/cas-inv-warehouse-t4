@@ -1,13 +1,8 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package ph.com.guanzongroup.cas.inv.warehouse.t4.model.services;
 
 import java.sql.SQLException;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
-import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
@@ -35,6 +30,8 @@ public class DeliveryScheduleModels {
     private Model_Branch poBranch;
     private Model_Category poCategory;
 //   private Model_Cluster poCluster;
+//   private Model_Branch_Other poBranchOther;
+//   private Model_Truck_Size poTruckSize;
 
     //Delivery_Schedule_Master & Details
     public Model_Delivery_Schedule_Master DeliverySchedule() {
@@ -112,7 +109,7 @@ public class DeliveryScheduleModels {
             return null;
         }
 
-        if (poBranch== null) {
+        if (poBranch == null) {
             poBranch = new Model_Branch();
             poBranch.setApplicationDriver(poGRider);
             poBranch.setXML("Model_Branch");
@@ -129,7 +126,7 @@ public class DeliveryScheduleModels {
             return null;
         }
 
-        if (poCategory== null) {
+        if (poCategory == null) {
             poCategory = new Model_Category();
             poCategory.setApplicationDriver(poGRider);
             poCategory.setXML("Model_Category");
@@ -139,7 +136,7 @@ public class DeliveryScheduleModels {
 
         return poCategory;
     }
-    
+
 //    public Model_Cluster Cluster() throws SQLException, GuanzonException {
 //        if (poGRider == null) {
 //            System.err.println("ParamTabulate.Performing: Application driver is not set.");
@@ -154,7 +151,40 @@ public class DeliveryScheduleModels {
 //            poCluster.initialize();
 //        }
 //
-//        return poCategory;
+//        return poCluster;
 //    }
-
+    
+//    public Model_Branch_Other BranchOther() throws SQLException, GuanzonException {
+//        if (poGRider == null) {
+//            System.err.println("ParamTabulate.Performing: Application driver is not set.");
+//            return null;
+//        }
+//
+//        if (poBranchOther == null) {
+//            poBranchOther = new Model_Cluster();
+//            poBranchOther.setApplicationDriver(poGRider);
+//            poBranchOther.setXML("Model_Branch_Other");
+//            poBranchOther.setTableName("Branch_Other");
+//            poBranchOther.initialize();
+//        }
+//
+//        return poBranchOther;
+//    }
+    
+//    public Model_Truck_Size TruckSize() throws SQLException, GuanzonException {
+//        if (poGRider == null) {
+//            System.err.println("ParamTabulate.Performing: Application driver is not set.");
+//            return null;
+//        }
+//
+//        if (poTruckSize == null) {
+//            poTruckSize = new Model_Cluster();
+//            poTruckSize.setApplicationDriver(poGRider);
+//            poTruckSize.setXML("Model_Truck_Size");
+//            poTruckSize.setTableName("Truck_Size ");
+//            poTruckSize.initialize();
+//        }
+//
+//        return poTruckSize;
+//    }
 }
