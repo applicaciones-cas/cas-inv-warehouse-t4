@@ -11,7 +11,7 @@ import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.status.DeliveryScheduleStatus;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 
 /**
  *
@@ -36,6 +36,7 @@ public class Model_Delivery_Schedule_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             poEntity.updateObject("dTransact", poGRider.getServerDate());
+            poEntity.updateObject("dSchedule", poGRider.getServerDate());
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
             poEntity.insertRow();

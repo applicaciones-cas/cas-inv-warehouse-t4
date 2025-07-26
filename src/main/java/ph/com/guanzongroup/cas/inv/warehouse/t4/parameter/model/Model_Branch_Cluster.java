@@ -2,6 +2,7 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.guanzon.appdriver.agent.services.Model;
@@ -22,16 +23,27 @@ public class Model_Branch_Cluster extends Model {
     private List<Model> paBranchOthers;
     private List<Model> paBranchClusterDelivery;
 
-    public List<Model> BranchOthers(int fnRow) {
-        return paBranchOthers;
+    public Model_Branch_Others BranchOthers(int fnRow) {
+        return (Model_Branch_Others) paBranchOthers.get(fnRow);
     }
 
     public int getBranchOthersCount() {
         return paBranchOthers.size();
     }
 
-    public List<Model> BranchClusterDelivery(int fnRow) {
-        return paBranchClusterDelivery;
+    public Model_Branch_Cluster_Delivery BranchClusterDelivery(int fnRow) {
+        return (Model_Branch_Cluster_Delivery) paBranchClusterDelivery.get(fnRow);
+    }
+
+    public Model_Branch_Cluster_Delivery BranchClusterDeliveryTruck(int fnRow) {
+        
+        for (int lnCtr = 0; lnCtr <= paBranchClusterDelivery.size() - 1; lnCtr++) {
+            if (Integer.parseInt(paBranchClusterDelivery.get(lnCtr)
+                    .getValue("cTrckSize").toString()) == fnRow) {
+                return (Model_Branch_Cluster_Delivery) paBranchClusterDelivery.get(lnCtr);
+            }
+        }
+        return null;
     }
 
     public int getBranchClusterDeliverysCount() {
@@ -56,6 +68,8 @@ public class Model_Branch_Cluster extends Model {
             poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
+            paBranchClusterDelivery = new ArrayList<Model>();
+            paBranchOthers = new ArrayList<Model>();
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {

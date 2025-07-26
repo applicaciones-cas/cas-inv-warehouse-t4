@@ -8,7 +8,9 @@ import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
 
 /**
  *
@@ -36,6 +38,8 @@ public class Model_Branch_Area extends Model {
             poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
+            
+            poIndustry = new ParamModels(poGRider).Industry();
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {

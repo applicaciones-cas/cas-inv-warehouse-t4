@@ -2,6 +2,7 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -21,7 +22,7 @@ public class DeliverySchedule extends Transaction {
     private String psIndustryID = "";
     private String psCompanyID = "";
     private String psCategorCD = "";
-    
+
     public void setIndustryID(String industryId) {
         psIndustryID = industryId;
     }
@@ -38,9 +39,15 @@ public class DeliverySchedule extends Transaction {
         return (Model_Delivery_Schedule_Master) poMaster;
     }
 
+    @SuppressWarnings("unchecked")
+    public List<Model_Delivery_Schedule_Detail> getDetailList() {
+        return (List<Model_Delivery_Schedule_Detail>) (List<?>) paDetail;
+    }
+
     public Model_Delivery_Schedule_Detail getDetail(int clusterRow) {
-        if (getMaster().getTransactionNo().isEmpty()
-                || getMaster().getIndustryId().isEmpty()) {
+        if (getMaster().getTransactionNo().isEmpty())
+//                || getMaster().getIndustryId().isEmpty()) 
+                {
             return null;
         }
 
@@ -181,6 +188,7 @@ public class DeliverySchedule extends Transaction {
         poDetail.newRecord();
 
         paDetail.clear();
+        paDetail.add(poDetail);
 
         poJSON = initFields();
         if ("error".equals((String) poJSON.get("result"))) {

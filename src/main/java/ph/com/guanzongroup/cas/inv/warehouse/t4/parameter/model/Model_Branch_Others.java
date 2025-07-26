@@ -12,6 +12,7 @@ import org.guanzon.cas.parameter.model.Model_Brand;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
 
 /**
  *
@@ -46,6 +47,9 @@ public class Model_Branch_Others extends Model {
 
             ID = this.poEntity.getMetaData().getColumnLabel(1);
             this.poBranch = (new ParamModels(this.poGRider)).Branch();
+            this.poBrand = (new ParamModels(this.poGRider)).Brand();
+            this.poIndustry = (new ParamModels(this.poGRider)).Industry();
+            this.poBranchArea = (new DeliveryParamModels(this.poGRider)).BranchArea();
             this.pnEditMode = -1;
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {

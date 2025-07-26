@@ -23,7 +23,9 @@ public class Model_Branch_Cluster_Delivery extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
-            poEntity.updateString("cTrckSize", "0");
+            poEntity.updateInt("cTrckSize", 0);
+            poEntity.updateInt("nAllocatn", 0);
+            poEntity.updateInt("nDelivery", 0);
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -31,7 +33,6 @@ public class Model_Branch_Cluster_Delivery extends Model {
             poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
-            ID2 = poEntity.getMetaData().getColumnLabel(2);
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -41,10 +42,9 @@ public class Model_Branch_Cluster_Delivery extends Model {
     }
     //Getter & Setter 
     //sClustrID
-    //sClustrDs*
-    //sIndstCdx*
-    //sHeadOffc*
-    //cRecdStat
+    //cTrckSize*
+    //nAllocatn*
+    //nDelivery*
 
     //sClustrID
     public JSONObject setClusterID(String clusterID) {
@@ -55,40 +55,31 @@ public class Model_Branch_Cluster_Delivery extends Model {
         return (String) getValue("sClustrID");
     }
 
-    //sClustrDs
-    public JSONObject setClusterDescription(String clusterDescription) {
-        return setValue("sClustrDs", clusterDescription);
+    //cTrckSize
+    public JSONObject setTruckSize(int truckSize) {
+        return setValue("cTrckSize", truckSize);
     }
 
-    public String getClusterDescription() {
-        return (String) getValue("sClustrDs");
+    public int getTruckSize() {
+        return (int) getValue("cTrckSize");
     }
 
-    //sIndstCdx
-    public JSONObject setIndustryCode(String industryCode) {
-        return setValue("sIndstCdx", industryCode);
+    //nAllocatn
+    public JSONObject setAllocation(Number allocation) {
+        return setValue("nAllocatn", allocation);
     }
 
-    public String getIndustryCode() {
-        return (String) getValue("sIndstCdx");
+    public Number getAllocation() {
+        return (Number) getValue("nAllocatn");
     }
 
-    //sHeadOffc
-    public JSONObject setHeadOffice(String headOffice) {
-        return setValue("sHeadOffc", headOffice);
+    //nDelivery
+    public JSONObject setDelivery(Number allocation) {
+        return setValue("nDelivery", allocation);
     }
 
-    public String getHeadOffice() {
-        return (String) getValue("sHeadOffc");
-    }
-
-    //cRecdStat
-    public JSONObject setRecordStatus(String recordStatus) {
-        return setValue("cRecdStat", recordStatus);
-    }
-
-    public String getRecordStatus() {
-        return (String) getValue("cRecdStat");
+    public Number getDelivery() {
+        return (Number) getValue("nDelivery");
     }
 
     //sModified
