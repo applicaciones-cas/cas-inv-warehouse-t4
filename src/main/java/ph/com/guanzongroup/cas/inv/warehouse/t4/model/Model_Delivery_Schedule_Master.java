@@ -3,8 +3,13 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.model;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.parameter.model.Model_Branch;
+import org.guanzon.cas.parameter.model.Model_Category;
+import org.guanzon.cas.parameter.model.Model_Company;
+import org.guanzon.cas.parameter.model.Model_Industry;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.status.DeliveryScheduleStatus;
 
@@ -13,8 +18,12 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.status.DeliveryScheduleStatus;
  * @author maynevval 07-24-2025
  */
 public class Model_Delivery_Schedule_Master extends Model {
-    //reference objects
 
+    //reference objects
+    Model_Industry poIndustry;
+    Model_Company poCompany;
+    Model_Branch poBranch;
+    Model_Category poCategory;
 
     @Override
     public void initialize() {
@@ -35,11 +44,9 @@ public class Model_Delivery_Schedule_Master extends Model {
             poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
-            
+
             //add model here
-            
             pnEditMode = EditMode.UNKNOWN;
-            
 
         } catch (SQLException e) {
             logwrapr.severe(e.getMessage());
@@ -158,6 +165,74 @@ public class Model_Delivery_Schedule_Master extends Model {
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+    }
+
+    public Model_Category Category() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sCategrCd"))) {
+            if (this.poCategory.getEditMode() == 1 && this.poCategory
+                    .getCategoryId().equals(getValue("sCategrCd"))) {
+                return this.poCategory;
+            }
+            this.poJSON = this.poCategory.openRecord((String) getValue("sCategrCd"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poCategory;
+            }
+            this.poCategory.initialize();
+            return this.poCategory;
+        }
+        this.poCategory.initialize();
+        return this.poCategory;
+    }
+
+    public Model_Branch Branch() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sBranchCd"))) {
+            if (this.poBranch.getEditMode() == 1 && this.poBranch
+                    .getBranchCode().equals(getValue("sBranchCd"))) {
+                return this.poBranch;
+            }
+            this.poJSON = this.poBranch.openRecord((String) getValue("sBranchCd"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poBranch;
+            }
+            this.poBranch.initialize();
+            return this.poBranch;
+        }
+        this.poBranch.initialize();
+        return this.poBranch;
+    }
+
+    public Model_Company Company() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sCompnyID"))) {
+            if (this.poCompany.getEditMode() == 1 && this.poCompany
+                    .getCompanyId().equals(getValue("sCompnyID"))) {
+                return this.poCompany;
+            }
+            this.poJSON = this.poCompany.openRecord((String) getValue("sCompnyID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poCompany;
+            }
+            this.poCompany.initialize();
+            return this.poCompany;
+        }
+        this.poCompany.initialize();
+        return this.poCompany;
+    }
+
+    public Model_Industry Industry() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sIndstCdx"))) {
+            if (this.poIndustry.getEditMode() == 1 && this.poIndustry
+                    .getIndustryId().equals(getValue("sIndstCdx"))) {
+                return this.poIndustry;
+            }
+            this.poJSON = this.poIndustry.openRecord((String) getValue("sIndstCdx"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poIndustry;
+            }
+            this.poIndustry.initialize();
+            return this.poIndustry;
+        }
+        this.poIndustry.initialize();
+        return this.poIndustry;
     }
 
 }

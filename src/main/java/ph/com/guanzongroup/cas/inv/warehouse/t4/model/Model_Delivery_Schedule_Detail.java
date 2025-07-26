@@ -3,16 +3,19 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.model;
 import java.sql.SQLException;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.appdriver.constant.TransactionStatus;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 
 /**
  *
  * @author maynevval 07-24-2025
  */
 public class Model_Delivery_Schedule_Detail extends Model {
+
+    private Model_Branch_Cluster poBranchCluster;
 
     @Override
     public void initialize() {
@@ -24,8 +27,7 @@ public class Model_Delivery_Schedule_Detail extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
-            poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateString("cTrckSize", TransactionStatus.STATE_OPEN);
+            poEntity.updateString("cTrckSize", "0");
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -124,6 +126,23 @@ public class Model_Delivery_Schedule_Detail extends Model {
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+    }
+
+    public Model_Branch_Cluster BranchCluster() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sClustrID"))) {
+            if (this.poBranchCluster.getEditMode() == 1 && this.poBranchCluster
+                    .getClusterID().equals(getValue("sClustrID"))) {
+                return this.poBranchCluster;
+            }
+            this.poJSON = this.poBranchCluster.openRecord((String) getValue("sClustrID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poBranchCluster;
+            }
+            this.poBranchCluster.initialize();
+            return this.poBranchCluster;
+        }
+        this.poBranchCluster.initialize();
+        return this.poBranchCluster;
     }
 
 }
