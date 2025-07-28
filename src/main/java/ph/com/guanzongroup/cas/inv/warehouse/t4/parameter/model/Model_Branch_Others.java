@@ -649,12 +649,12 @@ public class Model_Branch_Others extends Model {
     }
 
     public Model_Branch Branch() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sBranchCd"))) {
+        if (!"".equals(getValue("sBranchCD"))) {
             if (this.poBranch.getEditMode() == 1 && this.poBranch
-                    .getBranchCode().equals(getValue("sBranchCd"))) {
+                    .getBranchCode().equals(getValue("sBranchCD"))) {
                 return this.poBranch;
             }
-            this.poJSON = this.poBranch.openRecord((String) getValue("sBranchCd"));
+            this.poJSON = this.poBranch.openRecord((String) getValue("sBranchCD"));
             if ("success".equals(this.poJSON.get("result"))) {
                 return this.poBranch;
             }

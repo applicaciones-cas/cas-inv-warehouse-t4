@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.LogWrapper;
+import org.guanzon.appdriver.constant.RecordStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchArea;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchClusterDelivery;
@@ -73,8 +74,10 @@ public class DeliveryParamController {
         this.poBranchCluster.setApplicationDriver(this.poGRider);
         this.poBranchCluster.setWithParentClass(false);
         this.poBranchCluster.setLogWrapper(this.poLogWrapper);
+        this.poBranchCluster.setRecordStatus(RecordStatus.ACTIVE);
         this.poBranchCluster.initialize();
         this.poBranchCluster.newRecord();
+        
         return this.poBranchCluster;
     }
 

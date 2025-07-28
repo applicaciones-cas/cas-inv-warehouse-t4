@@ -5,6 +5,7 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.services.Parameter;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
+import org.guanzon.appdriver.base.SQLUtil;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
@@ -62,6 +63,31 @@ public class BranchCluster extends Parameter {
                 byCode ? 0 : 1);
         if (this.poJSON != null) {
             return this.poModel.openRecord((String) this.poJSON.get("sBrgyIDxx"));
+        }
+        this.poJSON = new JSONObject();
+        this.poJSON.put("result", "error");
+        this.poJSON.put("message", "No record loaded.");
+        return this.poJSON;
+    }
+
+    public JSONObject searchRecordbyIndustry(String value, boolean byCode) throws SQLException, GuanzonException {
+
+        if (poModel.getIndustryCode() == null || "".equals(poModel.getIndustryCode())) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+        String lsCondition = "sIndstCdx = " + SQLUtil.toSQL(poModel.getIndustryCode());
+        String lsSQL = MiscUtil.addCondition(getSQ_Browse(), lsCondition);
+        this.poJSON = ShowDialogFX.Search(this.poGRider,
+                lsSQL,
+                value,
+                "ID»Cluster Name",
+                "sClustrID»sClustrDs",
+                "sClustrID»sClustrDs",
+                byCode ? 0 : 1);
+        if (this.poJSON != null) {
+                return this.poModel.openRecord((String) this.poJSON.get("sClustrID"));
         }
         this.poJSON = new JSONObject();
         this.poJSON.put("result", "error");

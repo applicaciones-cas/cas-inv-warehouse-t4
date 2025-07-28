@@ -31,12 +31,21 @@ public class Model_Branch_Cluster extends Model {
         return paBranchOthers.size();
     }
 
+    public Model_Branch_Others BranchOther(int fnRow) {
+        return (Model_Branch_Others) paBranchOthers.get(fnRow);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Model_Branch_Others> getBranchOthersList() {
+        return (List<Model_Branch_Others>) (List<?>) paBranchOthers;
+    }
+
     public Model_Branch_Cluster_Delivery BranchClusterDelivery(int fnRow) {
         return (Model_Branch_Cluster_Delivery) paBranchClusterDelivery.get(fnRow);
     }
 
     public Model_Branch_Cluster_Delivery BranchClusterDeliveryTruck(int fnRow) {
-        
+
         for (int lnCtr = 0; lnCtr <= paBranchClusterDelivery.size() - 1; lnCtr++) {
             if (Integer.parseInt(paBranchClusterDelivery.get(lnCtr)
                     .getValue("cTrckSize").toString()) == fnRow) {
@@ -44,6 +53,11 @@ public class Model_Branch_Cluster extends Model {
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Model_Branch_Cluster_Delivery> getBranchClusterDelivery() {
+        return (List<Model_Branch_Cluster_Delivery>) (List<?>) paBranchClusterDelivery;
     }
 
     public int getBranchClusterDeliverysCount() {
@@ -162,6 +176,7 @@ public class Model_Branch_Cluster extends Model {
     }
 
     public JSONObject loadBranchList()
+            
             throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
@@ -171,12 +186,17 @@ public class Model_Branch_Cluster extends Model {
             return poJSON;
         }
 
+        
+        paBranchOthers.clear();
         String lsSQL = "SELECT"
-                + "  sBranchCd"
+                + "  a.sBranchCD"
                 + " , sClustrID"
-                + " FROM Branch_Others"
-                + " WHERE sClustrID = " + SQLUtil.toSQL(getClusterID())
-                + " ORDER BY sBranchCd ASC,sClustrID";
+                + " FROM Branch_Others a,"
+                + " Branch b"
+                + " WHERE a.sBranchCD = b.sBranchCd "
+                + " AND sClustrID = " + SQLUtil.toSQL(getClusterID())
+                + " AND b.cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
+                + " ORDER BY sBranchCD ASC,sClustrID";
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -191,7 +211,7 @@ public class Model_Branch_Cluster extends Model {
         while (loRS.next()) {
             Model_Branch_Others loBranchOthers = new DeliveryParamModels(poGRider).BranchOthers();
 
-            poJSON = loBranchOthers.openRecord(loRS.getString("sBranchCd"));
+            poJSON = loBranchOthers.openRecord(loRS.getString("sBranchCD"));
 
             if ("success".equals((String) poJSON.get("result"))) {
                 paBranchOthers.add((Model) loBranchOthers);

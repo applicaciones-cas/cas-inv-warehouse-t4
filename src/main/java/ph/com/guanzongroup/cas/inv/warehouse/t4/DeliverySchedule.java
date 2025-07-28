@@ -16,23 +16,32 @@ import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster_Delivery;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Others;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
 
 public class DeliverySchedule extends Transaction {
 
-    private String psIndustryID = "";
+    private String psIndustryCode = "";
     private String psCompanyID = "";
     private String psCategorCD = "";
+    private List<Model> paMaster;
 
     public void setIndustryID(String industryId) {
-        psIndustryID = industryId;
+        psIndustryCode = industryId;
+        getMaster().setIndustryId(industryId);
+
     }
 
     public void setCompanyID(String companyId) {
         psCompanyID = companyId;
+        getMaster().setCompanyID(companyId);
     }
 
     public void setCategoryID(String categoryId) {
         psCategorCD = categoryId;
+        getMaster().setCategoryId(categoryId);
     }
 
     public Model_Delivery_Schedule_Master getMaster() {
@@ -40,27 +49,54 @@ public class DeliverySchedule extends Transaction {
     }
 
     @SuppressWarnings("unchecked")
+    public List<Model_Delivery_Schedule_Master> getMasterList() {
+        return (List<Model_Delivery_Schedule_Master>) (List<?>) paMaster;
+    }
+
+    public Model_Delivery_Schedule_Master getMaster(int masterRow) {
+        return (Model_Delivery_Schedule_Master) paMaster.get(masterRow);
+
+    }
+
+    @SuppressWarnings("unchecked")
     public List<Model_Delivery_Schedule_Detail> getDetailList() {
         return (List<Model_Delivery_Schedule_Detail>) (List<?>) paDetail;
     }
 
+    @SuppressWarnings("unchecked")
+    public List<Model_Branch_Others> getDeliveryBranchOtherList(int foSelected) throws SQLException, GuanzonException {
+        return (List<Model_Branch_Others>) ((Model_Delivery_Schedule_Detail) paDetail.get(foSelected)).BranchCluster().getBranchOthersList();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Model_Branch_Cluster_Delivery> getDeliveryBranchClusterDeliveryList(int foSelected) throws SQLException, GuanzonException {
+        return (List<Model_Branch_Cluster_Delivery>) ((Model_Delivery_Schedule_Detail) paDetail.get(foSelected)).BranchCluster().getBranchClusterDelivery();
+    }
+
+    public JSONObject LoadBranchClusterDelivery(int foSelectedClusterRow) throws SQLException, GuanzonException, CloneNotSupportedException {
+        return ((Model_Delivery_Schedule_Detail) paDetail.get(foSelectedClusterRow)).BranchCluster().loadBranchClusterDeliveryList();
+    }
+
+    public JSONObject LoadBranchOthers(int foSelectedClusterRow) throws SQLException, GuanzonException, CloneNotSupportedException {
+        return ((Model_Delivery_Schedule_Detail) paDetail.get(foSelectedClusterRow)).BranchCluster().loadBranchList();
+
+    }
+
     public Model_Delivery_Schedule_Detail getDetail(int clusterRow) {
-        if (getMaster().getTransactionNo().isEmpty())
-//                || getMaster().getIndustryId().isEmpty()) 
-                {
+        if (getMaster().getTransactionNo().isEmpty()
+                || getMaster().getIndustryId().isEmpty()) {
             return null;
         }
 
         Model_Delivery_Schedule_Detail loDetail;
 
         // If index is invalid or out of range, add a new detail
-        if (clusterRow < 0 || clusterRow >= paDetail.size()) {
+        if (clusterRow >= paDetail.size() - 1) {
             loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
             loDetail.newRecord();
             loDetail.setTransactionNo(getMaster().getTransactionNo());
 
             paDetail.add(loDetail);
-            return loDetail;
         }
 
         // Safe to get the selected detail
@@ -112,9 +148,11 @@ public class DeliverySchedule extends Transaction {
                 poJSON.put("result", "error");
                 poJSON.put("message", "No record loaded.");
                 return poJSON;
+
             }
         } catch (CloneNotSupportedException | SQLException | GuanzonException ex) {
-            Logger.getLogger(DeliverySchedule.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DeliverySchedule.class
+                    .getName()).log(Level.SEVERE, null, ex);
             poJSON = new JSONObject();
             poJSON.put("result", "error");
             poJSON.put("message", "No record loaded.");
@@ -194,6 +232,10 @@ public class DeliverySchedule extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+
+        getMaster().setIndustryId(psIndustryCode);
+        getMaster().setCompanyID(psCompanyID);
+        getMaster().setCategoryId(psCategorCD);
 
         pnEditMode = EditMode.ADDNEW;
 
@@ -296,6 +338,41 @@ public class DeliverySchedule extends Transaction {
 
     public JSONObject UpdateTransaction() {
         return updateTransaction();
+    }
+
+    public JSONObject searchClusterBranch(int row, String value, boolean byCode) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        BranchCluster loSubClass = new DeliveryParamController(poGRider, logwrapr).BranchCluster();
+
+        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+
+        loSubClass.getModel().setIndustryCode(psIndustryCode);
+
+        poJSON = loSubClass.searchRecordbyIndustry(value, byCode);
+
+        System.out.println("result " + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                if (((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting)).getClusterID()
+                        == loSubClass.getModel().getClusterID()
+                        && loSubClass.getModel().getClusterID() != null
+                        && !loSubClass.getModel().getClusterID().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Selected Cluster ID is already exist!");
+                    return poJSON;
+
+                }
+
+            }
+            getDetail(row).setClusterID(loSubClass.getModel().getClusterID());
+        }
+        return poJSON;
+
     }
 
 }
