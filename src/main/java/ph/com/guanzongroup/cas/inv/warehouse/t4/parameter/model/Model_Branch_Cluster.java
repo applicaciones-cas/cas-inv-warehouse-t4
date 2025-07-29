@@ -56,7 +56,7 @@ public class Model_Branch_Cluster extends Model {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Model_Branch_Cluster_Delivery> getBranchClusterDelivery() {
+    public List<Model_Branch_Cluster_Delivery> getBranchClusterDeliveryList() {
         return (List<Model_Branch_Cluster_Delivery>) (List<?>) paBranchClusterDelivery;
     }
 
@@ -176,7 +176,6 @@ public class Model_Branch_Cluster extends Model {
     }
 
     public JSONObject loadBranchList()
-            
             throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
@@ -186,7 +185,6 @@ public class Model_Branch_Cluster extends Model {
             return poJSON;
         }
 
-        
         paBranchOthers.clear();
         String lsSQL = "SELECT"
                 + "  a.sBranchCD"
@@ -235,11 +233,12 @@ public class Model_Branch_Cluster extends Model {
             return poJSON;
         }
 
+        paBranchOthers.clear();
         String lsSQL = "SELECT"
                 + "  sClustrID"
                 + " FROM Branch_Cluster_Delivery"
                 + " WHERE sClustrID = " + SQLUtil.toSQL(getClusterID())
-                + " ORDER BY sBranchCd ASC,sClustrID";
+                + " ORDER BY sClustrID";
 
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
@@ -249,15 +248,13 @@ public class Model_Branch_Cluster extends Model {
             return poJSON;
         }
 
-        paBranchOthers.clear();
-
         while (loRS.next()) {
-            Model_Branch_Others loBranchOthers = new DeliveryParamModels(poGRider).BranchOthers();
+            Model_Branch_Cluster_Delivery loBranchClusterDelivery = new DeliveryParamModels(poGRider).BranchClusterDelivery();
 
-            poJSON = loBranchOthers.openRecord(loRS.getString("sClustrID"));
+            poJSON = loBranchClusterDelivery.openRecord(loRS.getString("sClustrID"));
 
             if ("success".equals((String) poJSON.get("result"))) {
-                paBranchOthers.add((Model) loBranchOthers);
+                paBranchClusterDelivery.add((Model) loBranchClusterDelivery);
             } else {
                 return poJSON;
             }

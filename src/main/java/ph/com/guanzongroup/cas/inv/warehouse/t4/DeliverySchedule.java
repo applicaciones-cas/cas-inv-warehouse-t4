@@ -70,7 +70,11 @@ public class DeliverySchedule extends Transaction {
 
     @SuppressWarnings("unchecked")
     public List<Model_Branch_Cluster_Delivery> getDeliveryBranchClusterDeliveryList(int foSelected) throws SQLException, GuanzonException {
-        return (List<Model_Branch_Cluster_Delivery>) ((Model_Delivery_Schedule_Detail) paDetail.get(foSelected)).BranchCluster().getBranchClusterDelivery();
+        return (List<Model_Branch_Cluster_Delivery>) ((Model_Delivery_Schedule_Detail) paDetail.get(foSelected)).BranchCluster().getBranchClusterDeliveryList();
+    }
+
+    public int getBranchClusterDeliverysCount(int foSelected) throws SQLException, GuanzonException {
+        return ((Model_Delivery_Schedule_Detail) paDetail.get(foSelected)).BranchCluster().getBranchClusterDeliverysCount();
     }
 
     public JSONObject LoadBranchClusterDelivery(int foSelectedClusterRow) throws SQLException, GuanzonException, CloneNotSupportedException {

@@ -74,8 +74,8 @@ public class Model_Delivery_Schedule_Detail extends Model {
     }
 
     //cTrckSize
-    public JSONObject setTruckSize(String companyID) {
-        return setValue("cTrckSize", companyID);
+    public JSONObject setTruckSize(String truckSize) {
+        return setValue("cTrckSize", truckSize);
     }
 
     public String getTruckSize() {

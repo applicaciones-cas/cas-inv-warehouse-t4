@@ -23,14 +23,13 @@ public class Model_Branch_Cluster_Delivery extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
-            poEntity.updateInt("cTrckSize", 0);
-            poEntity.updateInt("nAllocatn", 0);
-            poEntity.updateInt("nDelivery", 0);
-
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
-
             poEntity.absolute(1);
+
+            poEntity.updateString("cTrckSize", "0");
+            poEntity.updateInt("nAllocatn", 0);
+            poEntity.updateInt("nDelivery", 0);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
 
@@ -56,12 +55,12 @@ public class Model_Branch_Cluster_Delivery extends Model {
     }
 
     //cTrckSize
-    public JSONObject setTruckSize(int truckSize) {
+    public JSONObject setTruckSize(String truckSize) {
         return setValue("cTrckSize", truckSize);
     }
 
-    public int getTruckSize() {
-        return (int) getValue("cTrckSize");
+    public String getTruckSize() {
+        return (String) getValue("cTrckSize");
     }
 
     //nAllocatn
