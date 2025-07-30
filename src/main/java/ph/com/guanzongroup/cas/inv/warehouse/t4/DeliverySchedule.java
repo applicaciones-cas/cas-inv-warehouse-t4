@@ -2,6 +2,7 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -129,6 +130,7 @@ public class DeliverySchedule extends Transaction {
 
         poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
         poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        paMaster = new ArrayList<Model>();
         return super.initialize();
     }
 
@@ -136,7 +138,7 @@ public class DeliverySchedule extends Transaction {
         try {
             String lsSQL = SQL_BROWSE;
 
-            poJSON = ShowDialogFX.Search(poGRider,
+            poJSON = ShowDialogFX.Browse(poGRider,
                     lsSQL,
                     value,
                     "Transaction No»Date»Schedule Date",
@@ -274,7 +276,7 @@ public class DeliverySchedule extends Transaction {
 
         if (getEditMode() == EditMode.ADDNEW) {
             pdModified = poGRider.getServerDate();
-            //poMaster.setValue("sModified", poGRider.Encrypt(poGRider.getUserID()));
+            poMaster.setValue("sModified", poGRider.Encrypt(poGRider.getUserID()));
         }
 
         poJSON = save();
@@ -294,6 +296,7 @@ public class DeliverySchedule extends Transaction {
 
             if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
                 poMaster.setValue("dModified", pdModified);
+                System.out.print("Date ito " + poMaster.getValue("dModified"));
                 poJSON = poMaster.saveRecord();
 
                 if ("error".equals((String) poJSON.get("result"))) {
@@ -379,4 +382,41 @@ public class DeliverySchedule extends Transaction {
 
     }
 
+    public JSONObject loadTransactionList(String value, String column)
+            throws SQLException, GuanzonException, CloneNotSupportedException {
+//        poJSON = new JSONObject();
+
+        paMaster.clear();
+        String lsSQL = SQL_BROWSE;
+        if (value != null && !value.isEmpty()) {
+            //sTransNox/dTransact/dSchedule
+            lsSQL = MiscUtil.addCondition(lsSQL, column + "= " + SQLUtil.toSQL(value));
+        }
+
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+        if (MiscUtil.RecordCount(loRS)
+                <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
+        }
+
+        while (loRS.next()) {
+            Model_Delivery_Schedule_Master loDeliverySchedule = new DeliveryScheduleModels(poGRider).DeliverySchedule();
+
+            poJSON = loDeliverySchedule.openRecord(loRS.getString("sTransNox"));
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                paMaster.add((Model) loDeliverySchedule);
+            } else {
+                return poJSON;
+            }
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put(
+                "result", "success");
+        return poJSON;
+    }
 }

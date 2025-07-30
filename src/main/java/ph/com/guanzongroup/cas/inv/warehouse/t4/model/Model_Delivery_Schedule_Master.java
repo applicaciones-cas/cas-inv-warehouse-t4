@@ -35,14 +35,16 @@ public class Model_Delivery_Schedule_Master extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
-            poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateObject("dSchedule", poGRider.getServerDate());
-            poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
+            
+            poEntity.updateObject("dTransact", poGRider.getServerDate());
+            poEntity.updateObject("dSchedule", poGRider.getServerDate());
+            poEntity.updateObject("dModified", poGRider.getServerDate());
+            poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
 

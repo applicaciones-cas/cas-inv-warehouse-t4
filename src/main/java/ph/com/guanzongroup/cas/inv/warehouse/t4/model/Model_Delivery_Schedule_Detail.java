@@ -30,6 +30,7 @@ public class Model_Delivery_Schedule_Detail extends Model {
             MiscUtil.initRowSet(poEntity);
 
             poEntity.updateString("cTrckSize", "0");
+            poEntity.updateNull("dCancelld");
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();

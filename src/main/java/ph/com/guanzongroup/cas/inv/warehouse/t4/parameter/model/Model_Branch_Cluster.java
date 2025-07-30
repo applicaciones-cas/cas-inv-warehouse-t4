@@ -204,8 +204,6 @@ public class Model_Branch_Cluster extends Model {
             return poJSON;
         }
 
-        paBranchOthers.clear();
-
         while (loRS.next()) {
             Model_Branch_Others loBranchOthers = new DeliveryParamModels(poGRider).BranchOthers();
 
