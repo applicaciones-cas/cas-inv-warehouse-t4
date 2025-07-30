@@ -242,6 +242,7 @@ public class DeliverySchedule extends Transaction {
         getMaster().setIndustryId(psIndustryCode);
         getMaster().setCompanyID(psCompanyID);
         getMaster().setCategoryId(psCategorCD);
+        getMaster().setBranchCode(poGRider.getBranchCode());
 
         pnEditMode = EditMode.ADDNEW;
 
@@ -296,7 +297,6 @@ public class DeliverySchedule extends Transaction {
 
             if (pnEditMode == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
                 poMaster.setValue("dModified", pdModified);
-                System.out.print("Date ito " + poMaster.getValue("dModified"));
                 poJSON = poMaster.saveRecord();
 
                 if ("error".equals((String) poJSON.get("result"))) {
@@ -307,7 +307,11 @@ public class DeliverySchedule extends Transaction {
                 }
 
                 for (int lnCtr = 0; lnCtr <= paDetail.size() - 1; lnCtr++) {
-                    //paDetail.get(lnCtr).setValue("dModified", pdModified);
+                    if (paDetail.get(lnCtr).getValue("sClustrID") == null) {
+                        continue;
+                    }
+                    paDetail.get(lnCtr).setValue("dModified", pdModified);
+                    System.out.println("Cluster ID" + paDetail.get(lnCtr).getValue("sClustrID"));
                     poJSON = paDetail.get(lnCtr).saveRecord();
 
                     if ("error".equals((String) poJSON.get("result"))) {
