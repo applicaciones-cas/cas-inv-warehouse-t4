@@ -13,7 +13,10 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.UserRight;
+import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
@@ -21,6 +24,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster_Delivery;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Others;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.DeliveryScheduleValidatorFactory;
 
 public class DeliverySchedule extends Transaction {
 
@@ -96,7 +100,7 @@ public class DeliverySchedule extends Transaction {
         Model_Delivery_Schedule_Detail loDetail;
 
         // If index is invalid or out of range, add a new detail
-        if (clusterRow >= paDetail.size() - 1) {
+        if (clusterRow > paDetail.size()) {
             loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
             loDetail.newRecord();
             loDetail.setTransactionNo(getMaster().getTransactionNo());
@@ -138,7 +142,7 @@ public class DeliverySchedule extends Transaction {
         try {
             String lsSQL = SQL_BROWSE;
 
-            poJSON = ShowDialogFX.Browse(poGRider,
+            poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
                     "Transaction No»Date»Schedule Date",
@@ -149,6 +153,8 @@ public class DeliverySchedule extends Transaction {
             if (poJSON != null) {
                 return openTransaction((String) poJSON.get("sTransNox"));
 
+            } else if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
             } else {
                 poJSON = new JSONObject();
                 poJSON.put("result", "error");
@@ -177,7 +183,7 @@ public class DeliverySchedule extends Transaction {
 
         poJSON = poMaster.openRecord(transactionNo);
 
-        if (!"success".equals((String) poJSON.get("result"))) {
+        if ("error".equals((String) poJSON.get("result"))) {
             poJSON = new JSONObject();
             poJSON.put("result", "error");
             poJSON.put("message", "Unable to Open Transaction Record.");
@@ -194,9 +200,9 @@ public class DeliverySchedule extends Transaction {
             while (loRS.next()) {
                 Model loDetail = (Model) poDetail.clone();
                 loDetail.newRecord();
-                poJSON = loDetail.openRecord(transactionNo, loRS.getInt("sClustrID"));
+                poJSON = loDetail.openRecord(transactionNo, loRS.getString("sClustrID"));
 
-                if (!"success".equals((String) poJSON.get("result"))) {
+                if ("error".equals((String) poJSON.get("result"))) {
                     poJSON.put("message", "Unable to open transaction detail record.");
                     clear();
                     return poJSON;
@@ -207,7 +213,7 @@ public class DeliverySchedule extends Transaction {
             }
         }
         poEvent = new JSONObject();
-        poEvent.put("event", "UPDATE");
+        poEvent.put("event", "READY");
 
         pnEditMode = EditMode.READY;
         pbRecordExist = true;
@@ -269,7 +275,10 @@ public class DeliverySchedule extends Transaction {
             poJSON.put("message", "Saving of unmodified transaction is not allowed.");
             return poJSON;
         }
-
+        poJSON = isEntryOkay(DeliveryScheduleStatus.OPEN);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
         poJSON = willSave();
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
@@ -348,7 +357,232 @@ public class DeliverySchedule extends Transaction {
     }
 
     public JSONObject UpdateTransaction() {
-        return updateTransaction();
+        poJSON = new JSONObject();
+
+        poJSON = updateTransaction();
+        if ("success".equals((String) poJSON.get("result"))) {
+            Model_Delivery_Schedule_Detail loDetail;
+            loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            loDetail.newRecord();
+            loDetail.setTransactionNo(getMaster().getTransactionNo());
+
+            paDetail.add(loDetail);
+        }
+        return poJSON;
+    }
+
+    @Override
+    protected JSONObject isEntryOkay(String status) {
+        GValidator loValidator = DeliveryScheduleValidatorFactory.make(getMaster().getIndustryId());
+
+        loValidator.setApplicationDriver(poGRider);
+        loValidator.setTransactionStatus(status);
+        loValidator.setMaster(poMaster);
+//        loValidator.setDetail(paDetail);
+
+        poJSON = loValidator.validate();
+        if (poJSON.containsKey("isRequiredApproval") && Boolean.TRUE.equals(poJSON.get("isRequiredApproval"))) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+                poJSON = ShowDialogFX.getUserApproval(poGRider);
+                if ("error".equals((String) poJSON.get("result"))) {
+                    return poJSON;
+                } else {
+                    if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "User is not an authorized approving officer.");
+                        return poJSON;
+                    }
+                }
+            }
+        }
+
+        return poJSON;
+    }
+
+    public JSONObject CloseTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(DeliveryScheduleStatus.CONFIRMED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer.");
+                    return poJSON;
+                }
+            }
+        }
+        poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "ConfirmTransaction",
+                DeliveryScheduleStatus.CONFIRMED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction confirmed successfully.");
+
+        return poJSON;
+    }
+
+    public JSONObject CancelTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already cancelled.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already voided.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(DeliveryScheduleStatus.CANCELLED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer.");
+                    return poJSON;
+                }
+            }
+        }
+        poGRider.beginTrans("UPDATE STATUS", "CancelTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "CancelTransaction",
+                DeliveryScheduleStatus.CANCELLED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction cancelled successfully.");
+
+        return poJSON;
+    }
+
+    public JSONObject VoidTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already cancelled.");
+            return poJSON;
+        }
+
+        if (DeliveryScheduleStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already voided.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(DeliveryScheduleStatus.VOID);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            poJSON = ShowDialogFX.getUserApproval(poGRider);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            } else {
+                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "User is not an authorized approving officer.");
+                    return poJSON;
+                }
+            }
+        }
+        poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "VoidTransaction",
+                DeliveryScheduleStatus.VOID,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction voided successfully.");
+
+        return poJSON;
     }
 
     public JSONObject searchClusterBranch(int row, String value, boolean byCode) throws SQLException, GuanzonException {
