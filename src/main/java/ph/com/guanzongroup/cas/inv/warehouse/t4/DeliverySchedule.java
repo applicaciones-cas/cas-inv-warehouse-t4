@@ -466,7 +466,7 @@ public class DeliverySchedule extends Transaction {
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No transacton was loaded.");
+            poJSON.put("message", "Invalid Edit Mode");
             return poJSON;
         }
 
@@ -532,16 +532,15 @@ public class DeliverySchedule extends Transaction {
 
         if (getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No transacton was loaded.");
+            poJSON.put("message", "Invalid Edit Mode.");
             return poJSON;
         }
 
-        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already confirmed.");
-            return poJSON;
-        }
-
+//        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already confirmed.");
+//            return poJSON;
+//        }
         if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already cancelled.");
