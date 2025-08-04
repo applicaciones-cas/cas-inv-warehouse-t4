@@ -155,7 +155,7 @@ public class DeliverySchedule extends Transaction {
                     "Transaction No»Date»Schedule Date",
                     "sTransNox»dTransact»dSchedule",
                     "sTransNox»dTransact»dSchedule",
-                    byExact ? (byCode ? 0 : 1) : 3);
+                    byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
                 return openTransaction((String) poJSON.get("sTransNox"));
