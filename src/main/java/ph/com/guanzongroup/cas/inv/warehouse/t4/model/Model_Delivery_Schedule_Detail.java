@@ -7,7 +7,6 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
 
@@ -29,18 +28,17 @@ public class Model_Delivery_Schedule_Detail extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
-            poEntity.updateString("cTrckSize", "0");
-            poEntity.updateString("cCancelld", "0");
-            poEntity.updateNull("dCancelld");
-
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
 
             poEntity.absolute(1);
 
+            poEntity.updateString("cTrckSize", "0");
+            poEntity.updateString("cCancelld", "0");
+            poEntity.updateNull("dCancelld");
             ID = poEntity.getMetaData().getColumnLabel(1);
             ID2 = poEntity.getMetaData().getColumnLabel(2);
-            
+
             poBranchCluster = new DeliveryParamModels(poGRider).BranchCluster();
 
             pnEditMode = EditMode.UNKNOWN;
@@ -135,7 +133,7 @@ public class Model_Delivery_Schedule_Detail extends Model {
     }
 
     public Model_Branch_Cluster BranchCluster() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sClustrID")) ) {
+        if (!"".equals(getValue("sClustrID"))) {
             if (this.poBranchCluster.getEditMode() == 1 && this.poBranchCluster
                     .getClusterID().equals(getValue("sClustrID"))) {
                 return this.poBranchCluster;

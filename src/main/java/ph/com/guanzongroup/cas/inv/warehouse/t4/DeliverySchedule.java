@@ -130,11 +130,12 @@ public class DeliverySchedule extends Transaction {
     }
 
     public JSONObject initTransaction() throws GuanzonException, SQLException {
-        SOURCE_CODE = "Tbln";
+        SOURCE_CODE = "Dlvr";
 
         poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
         poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
         paMaster = new ArrayList<Model>();
+        
         return super.initialize();
     }
 

@@ -10,6 +10,7 @@ import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 
@@ -35,16 +36,20 @@ public class Model_Delivery_Schedule_Master extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
-
-            poEntity.insertRow();
-            poEntity.moveToCurrentRow();
-
-            poEntity.absolute(1);
-            
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateObject("dSchedule", poGRider.getServerDate());
             poEntity.updateObject("dModified", poGRider.getServerDate());
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
+            
+            this.poBranch = (new ParamModels(this.poGRider)).Branch();
+            this.poCompany = (new ParamModels(this.poGRider)).Company();
+            this.poIndustry = (new ParamModels(this.poGRider)).Industry();
+            this.poCategory = (new ParamModels(this.poGRider)).Category();
+            
+            poEntity.insertRow();
+            poEntity.moveToCurrentRow();
+
+            poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
 
