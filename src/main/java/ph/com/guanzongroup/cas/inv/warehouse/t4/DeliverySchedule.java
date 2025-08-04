@@ -160,8 +160,8 @@ public class DeliverySchedule extends Transaction {
             if (poJSON != null) {
                 return openTransaction((String) poJSON.get("sTransNox"));
 
-            } else if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
+//            } else if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
             } else {
                 poJSON = new JSONObject();
                 poJSON.put("result", "error");
