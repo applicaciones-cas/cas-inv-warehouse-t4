@@ -92,28 +92,34 @@ public class DeliverySchedule extends Transaction {
     }
 
     public Model_Delivery_Schedule_Detail getDetail(int clusterRow) {
-        if (getMaster().getTransactionNo().isEmpty()
-                || getMaster().getIndustryId().isEmpty()) {
+        if (getMaster().getTransactionNo().isEmpty() || getMaster().getIndustryId().isEmpty()) {
             return null;
         }
-
-        Model_Delivery_Schedule_Detail loDetail;
-
-        // If index is invalid or out of range, add a new detail
-        if (clusterRow > paDetail.size()) {
-            loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
-            loDetail.newRecord();
-            loDetail.setTransactionNo(getMaster().getTransactionNo());
-
-            paDetail.add(loDetail);
+        //autoadd detail if empty
+        Model_Delivery_Schedule_Detail lastDetail = (Model_Delivery_Schedule_Detail) paDetail.get(paDetail.size() - 1);
+        String clusterID = lastDetail.getClusterID();
+        if (clusterID != null && !clusterID.trim().isEmpty()) {
+            Model_Delivery_Schedule_Detail newDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            newDetail.newRecord();
+            newDetail.setTransactionNo(getMaster().getTransactionNo());
+            paDetail.add(newDetail);
         }
 
-        // Safe to get the selected detail
+        // If index is invalid or out of range, add up to that index
+        while (paDetail.size() <= clusterRow) {
+
+            Model_Delivery_Schedule_Detail newDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            newDetail.newRecord();
+            newDetail.setTransactionNo(getMaster().getTransactionNo());
+            paDetail.add(newDetail);
+        }
+
+        // Get the requested detail
         Model_Delivery_Schedule_Detail loDetailSelected = (Model_Delivery_Schedule_Detail) paDetail.get(clusterRow);
 
         // Find a match by ClusterID
         for (int lnCtr = 0; lnCtr <= paDetail.size() - 1; lnCtr++) {
-            loDetail = (Model_Delivery_Schedule_Detail) paDetail.get(lnCtr);
+            Model_Delivery_Schedule_Detail loDetail = (Model_Delivery_Schedule_Detail) paDetail.get(lnCtr);
 
             if (loDetail.getClusterID() == loDetailSelected.getClusterID()) {
                 return loDetail;
@@ -121,11 +127,11 @@ public class DeliverySchedule extends Transaction {
         }
 
         // No match found — create new
-        loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        Model_Delivery_Schedule_Detail loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
         loDetail.newRecord();
         loDetail.setTransactionNo(getMaster().getTransactionNo());
-
         paDetail.add(loDetail);
+
         return loDetail;
     }
 
@@ -135,7 +141,7 @@ public class DeliverySchedule extends Transaction {
         poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
         poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
         paMaster = new ArrayList<Model>();
-        
+
         return super.initialize();
     }
 
@@ -221,6 +227,7 @@ public class DeliverySchedule extends Transaction {
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
+        poJSON.put("result", "Transaction loaded successfully");
         return poJSON;
     }
 
