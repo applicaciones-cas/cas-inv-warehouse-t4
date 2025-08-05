@@ -301,7 +301,7 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (getEditMode() == EditMode.ADDNEW) {
+        if (getEditMode() == EditMode.ADDNEW || pnEditMode == EditMode.UPDATE) {
             pdModified = poGRider.getServerDate();
             poMaster.setValue("sModified", poGRider.Encrypt(poGRider.getUserID()));
         }
@@ -336,10 +336,11 @@ public class DeliverySchedule extends Transaction {
                     if (paDetail.get(lnCtr).getValue("sClustrID") == null) {
                         continue;
                     }
+                    paDetail.get(lnCtr).setValue("sTransNox", String.valueOf(poMaster.getValue(1)));
                     paDetail.get(lnCtr).setValue("dModified", pdModified);
-                    System.out.println("Cluster ID" + paDetail.get(lnCtr).getValue("sClustrID"));
+                    System.out.println("Cluster ID : " + paDetail.get(lnCtr).getValue("sClustrID"));
                     poJSON = paDetail.get(lnCtr).saveRecord();
-
+                     System.out.println(poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         if (!pbWthParent) {
                             poGRider.rollbackTrans();
@@ -366,7 +367,7 @@ public class DeliverySchedule extends Transaction {
 
         pnEditMode = EditMode.UNKNOWN;
         pbRecordExist = true;
-
+//        paMaster = new ArrayList<Model>();
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction saved successfully.");

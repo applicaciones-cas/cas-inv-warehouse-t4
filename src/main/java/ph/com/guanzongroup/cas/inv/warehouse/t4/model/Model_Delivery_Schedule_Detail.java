@@ -129,7 +129,7 @@ public class Model_Delivery_Schedule_Detail extends Model {
 
     @Override
     public String getNextCode() {
-        return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+        return "";
     }
 
     public Model_Branch_Cluster BranchCluster() throws SQLException, GuanzonException {
