@@ -13,8 +13,11 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.parameter.model.Model_Category;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
@@ -35,18 +38,14 @@ public class DeliverySchedule extends Transaction {
 
     public void setIndustryID(String industryId) {
         psIndustryCode = industryId;
-        getMaster().setIndustryId(industryId);
-
     }
 
     public void setCompanyID(String companyId) {
         psCompanyID = companyId;
-        getMaster().setCompanyID(companyId);
     }
 
     public void setCategoryID(String categoryId) {
         psCategorCD = categoryId;
-        getMaster().setCategoryId(categoryId);
     }
 
     public Model_Delivery_Schedule_Master getMaster() {
@@ -257,6 +256,16 @@ public class DeliverySchedule extends Transaction {
         getMaster().setCompanyID(psCompanyID);
         getMaster().setCategoryId(psCategorCD);
         getMaster().setBranchCode(poGRider.getBranchCode());
+
+        if (!psIndustryCode.isEmpty()) {
+            if (psCategorCD.isEmpty()) {
+                try {
+                    getCategory();
+                } catch (SQLException | GuanzonException ex) {
+                    Logger.getLogger(DeliverySchedule.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
 
         pnEditMode = EditMode.ADDNEW;
 
@@ -637,7 +646,9 @@ public class DeliverySchedule extends Transaction {
             //sTransNox/dTransact/dSchedule
             lsSQL = MiscUtil.addCondition(lsSQL, column + "= " + SQLUtil.toSQL(value));
         }
-
+        if (!psIndustryCode.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+        }
         ResultSet loRS = poGRider.executeQuery(lsSQL);
 
         if (MiscUtil.RecordCount(loRS)
@@ -663,5 +674,47 @@ public class DeliverySchedule extends Transaction {
         poJSON.put(
                 "result", "success");
         return poJSON;
+    }
+
+    public JSONObject getCategory() throws SQLException, GuanzonException {
+        if (!"".equals(psIndustryCode)) {
+
+            String lsSQL = "SELECT "
+                    + " sCategrCd"
+                    + ", sDescript"
+                    + ", sIndstCdx"
+                    + ", sInvTypCd"
+                    + ", cRecdStat "
+                    + " FROM Category "
+                    + "  WHERE cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
+                    + " AND sIndstCdx = " + SQLUtil.toSQL(psIndustryCode);
+
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+
+            if (MiscUtil.RecordCount(loRS)
+                    <= 0) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record found.");
+                return poJSON;
+            }
+            loRS.beforeFirst();
+            if (loRS.next()) {
+                Model_Category loCategory = new ParamModels(poGRider).Category();
+                poJSON = loCategory.openRecord(loRS.getString("sCategrCd"));
+                if ("success".equals((String) poJSON.get("result"))) {
+                    psCategorCD = loRS.getString("sCategrCd");
+                    getMaster().setCategoryId(psCategorCD);
+                    return poJSON;
+                } else {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "No record found.");
+                    return poJSON;
+                }
+            }
+        }
+        poJSON.put("result", "error");
+        poJSON.put("message", "Industry not yet set");
+        return poJSON;
+
     }
 }
