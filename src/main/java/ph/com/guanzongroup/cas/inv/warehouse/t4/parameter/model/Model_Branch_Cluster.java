@@ -41,6 +41,9 @@ public class Model_Branch_Cluster extends Model {
     }
 
     public Model_Branch_Cluster_Delivery BranchClusterDelivery(int fnRow) {
+        if (fnRow > paBranchClusterDelivery.size() - 1) {
+            return null;
+        }
         return (Model_Branch_Cluster_Delivery) paBranchClusterDelivery.get(fnRow);
     }
 

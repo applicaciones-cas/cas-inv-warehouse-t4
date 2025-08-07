@@ -62,7 +62,7 @@ public class BranchCluster extends Parameter {
                 "sBranchCd»sClustrDs",
                 byCode ? 0 : 1);
         if (this.poJSON != null) {
-            return this.poModel.openRecord((String) this.poJSON.get("sBrgyIDxx"));
+            return this.poModel.openRecord((String) this.poJSON.get("sClustrID"));
         }
         this.poJSON = new JSONObject();
         this.poJSON.put("result", "error");
