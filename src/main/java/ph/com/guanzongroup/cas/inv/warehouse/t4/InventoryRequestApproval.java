@@ -160,7 +160,7 @@ public class InventoryRequestApproval extends Transaction {
         return poJSON;
     }
 
-    public JSONObject searchClusterBranch(int row, String value, boolean byCode) throws SQLException, GuanzonException {
+    public JSONObject searchClusterBranch(String value, boolean byCode) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         BranchCluster loSubClass = new DeliveryParamController(poGRider, logwrapr).BranchCluster();
 
