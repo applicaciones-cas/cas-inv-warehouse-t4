@@ -45,7 +45,7 @@ public class DeliverySchedule_Vehicle implements GValidator {
         poMaster = (Model_Delivery_Schedule_Master) value;
     }
 
-     @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     @Override
     public void setDetail(ArrayList<Object> value) {
         paDetail = (ArrayList<Model_Delivery_Schedule_Detail>) (ArrayList<?>) value;
@@ -171,17 +171,15 @@ public class DeliverySchedule_Vehicle implements GValidator {
 
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getClusterID() == null
-                    && paDetail.get(lnCtr).getClusterID().isEmpty()) {
-                continue;
+            if (paDetail.get(lnCtr).getClusterID() != null
+                    && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
+                lnDetailCount++;
             }
-            lnDetailCount++;
-
         }
 
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Detail is not set");
+            poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
 

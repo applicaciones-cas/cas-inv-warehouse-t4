@@ -114,17 +114,15 @@ public class DeliverySchedule_General implements GValidator {
 
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getClusterID() == null
-                    && paDetail.get(lnCtr).getClusterID().isEmpty()) {
-                continue;
+            if (paDetail.get(lnCtr).getClusterID() != null
+                    && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
+                lnDetailCount++;
             }
-            lnDetailCount++;
-
         }
 
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Category is not set.");
+            poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
 
