@@ -178,7 +178,7 @@ public class DeliverySchedule_MP implements GValidator {
                 if (paDetail.get(lnCtr).getTruckSize() == null
                         || paDetail.get(lnCtr).getTruckSize().isEmpty()) {
                     poJSON.put("result", "error");
-                    poJSON.put("message", "Truck Size is not set.");
+                    poJSON.put("message", "Truck Size is not set. Row = " + (lnCtr + 1));
                     return poJSON;
                 }
             }
