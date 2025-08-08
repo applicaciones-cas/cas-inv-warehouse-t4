@@ -340,7 +340,7 @@ public class DeliverySchedule extends Transaction {
                     paDetail.get(lnCtr).setValue("dModified", pdModified);
                     System.out.println("Cluster ID : " + paDetail.get(lnCtr).getValue("sClustrID"));
                     poJSON = paDetail.get(lnCtr).saveRecord();
-                     System.out.println(poJSON.get("message"));
+                    System.out.println(poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         if (!pbWthParent) {
                             poGRider.rollbackTrans();
@@ -396,7 +396,8 @@ public class DeliverySchedule extends Transaction {
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
         loValidator.setMaster(poMaster);
-//        loValidator.setDetail(paDetail);
+        ArrayList laDetailList = new ArrayList<>(getDetailList());
+        loValidator.setDetail(laDetailList);
 
         poJSON = loValidator.validate();
         if (poJSON.containsKey("isRequiredApproval") && Boolean.TRUE.equals(poJSON.get("isRequiredApproval"))) {

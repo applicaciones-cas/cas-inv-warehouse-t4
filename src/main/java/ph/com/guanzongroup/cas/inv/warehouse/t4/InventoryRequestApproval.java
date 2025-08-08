@@ -4,30 +4,24 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
-import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
-import org.guanzon.cas.parameter.model.Model_Category;
-import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.DeliveryScheduleValidatorFactory;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryStockRequestApprovalValidatorFactory;
 
 public class InventoryRequestApproval extends Transaction {
 
@@ -98,8 +92,8 @@ public class InventoryRequestApproval extends Transaction {
     public JSONObject initTransaction() throws GuanzonException, SQLException {
         SOURCE_CODE = "";
 
-        poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
-        poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        poMaster = new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
+        poDetail = new InvWarehouseModels(poGRider).InventoryStockRequestDetail();
         poCluster = new DeliveryParamModels(poGRider).BranchCluster();
         paMaster = new ArrayList<Model>();
 
@@ -134,7 +128,7 @@ public class InventoryRequestApproval extends Transaction {
 
     @Override
     protected JSONObject isEntryOkay(String status) {
-        GValidator loValidator = DeliveryScheduleValidatorFactory.make(getMaster().getIndustryId());
+        GValidator loValidator = InventoryStockRequestApprovalValidatorFactory.make(getMaster().getIndustryId());
 
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);

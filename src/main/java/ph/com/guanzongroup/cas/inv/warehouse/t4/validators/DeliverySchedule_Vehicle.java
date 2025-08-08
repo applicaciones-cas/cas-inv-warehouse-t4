@@ -19,7 +19,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Ma
 
 /**
  *
- * @author Arsiela 03-12-2025
+ * @author MNV t4
  */
 public class DeliverySchedule_Vehicle implements GValidator {
 
@@ -45,12 +45,10 @@ public class DeliverySchedule_Vehicle implements GValidator {
         poMaster = (Model_Delivery_Schedule_Master) value;
     }
 
+     @SuppressWarnings("unchecked")
     @Override
     public void setDetail(ArrayList<Object> value) {
-        paDetail.clear();
-        for (int lnCtr = 0; lnCtr <= value.size() - 1; lnCtr++) {
-            paDetail.add((Model_Delivery_Schedule_Detail) value.get(lnCtr));
-        }
+        paDetail = (ArrayList<Model_Delivery_Schedule_Detail>) (ArrayList<?>) value;
     }
 
     @Override
@@ -89,6 +87,7 @@ public class DeliverySchedule_Vehicle implements GValidator {
         boolean isRequiredApproval = false;
 
         if (poMaster.getTransactionDate() == null) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
@@ -108,21 +107,38 @@ public class DeliverySchedule_Vehicle implements GValidator {
         }
 
         if (poMaster.getIndustryId() == null) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Industry is not set.");
             return poJSON;
         }
         if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-//temporary disable diko alm setter 
-//        if (poMaster.getCategoryId()
-//                == null || poMaster.getCategoryId().isEmpty()) {
-//            poJSON.put("message", "Category is not set.");
-//            return poJSON;
-//        }
+        if (poMaster.getCategoryId()
+                == null || poMaster.getCategoryId().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Category is not set.");
+            return poJSON;
+        }
         if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Branch is not set.");
+            return poJSON;
+        }
+
+        int lnDetailCount = 0;
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getClusterID() != null
+                    && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
+                lnDetailCount++;
+            }
+        }
+
+        if (lnDetailCount <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
 
@@ -137,40 +153,35 @@ public class DeliverySchedule_Vehicle implements GValidator {
         boolean isRequiredApproval = false;
 
         if (poMaster.getTransactionDate() == null) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
 
-        //change transaction date 
-        if (poMaster.getTransactionDate().after((Date) poGRider.getServerDate())
-                && poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
-            poJSON.put("message", "Change of transaction date are not allowed.! Approval is Required");
-            isRequiredApproval = true;
-        }
-
-        //change schedule date 
-        if (poMaster.getScheduleDate().after((Date) poGRider.getServerDate())
-                && poMaster.getScheduleDate().before((Date) poGRider.getServerDate())) {
-            poJSON.put("message", "Change of schedule date are not allowed.! Approval is Required");
-            isRequiredApproval = true;
-        }
-
         if (poMaster.getIndustryId() == null) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Industry is not set.");
             return poJSON;
         }
         if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
+            poJSON.put("result", "error");
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-//temporary disable diko alm setter 
-//        if (poMaster.getCategoryId()
-//                == null || poMaster.getCategoryId().isEmpty()) {
-//            poJSON.put("message", "Category is not set.");
-//            return poJSON;
-//        }
-        if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
-            poJSON.put("message", "Branch is not set.");
+
+        int lnDetailCount = 0;
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getClusterID() == null
+                    && paDetail.get(lnCtr).getClusterID().isEmpty()) {
+                continue;
+            }
+            lnDetailCount++;
+
+        }
+
+        if (lnDetailCount <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Detail is not set");
             return poJSON;
         }
 
