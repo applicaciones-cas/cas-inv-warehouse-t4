@@ -131,12 +131,18 @@ public class DeliverySchedule_MC implements GValidator {
             return poJSON;
         }
 
-        
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getClusterID() != null
                     && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
                 lnDetailCount++;
+                
+                if (paDetail.get(lnCtr).getTruckSize() == null
+                        || paDetail.get(lnCtr).getTruckSize().isEmpty()) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Truck Size is not set.");
+                    return poJSON;
+                }
             }
         }
 
