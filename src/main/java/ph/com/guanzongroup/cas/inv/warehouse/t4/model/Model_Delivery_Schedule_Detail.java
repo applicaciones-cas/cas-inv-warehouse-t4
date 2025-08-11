@@ -147,6 +147,7 @@ public class Model_Delivery_Schedule_Detail extends Model {
         }
         poBranchCluster.initialize();
         return this.poBranchCluster;
+        
     }
 
 }

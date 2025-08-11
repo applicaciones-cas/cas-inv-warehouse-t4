@@ -1,9 +1,17 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4;
 
+import java.awt.event.WindowAdapter;
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.WindowConstants;
+import net.sf.jasperreports.engine.JRException;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
@@ -21,6 +29,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtil;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryStockRequestApprovalValidatorFactory;
 
 public class InventoryRequestApproval extends Transaction {
@@ -231,6 +240,40 @@ public class InventoryRequestApproval extends Transaction {
         poJSON.put(
                 "result", "success");
         return poJSON;
+    }
+
+    public JSONObject printRecord() throws SQLException, JRException {
+        poJSON = new JSONObject();
+
+        ReportUtil poReportJasper = new ReportUtil(poGRider);
+
+        //add Parameter
+        poReportJasper.addParameter("sBranchNm", poGRider.getBranchName());
+        poReportJasper.addParameter("sAddressx", poGRider.getAddress());
+        poReportJasper.addParameter("sCompnyNm", poGRider.getClientName());
+        poReportJasper.addParameter("sTransNox", getMaster().getTransactionNo());
+        poReportJasper.addParameter("dTransact", getMaster().getTransactionDate());
+        if ("1".equals(getMaster().getProcessed())) {
+            poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approvedreprint.png");
+        } else {
+            poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
+
+        }
+        poReportJasper.setJasperPath("InventoryStockRequestApproved");
+        poReportJasper.setSQLReport(PrintRecordQuery());
+        poReportJasper.isAlwaysTop(true);
+        poReportJasper.isWithUI(true);
+        poReportJasper.isWithExport(true);
+        poReportJasper.willExport(true);
+        poReportJasper.generateReport();
+
+        return poJSON;
+    }
+
+    private String PrintRecordQuery() {
+        String lsSQL = "";
+
+        return lsSQL;
     }
 
 }
