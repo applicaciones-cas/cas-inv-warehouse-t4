@@ -713,9 +713,13 @@ public class DeliverySchedule extends Transaction {
                     return poJSON;
                 }
             }
+        } else {
+            //General
+            psCategorCD = "0007";
+
         }
-        poJSON.put("result", "error");
-        poJSON.put("message", "Industry not yet set");
+        poJSON.put("result", "success");
+        poJSON.put("message", "Industry is General");
         return poJSON;
 
     }

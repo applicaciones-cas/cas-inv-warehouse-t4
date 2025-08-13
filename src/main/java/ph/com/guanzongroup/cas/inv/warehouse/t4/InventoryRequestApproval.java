@@ -1,20 +1,16 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4;
 
-import java.awt.event.WindowAdapter;
-import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.WindowConstants;
+import javafx.application.Platform;
 import net.sf.jasperreports.engine.JRException;
 import org.guanzon.appdriver.agent.ShowDialogFX;
+import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -30,6 +26,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Clu
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtil;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtilListener;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryStockRequestApprovalValidatorFactory;
 
 public class InventoryRequestApproval extends Transaction {
@@ -242,38 +239,191 @@ public class InventoryRequestApproval extends Transaction {
         return poJSON;
     }
 
-    public JSONObject printRecord() throws SQLException, JRException {
+    public JSONObject printRecord() throws SQLException, JRException, CloneNotSupportedException, GuanzonException {
         poJSON = new JSONObject();
 
         ReportUtil poReportJasper = new ReportUtil(poGRider);
 
+        if (psCategorCD == null && psCategorCD.isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Category is Required for this Transaction");
+            return poJSON;
+        }
+        if (getMaster().getTransactionNo() == null && getMaster().getTransactionNo().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record is Selected");
+            return poJSON;
+
+        }
+        poJSON = OpenTransaction(getMaster().getTransactionNo());
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        // Attach listener
+        poReportJasper.setReportListener(new ReportUtilListener() {
+            @Override
+            public void onReportOpen() {
+                System.out.println("Report opened.");
+            }
+
+            @Override
+            public void onReportClose() {
+                //fetch/add if needed
+                System.out.println("Report closed.");
+            }
+
+            @Override
+            public void onReportPrint() {
+                System.out.println("Report printing...");
+                isJSONSuccess(PrintTransaction(), "Print Record", "Initialize Record Print! ");
+            }
+
+            @Override
+            public void onReportExport() {
+                System.out.println("Report exported.");
+                isJSONSuccess(poReportJasper.exportReportbyExcel(), "Export Record", "Initialize Record Export! ");
+                //if used a model or array please create function 
+            }
+
+        });
         //add Parameter
-        poReportJasper.addParameter("sBranchNm", poGRider.getBranchName());
-        poReportJasper.addParameter("sAddressx", poGRider.getAddress());
-        poReportJasper.addParameter("sCompnyNm", poGRider.getClientName());
-        poReportJasper.addParameter("sTransNox", getMaster().getTransactionNo());
-        poReportJasper.addParameter("dTransact", getMaster().getTransactionDate());
-        if ("1".equals(getMaster().getProcessed())) {
+        poReportJasper.addParameter("BranchName", poGRider.getBranchName());
+        poReportJasper.addParameter("Address", poGRider.getAddress());
+        poReportJasper.addParameter("CompanyName", poGRider.getClientName());
+        poReportJasper.addParameter("TransactionNo", getMaster().getTransactionNo());
+        poReportJasper.addParameter("TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
+        poReportJasper.addParameter("Remarks", getMaster().getRemarks());
+        poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
+        if (!"1".equals(getMaster().getProcessed()) && !StockRequestStatus.PROCESSED.equals(getMaster().getTransactionStatus())) {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approvedreprint.png");
         } else {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
-
         }
-        poReportJasper.setJasperPath("InventoryStockRequestApproved");
+        poReportJasper.setReportName("InventoryRequestApproval");
+        poReportJasper.setJasperPath(getJasperReport());
+
+        //process by ResultSet
         poReportJasper.setSQLReport(PrintRecordQuery());
-        poReportJasper.isAlwaysTop(true);
+        System.out.println("Print Data Query :" + PrintRecordQuery());
+
+        //process by JasperCollection parse ur List / ArrayList
+        //JRBeanCollectionDataSource jrRS = new JRBeanCollectionDataSource(R1data);
+        //poReportJasper.setJRBeanCollectionDataSource(jrRS);
+        //direct pass JasperViewer
+        //         reportPrint = JasperFillManager.fillReport(poGRider.getReportPath() + psJasperPath + ".jasper",
+        //                    poParamater,
+        //                    yourDATA);
+        //        poReportJasper.setJasperPrint(reportPrint);
+        poReportJasper.isAlwaysTop(false);
         poReportJasper.isWithUI(true);
         poReportJasper.isWithExport(true);
+        poReportJasper.isWithExportPDF(true);
         poReportJasper.willExport(true);
-        poReportJasper.generateReport();
+        return poReportJasper.generateReport();
 
-        return poJSON;
+    }
+
+    private String getJasperReport() {
+        //create this function if has Categorized Report
+        switch (psCategorCD) {
+
+            case "0001"://CELLPHONE
+                return "InventoryStockRequestApprovedMP";
+            case "0002"://APPLIANCES
+                return "InventoryStockRequestApprovedAppliance";
+            case "0003"://MC UNIT
+                return "InventoryStockRequestApprovedMC";
+            case "0004"://MC SPAREPARTS
+                return "InventoryStockRequestApprovedMCSP";
+            case "0005"://CAR UNIT
+                return "InventoryStockRequestApprovedCar";
+            case "0006"://CAR SPAREPARTS
+                return "InventoryStockRequestApprovedCarSP";
+            case "0007"://GENERAL
+                return "InventoryStockRequestApprovedGeneral";
+            case "0008"://LP - Food
+                return "InventoryStockRequestApprovedLPFood";
+            case "0009"://Monarch - Food
+                return "InventoryStockRequestApprovedMonarchFood";
+            default:
+                return "";
+        }
+
     }
 
     private String PrintRecordQuery() {
-        String lsSQL = "";
+        String lsSQL = "SELECT "
+                + "   InventoryStockRequestMaster.sTransNox sTransNox"
+                + ",  IFNULL(InventoryStockRequestDetail.sStockIDx,'') sStockIDx"
+                + ",  IFNULL(Inventory.sBarCodex,'') Barcode"
+                + ",  IFNULL(Inventory.sDescript,'') InventoryName"
+                + ",  IFNULL(Brand.sDescript,'') BrandName"
+                + ",  IFNULL(Model.sDescript,'') ModelName"
+                + ",  IFNULL(Color.sDescript,'') ColorName"
+                + ",  IFNULL(Measure.sDescript,'') MeasureName"
+                + ",  IFNULL(InventoryType.sDescript,'') InventoryTypeName"
+                + ",  IFNULL(Variant.sDescript,'') VariantName"
+                + ",  InventoryStockRequestDetail.nQtyOnHnd nQtyOnHnd"
+                + ",  InventoryStockRequestDetail.nQuantity nQuantity"
+                + ",  InventoryStockRequestDetail.nApproved nApproved"
+                + ",  InventoryStockRequestDetail.nCancelld nCancelld"
+                + "   FROM Inv_Stock_Request_Master InventoryStockRequestMaster"
+                + "     LEFT JOIN Inv_Stock_Request_Detail InventoryStockRequestDetail"
+                + "         ON InventoryStockRequestMaster.sTransNox = InventoryStockRequestDetail.sTransNox"
+                + "     LEFT JOIN Inventory Inventory"
+                + "         ON InventoryStockRequestDetail.sStockIDx = Inventory.sStockIDx"
+                + "     LEFT JOIN Category Category"
+                + "         ON Inventory.sCategCd1 = Category.sCategrCd"
+                + "     LEFT JOIN Category_Level2 Category_Level2"
+                + "         ON Inventory.sCategCd2 = Category_Level2.sCategrCd"
+                + "     LEFT JOIN Category_Level3 Category_Level3"
+                + "         ON Inventory.sCategCd3 = Category_Level3.sCategrCd"
+                + "     LEFT JOIN Category_Level4 Category_Level4"
+                + "         ON Inventory.sCategCd4 = Category_Level4.sCategrCd"
+                + "     LEFT JOIN Brand Brand"
+                + "         ON Inventory.sBrandIDx = Brand.sBrandIDx"
+                + "     LEFT JOIN Model Model"
+                + "         ON Inventory.sModelIDx = Model.sModelIDx"
+                + "     LEFT JOIN Color Color"
+                + "         ON Inventory.sColorIDx = Color.sColorIDx"
+                + "     LEFT JOIN Measure Measure"
+                + "         ON Inventory.sMeasurID = Measure.sMeasurID"
+                + "     LEFT JOIN Inv_Type InventoryType"
+                + "         ON Inventory.sInvTypCd = InventoryType.sInvTypCd"
+                + "     LEFT JOIN Model_Variant Variant"
+                + "         ON Inventory.sVrntIDxx = Variant.sVrntIDxx"
+                + "             ORDER BY InventoryStockRequestDetail.nEntryNox ASC";
+
+        lsSQL = MiscUtil.addCondition(lsSQL, "InventoryStockRequestMaster.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
 
         return lsSQL;
+    }
+
+    private JSONObject PrintTransaction() {
+        //update ang kailngan 
+        return poJSON;
+    }
+
+    private boolean isJSONSuccess(JSONObject loJSON, String module, String fsModule) {
+        String result = (String) loJSON.get("result");
+        if ("error".equals(result)) {
+            String message = (String) loJSON.get("message");
+            Platform.runLater(() -> {
+                ShowMessageFX.Warning(null, "", module + ": " + message);
+            });
+            return false;
+        }
+        String message = (String) loJSON.get("message");
+
+        Platform.runLater(() -> {
+            if (message != null) {
+                ShowMessageFX.Information(null, "", module + ": " + message);
+            }
+        });
+        return true;
+
     }
 
 }
