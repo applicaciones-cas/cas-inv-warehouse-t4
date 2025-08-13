@@ -25,6 +25,7 @@ import javafx.stage.FileChooser;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.swing.JRViewer;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.base.CommonUtils;
@@ -100,18 +101,24 @@ public class ReportUtilViewController implements Initializable {
         switch (lsButton) {
 
             case "btnPrint":
-                //notify user only 
+                if (!isJSONSuccess(printRecord(), "Initialize printing! ")) {
+                    break;
+                }
+
                 if (plReportListener != null) {
                     plReportListener.onReportPrint();
                 }
                 break;
+
             case "btnExport":
                 if (plReportListener != null) {
                     plReportListener.onReportExport();
                 }
                 break;
             case "btnExportPDF":
-                isJSONSuccess(exportByPDF(), "Initialize export PDF! ");
+                if (!isJSONSuccess(exportByPDF(), "Initialize export PDF! ")) {
+                    break;
+                }
                 break;
             case "btnClose":
             case "btnExit":
@@ -254,6 +261,26 @@ public class ReportUtilViewController implements Initializable {
         return poJSON;
     }
 
+    private JSONObject printRecord() {
+        try {
+            if (psjpReport == null) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Invalid Jasper Print Detected.");
+
+            }
+            //notify user only
+            JasperPrintManager.printReport(psjpReport, true);
+            poJSON.put("result", "success");
+//            poJSON.put("message", "Report generated.");
+            return poJSON;
+        } catch (JRException ex) {
+            Logger.getLogger(ReportUtilViewController.class.getName()).log(Level.SEVERE, null, ex);
+            poJSON.put("result", "error");
+            poJSON.put("message", ex.getMessage());
+            return poJSON;
+        }
+    }
+
     private JSONObject exportByPDF() {
         poJSON = new JSONObject();
 
@@ -351,9 +378,9 @@ public class ReportUtilViewController implements Initializable {
         if ("error".equals(result)) {
             String message = (String) loJSON.get("message");
             Platform.runLater(() -> {
-                 if (message != null) {
-                ShowMessageFX.Warning(null, psReportName, fsModule + ": " + message);
-                 }
+                if (message != null) {
+                    ShowMessageFX.Warning(null, psReportName, fsModule + ": " + message);
+                }
             });
             return false;
         }

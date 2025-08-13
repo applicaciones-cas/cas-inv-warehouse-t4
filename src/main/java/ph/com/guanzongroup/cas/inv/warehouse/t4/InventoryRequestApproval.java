@@ -411,7 +411,9 @@ public class InventoryRequestApproval extends Transaction {
         if ("error".equals(result)) {
             String message = (String) loJSON.get("message");
             Platform.runLater(() -> {
+                 if (message != null) {
                 ShowMessageFX.Warning(null, "", module + ": " + message);
+                 }
             });
             return false;
         }
