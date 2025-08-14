@@ -83,7 +83,7 @@ public class InventoryRequestApproval extends Transaction {
             return null;
         }
 
-        if (entryNo < 0 || entryNo > paDetail.size() - 1) {
+        if (entryNo <= 0 || entryNo > paDetail.size() ) {
             return null;
         }
 

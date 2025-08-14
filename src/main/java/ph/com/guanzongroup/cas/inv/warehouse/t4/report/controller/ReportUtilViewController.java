@@ -1,14 +1,11 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4.report.controller;
 
-import java.awt.Component;
 import java.awt.print.PrinterJob;
 import java.io.File;
 import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -27,7 +24,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javax.swing.JButton;
-import javax.swing.JToolBar;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperPrint;
