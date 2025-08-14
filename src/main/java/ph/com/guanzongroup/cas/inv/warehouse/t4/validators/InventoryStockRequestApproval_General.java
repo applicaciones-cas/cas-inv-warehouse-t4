@@ -63,7 +63,7 @@ public class InventoryStockRequestApproval_General implements GValidator {
                 case StockRequestStatus.CONFIRMED:
                     return validateConfirmed();
                 case StockRequestStatus.PROCESSED:
-                    return validatePosted();
+                    return validateProcess();
                 default:
                     poJSON = new JSONObject();
                     poJSON.put("result", "error");

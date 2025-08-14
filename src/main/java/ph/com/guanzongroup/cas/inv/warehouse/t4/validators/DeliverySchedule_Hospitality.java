@@ -191,7 +191,6 @@ public class DeliverySchedule_Hospitality implements GValidator {
             return poJSON;
         }
 
-
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }

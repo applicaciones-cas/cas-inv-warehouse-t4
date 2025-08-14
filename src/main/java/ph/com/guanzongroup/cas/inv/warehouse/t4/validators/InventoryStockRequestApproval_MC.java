@@ -116,7 +116,7 @@ public class InventoryStockRequestApproval_MC implements GValidator {
             poJSON.put("message", "Unmodified Transaction");
             return poJSON;
         }
-        
+
         if (poMaster.getProcessed()) {
             if (poGRider.getUserLevel() <= UserRight.ENCODER) {
                 isRequiredApproval = true;
