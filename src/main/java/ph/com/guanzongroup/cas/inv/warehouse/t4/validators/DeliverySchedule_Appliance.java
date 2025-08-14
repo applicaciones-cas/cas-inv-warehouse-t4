@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
@@ -133,7 +134,7 @@ public class DeliverySchedule_Appliance implements GValidator {
             if (paDetail.get(lnCtr).getClusterID() != null
                     && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
                 lnDetailCount++;
-                
+
                 if (paDetail.get(lnCtr).getTruckSize() == null
                         || paDetail.get(lnCtr).getTruckSize().isEmpty()) {
                     poJSON.put("result", "error");
@@ -148,6 +149,11 @@ public class DeliverySchedule_Appliance implements GValidator {
             poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
+
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
+
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 
@@ -189,6 +195,9 @@ public class DeliverySchedule_Appliance implements GValidator {
             return poJSON;
         }
 
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 
@@ -197,22 +206,36 @@ public class DeliverySchedule_Appliance implements GValidator {
 
     private JSONObject validatePosted() {
         poJSON = new JSONObject();
-
+        boolean isRequiredApproval = false;
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         poJSON.put("result", "success");
+        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 
     private JSONObject validateCancelled() throws SQLException {
+        boolean isRequiredApproval = false;
         poJSON = new JSONObject();
 
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         poJSON.put("result", "success");
+        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 
     private JSONObject validateVoid() throws SQLException {
+        boolean isRequiredApproval = false;
         poJSON = new JSONObject();
 
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         poJSON.put("result", "success");
+        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 

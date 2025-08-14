@@ -1,10 +1,14 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4.report.controller;
 
+import java.awt.Component;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -22,11 +26,14 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
+import javax.swing.JButton;
+import javax.swing.JToolBar;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.swing.JRViewer;
+import net.sf.jasperreports.swing.JRViewerToolbar;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GRiderCAS;
@@ -102,7 +109,7 @@ public class ReportUtilViewController implements Initializable {
 
             case "btnPrint":
                 if (!isJSONSuccess(printRecord(), "Initialize printing! ")) {
-                    break;
+                    return;
                 }
 
                 if (plReportListener != null) {
@@ -117,7 +124,11 @@ public class ReportUtilViewController implements Initializable {
                 break;
             case "btnExportPDF":
                 if (!isJSONSuccess(exportByPDF(), "Initialize export PDF! ")) {
-                    break;
+                    return;
+                }
+
+                if (plReportListener != null) {
+                    plReportListener.onReportExportPDF();
                 }
                 break;
             case "btnClose":
@@ -243,6 +254,28 @@ public class ReportUtilViewController implements Initializable {
 
         jrViewer = new JRViewer(psjpReport);
 
+        // Remove Print and Save buttons from JRViewer toolbar
+        for (int lnComponent = 0; lnComponent < jrViewer.getComponentCount(); lnComponent++) {
+            if (jrViewer.getComponent(lnComponent) instanceof JRViewerToolbar) {
+                JRViewerToolbar toolbar = (JRViewerToolbar) jrViewer.getComponent(lnComponent);
+
+                for (int lnToolBar = 0; lnToolBar < toolbar.getComponentCount(); lnToolBar++) {
+                    if (toolbar.getComponent(lnToolBar) instanceof JButton) {
+                        JButton button = (JButton) toolbar.getComponent(lnToolBar);
+
+                        if (button.getToolTipText() != null) {
+                            if (button.getToolTipText().equals("Save") || button.getToolTipText().equals("Print")) {
+                                button.setEnabled(false);
+                                button.setVisible(false);
+                            }
+                        }
+                    }
+                }
+
+                toolbar.revalidate();
+                toolbar.repaint();
+            }
+        }
         SwingNode swingNode = new SwingNode();
         javafx.application.Platform.runLater(() -> {
             swingNode.setContent(jrViewer);
@@ -262,17 +295,24 @@ public class ReportUtilViewController implements Initializable {
     }
 
     private JSONObject printRecord() {
+        poJSON = new JSONObject();
         try {
             if (psjpReport == null) {
                 poJSON.put("result", "error");
                 poJSON.put("message", "Invalid Jasper Print Detected.");
 
             }
-            //notify user only
-            JasperPrintManager.printReport(psjpReport, true);
-            poJSON.put("result", "success");
-//            poJSON.put("message", "Report generated.");
-            return poJSON;
+            PrinterJob job = PrinterJob.getPrinterJob();
+            if (job.printDialog()) {
+                JasperPrintManager.printReport(psjpReport, false);
+                System.out.println("Print successfully sent to printer.");
+                poJSON.put("result", "success");
+                return poJSON;
+            } else {
+                System.out.println("Print is canceled by user.");
+                poJSON.put("result", "error");
+                return poJSON;
+            }
         } catch (JRException ex) {
             Logger.getLogger(ReportUtilViewController.class.getName()).log(Level.SEVERE, null, ex);
             poJSON.put("result", "error");

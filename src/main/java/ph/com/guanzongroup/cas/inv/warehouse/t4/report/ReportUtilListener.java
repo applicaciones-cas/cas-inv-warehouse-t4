@@ -17,4 +17,6 @@ public interface ReportUtilListener {
     void onReportPrint();
 
     void onReportExport();
+
+    void onReportExportPDF();
 }

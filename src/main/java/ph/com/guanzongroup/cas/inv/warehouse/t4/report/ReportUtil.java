@@ -147,6 +147,12 @@ public class ReportUtil {
         return this.psMessage;
     }
 
+    public void CloseReportUtil() {
+        if (reportStage != null) {
+            reportStage.close();
+        }
+    }
+
     public JSONObject generateReport() throws SQLException, JRException {
         poJSON = processReport();
         if (!"error".equals((String) poJSON.get("result")) && reportPrint != null) {
@@ -411,7 +417,7 @@ public class ReportUtil {
             System.out.println("Exported to Excel successfully: " + fileFullPath);
             poJSON = new JSONObject();
             poJSON.put("result", "success");
-            poJSON.put("message", "Exported to Excel successfully!");
+//            poJSON.put("message", "Exported to Excel successfully!");
 
         } catch (SQLException | IOException e) {
             poJSON.put("result", "error");
@@ -515,7 +521,6 @@ public class ReportUtil {
 //            poJSON.put("message", "UI Displayed!");
             return poJSON;
         }
-        
 
         return loController.getMessage();
     }

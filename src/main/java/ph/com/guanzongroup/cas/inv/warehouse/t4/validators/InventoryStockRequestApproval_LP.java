@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
@@ -115,14 +116,19 @@ public class InventoryStockRequestApproval_LP implements GValidator {
             poJSON.put("message", "Unmodified Transaction");
             return poJSON;
         }
-
+        
+        if (poMaster.getProcessed()) {
+            if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+                isRequiredApproval = true;
+            }
+        }
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 
         return poJSON;
     }
 
-    private JSONObject validatePosted() {
+    private JSONObject validateProcess() {
         poJSON = new JSONObject();
 
         int lnDetailCount = 0;
@@ -134,9 +140,9 @@ public class InventoryStockRequestApproval_LP implements GValidator {
 
         }
 
-        if (lnDetailCount == paDetail.size()) {
+        if (lnDetailCount != paDetail.size()) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Detail is not fully processed.");
+//            poJSON.put("message", "Detail is not fully processed.");
             return poJSON;
         }
 

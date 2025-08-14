@@ -278,6 +278,21 @@ public class DeliverySchedule extends Transaction {
     }
 
     @Override
+    protected JSONObject willSave() {
+        poJSON = new JSONObject();
+
+        poJSON = isEntryOkay(DeliveryScheduleStatus.OPEN);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        //assign values needed
+        poJSON.put("result", "success");
+        return poJSON;
+
+    }
+
+    @Override
     public JSONObject saveTransaction() throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
 
@@ -290,10 +305,6 @@ public class DeliverySchedule extends Transaction {
         if (pnEditMode == EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "Saving of unmodified transaction is not allowed.");
-            return poJSON;
-        }
-        poJSON = isEntryOkay(DeliveryScheduleStatus.OPEN);
-        if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
         poJSON = willSave();
@@ -439,18 +450,6 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),
@@ -505,18 +504,6 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
         poGRider.beginTrans("UPDATE STATUS", "CancelTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),
@@ -570,18 +557,6 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
         poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),

@@ -4,6 +4,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import net.sf.jasperreports.engine.JRException;
 import org.guanzon.appdriver.agent.ShowDialogFX;
@@ -14,6 +16,7 @@ import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
+import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
@@ -21,6 +24,8 @@ import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
@@ -133,13 +138,31 @@ public class InventoryRequestApproval extends Transaction {
     }
 
     @Override
+    protected JSONObject willSave() {
+        poJSON = new JSONObject();
+
+        poJSON = isEntryOkay(StockRequestStatus.CONFIRMED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        //assign values needed
+        
+        poJSON.put("result", "success");
+        return poJSON;
+
+    }
+
+    @Override
     protected JSONObject isEntryOkay(String status) {
+        poJSON = new JSONObject();
         GValidator loValidator = InventoryStockRequestApprovalValidatorFactory.make(getMaster().getIndustryId());
 
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
         loValidator.setMaster(poMaster);
-//        loValidator.setDetail(paDetail);
+        ArrayList laDetailList = new ArrayList<>(getDetailList());
+        loValidator.setDetail(laDetailList);
 
         poJSON = loValidator.validate();
         if (poJSON.containsKey("isRequiredApproval") && Boolean.TRUE.equals(poJSON.get("isRequiredApproval"))) {
@@ -240,7 +263,13 @@ public class InventoryRequestApproval extends Transaction {
     }
 
     public JSONObject printRecord() throws SQLException, JRException, CloneNotSupportedException, GuanzonException {
+
         poJSON = new JSONObject();
+
+        poJSON = isEntryOkay(StockRequestStatus.CONFIRMED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
 
         ReportUtil poReportJasper = new ReportUtil(poGRider);
 
@@ -277,14 +306,41 @@ public class InventoryRequestApproval extends Transaction {
             @Override
             public void onReportPrint() {
                 System.out.println("Report printing...");
-                isJSONSuccess(PrintTransaction(), "Print Record", "Initialize Record Print! ");
+                try {
+                    if (!isJSONSuccess(PrintTransaction(), "Print Record",
+                            "Initialize Record Print! ")) {
+                        return;
+
+                    }
+
+                    if (!isJSONSuccess(ProcessTransaction(), "Print Record",
+                            "Initialize Record Print! ")) {
+                    }
+
+                    poReportJasper.CloseReportUtil();
+
+                } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
+                    Logger.getLogger(InventoryRequestApproval.class.getName()).log(Level.SEVERE, null, ex);
+                    ShowMessageFX.Error("", "", ex.getMessage());
+                }
             }
 
             @Override
             public void onReportExport() {
                 System.out.println("Report exported.");
-                isJSONSuccess(poReportJasper.exportReportbyExcel(), "Export Record", "Initialize Record Export! ");
+                if (!isJSONSuccess(poReportJasper.exportReportbyExcel(), "Export Record",
+                        "Initialize Record Export! ")) {
+                    return;
+                }
+
+//                poReportJasper.CloseReportUtil();
                 //if used a model or array please create function 
+            }
+
+            @Override
+            public void onReportExportPDF() {
+                System.out.println("Report exported.");
+//                poReportJasper.CloseReportUtil();
             }
 
         });
@@ -401,8 +457,117 @@ public class InventoryRequestApproval extends Transaction {
         return lsSQL;
     }
 
-    private JSONObject PrintTransaction() {
-        //update ang kailngan 
+    private JSONObject PrintTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        poJSON = OpenTransaction(getMaster().getTransactionNo());
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already Processed.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.CONFIRMED.equals((String) poMaster.getValue("cProcessd"))) {
+            poJSON.put("result", "success");
+            poJSON.put("message", "Transaction Printed successfully.");
+            return poJSON;
+        }
+        //validator
+        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+
+        String lsSQL = "UPDATE "
+                + poMaster.getTable()
+                + " SET   cProcessd = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED)
+                + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
+
+        Long lnResult = poGRider.executeQuery(lsSQL,
+                poMaster.getTable(),
+                poGRider.getBranchCode(), "", "");
+        if (lnResult <= 0L) {
+            poGRider.rollbackTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Error updating the transaction status.");
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction Printed successfully.");
+
+        return poJSON;
+    }
+
+    public JSONObject ProcessTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid Edit Mode");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already processed.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already cancelled.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already voided.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "ProcessTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "ProcessTransaction",
+                StockRequestStatus.PROCESSED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+//        poJSON.put("message", "Transaction processed successfully.");
+
         return poJSON;
     }
 
@@ -411,9 +576,9 @@ public class InventoryRequestApproval extends Transaction {
         if ("error".equals(result)) {
             String message = (String) loJSON.get("message");
             Platform.runLater(() -> {
-                 if (message != null) {
-                ShowMessageFX.Warning(null, "", module + ": " + message);
-                 }
+                if (message != null) {
+                    ShowMessageFX.Warning(null, module, fsModule + ": " + message);
+                }
             });
             return false;
         }
@@ -421,7 +586,7 @@ public class InventoryRequestApproval extends Transaction {
 
         Platform.runLater(() -> {
             if (message != null) {
-                ShowMessageFX.Information(null, "", module + ": " + message);
+                ShowMessageFX.Information(null, module, fsModule + ": " + message);
             }
         });
         return true;
