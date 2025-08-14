@@ -5,7 +5,7 @@ import org.guanzon.appdriver.base.LogWrapper;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.DeliverySchedule;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.InventoryRequestApproval;
 
-public class DeliveryScheduleControllers {
+public class DeliveryIssuanceControllers {
 
     private GRiderCAS poGRider;
     private LogWrapper poLogWrapper;
@@ -13,14 +13,14 @@ public class DeliveryScheduleControllers {
     private DeliverySchedule poDeliverySchedule;
     private InventoryRequestApproval poInventoryRequestApproval;
 
-    public DeliveryScheduleControllers(GRiderCAS applicationDriver, LogWrapper logWrapper) {
+    public DeliveryIssuanceControllers(GRiderCAS applicationDriver, LogWrapper logWrapper) {
         poGRider = applicationDriver;
         poLogWrapper = logWrapper;
     }
 
     public InventoryRequestApproval InventoryRequestApproval() {
         if (poGRider == null) {
-            poLogWrapper.severe("DeliveryScheduleController.InventoryRequestApproval: Application driver is not set.");
+            poLogWrapper.severe("DeliveryIssuanceControllers.InventoryRequestApproval: Application driver is not set.");
             return null;
         }
 
@@ -39,7 +39,7 @@ public class DeliveryScheduleControllers {
 
     public DeliverySchedule DeliverySchedule() {
         if (poGRider == null) {
-            poLogWrapper.severe("DeliveryScheduleController.DeliverySchedule: Application driver is not set.");
+            poLogWrapper.severe("DeliveryIssuanceControllers.DeliverySchedule: Application driver is not set.");
             return null;
         }
 

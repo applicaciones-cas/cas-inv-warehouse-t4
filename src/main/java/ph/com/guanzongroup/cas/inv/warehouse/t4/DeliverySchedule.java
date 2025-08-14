@@ -22,7 +22,7 @@ import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster_Delivery;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Others;
@@ -98,7 +98,7 @@ public class DeliverySchedule extends Transaction {
         Model_Delivery_Schedule_Detail lastDetail = (Model_Delivery_Schedule_Detail) paDetail.get(paDetail.size() - 1);
         String clusterID = lastDetail.getClusterID();
         if (clusterID != null && !clusterID.trim().isEmpty()) {
-            Model_Delivery_Schedule_Detail newDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            Model_Delivery_Schedule_Detail newDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
             newDetail.newRecord();
             newDetail.setTransactionNo(getMaster().getTransactionNo());
             paDetail.add(newDetail);
@@ -107,7 +107,7 @@ public class DeliverySchedule extends Transaction {
         // If index is invalid or out of range, add up to that index
         while (paDetail.size() <= clusterRow) {
 
-            Model_Delivery_Schedule_Detail newDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            Model_Delivery_Schedule_Detail newDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
             newDetail.newRecord();
             newDetail.setTransactionNo(getMaster().getTransactionNo());
             paDetail.add(newDetail);
@@ -126,7 +126,7 @@ public class DeliverySchedule extends Transaction {
         }
 
         // No match found — create new
-        Model_Delivery_Schedule_Detail loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        Model_Delivery_Schedule_Detail loDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
         loDetail.newRecord();
         loDetail.setTransactionNo(getMaster().getTransactionNo());
         paDetail.add(loDetail);
@@ -137,8 +137,8 @@ public class DeliverySchedule extends Transaction {
     public JSONObject initTransaction() throws GuanzonException, SQLException {
         SOURCE_CODE = "Dlvr";
 
-        poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
-        poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        poMaster = new DeliveryIssuanceModels(poGRider).DeliverySchedule();
+        poDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
         paMaster = new ArrayList<Model>();
 
         return super.initialize();
@@ -391,7 +391,7 @@ public class DeliverySchedule extends Transaction {
         poJSON = updateTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
             Model_Delivery_Schedule_Detail loDetail;
-            loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            loDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
             loDetail.newRecord();
             loDetail.setTransactionNo(getMaster().getTransactionNo());
 
@@ -636,7 +636,7 @@ public class DeliverySchedule extends Transaction {
         }
 
         while (loRS.next()) {
-            Model_Delivery_Schedule_Master loDeliverySchedule = new DeliveryScheduleModels(poGRider).DeliverySchedule();
+            Model_Delivery_Schedule_Master loDeliverySchedule = new DeliveryIssuanceModels(poGRider).DeliverySchedule();
 
             poJSON = loDeliverySchedule.openRecord(loRS.getString("sTransNox"));
 
