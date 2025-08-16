@@ -3,22 +3,43 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.model.services;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.LogWrapper;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.DeliverySchedule;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.InventoryRequestApproval;
 
-public class DeliveryScheduleControllers {
+public class DeliveryIssuanceControllers {
 
     private GRiderCAS poGRider;
     private LogWrapper poLogWrapper;
 
     private DeliverySchedule poDeliverySchedule;
+    private InventoryRequestApproval poInventoryRequestApproval;
 
-    public DeliveryScheduleControllers(GRiderCAS applicationDriver, LogWrapper logWrapper) {
+    public DeliveryIssuanceControllers(GRiderCAS applicationDriver, LogWrapper logWrapper) {
         poGRider = applicationDriver;
         poLogWrapper = logWrapper;
     }
 
+    public InventoryRequestApproval InventoryRequestApproval() {
+        if (poGRider == null) {
+            poLogWrapper.severe("DeliveryIssuanceControllers.InventoryRequestApproval: Application driver is not set.");
+            return null;
+        }
+
+        if (poInventoryRequestApproval != null) {
+            return poInventoryRequestApproval;
+        }
+
+        poInventoryRequestApproval = new InventoryRequestApproval();
+        poInventoryRequestApproval.setApplicationDriver(poGRider);
+        poInventoryRequestApproval.setBranchCode(poGRider.getBranchCode());
+        poInventoryRequestApproval.setVerifyEntryNo(true);
+        poInventoryRequestApproval.setWithParent(false);
+        poInventoryRequestApproval.setLogWrapper(poLogWrapper);
+        return poInventoryRequestApproval;
+    }
+
     public DeliverySchedule DeliverySchedule() {
         if (poGRider == null) {
-            poLogWrapper.severe("TabulationControllers.Bingo: Application driver is not set.");
+            poLogWrapper.severe("DeliveryIssuanceControllers.DeliverySchedule: Application driver is not set.");
             return null;
         }
 

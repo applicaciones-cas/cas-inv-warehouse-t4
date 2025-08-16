@@ -53,6 +53,14 @@ public class BranchCluster extends Parameter {
 
     public JSONObject searchRecord(String value, boolean byCode) throws SQLException, GuanzonException {
         String lsCondition = "";
+        if (this.psRecdStat.length() > 1) {
+            for (int lnCtr = 0; lnCtr <= this.psRecdStat.length() - 1; lnCtr++) {
+                lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psRecdStat.charAt(lnCtr)));
+            }
+            lsCondition = "cRecdStat IN (" + lsCondition.substring(2) + ")";
+        } else {
+            lsCondition = "cRecdStat = " + SQLUtil.toSQL(this.psRecdStat);
+        }
         String lsSQL = MiscUtil.addCondition(getSQ_Browse(), lsCondition);
         this.poJSON = ShowDialogFX.Search(this.poGRider,
                 lsSQL,
@@ -62,7 +70,7 @@ public class BranchCluster extends Parameter {
                 "sBranchCd»sClustrDs",
                 byCode ? 0 : 1);
         if (this.poJSON != null) {
-            return this.poModel.openRecord((String) this.poJSON.get("sBrgyIDxx"));
+            return this.poModel.openRecord((String) this.poJSON.get("sClustrID"));
         }
         this.poJSON = new JSONObject();
         this.poJSON.put("result", "error");
@@ -87,7 +95,7 @@ public class BranchCluster extends Parameter {
                 "sClustrID»sClustrDs",
                 byCode ? 0 : 1);
         if (this.poJSON != null) {
-                return this.poModel.openRecord((String) this.poJSON.get("sClustrID"));
+            return this.poModel.openRecord((String) this.poJSON.get("sClustrID"));
         }
         this.poJSON = new JSONObject();
         this.poJSON.put("result", "error");

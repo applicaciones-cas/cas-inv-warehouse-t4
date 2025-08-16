@@ -7,27 +7,27 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.validators;
 
 import org.guanzon.appdriver.iface.GValidator;
 
-public class DeliveryScheduleValidatorFactory {
+public class InventoryIssuanceValidatorFactory {
 
     public static GValidator make(String industryId) {
         switch (industryId) {
             case "01": //Mobile Phone
-                return new DeliverySchedule_MP();
+                return new InventoryStockRequestApproval_MP();
             case "02": //Motorcycle
-                return new DeliverySchedule_MC();
+                return new InventoryStockRequestApproval_MC();
             case "03": //Vehicle
-                return new DeliverySchedule_Vehicle();
-            case "04": //Hospitality
-                return new DeliverySchedule_Hospitality();
+                return new InventoryStockRequestApproval_Vehicle();
+            case "04": //Monarch
+                return new InventoryStockRequestApproval_Monarch();
             case "05": //Los Pedritos
-                return new DeliverySchedule_LP();
+                return new InventoryStockRequestApproval_LP();
             case "06": //General
-                return new DeliverySchedule_General();
+                return new InventoryStockRequestApproval_General();
             case "07": //Appliances
-                return new DeliverySchedule_Appliance();
-                
+                return new InventoryStockRequestApproval_Appliance();
+
             case "": //Main Office
-                return new DeliverySchedule_General();
+                return new InventoryStockRequestApproval_General();
             default:
                 return null;
         }

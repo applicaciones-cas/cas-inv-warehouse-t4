@@ -6,7 +6,6 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
@@ -17,9 +16,9 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 
 /**
  *
- * @author maynevval 07-24-2025
+ * @author maynevval 08-09-2025
  */
-public class Model_Delivery_Schedule_Master extends Model {
+public class Model_Inventory_Transfer_Master extends Model {
 
     //reference objects
     Model_Industry poIndustry;
@@ -38,7 +37,15 @@ public class Model_Delivery_Schedule_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateObject("dSchedule", poGRider.getServerDate());
+            poEntity.updateObject("nFreightx", 0.0);
+            poEntity.updateObject("nTranTotl", 0.0);
+            poEntity.updateObject("nDiscount", 0.0);
+            poEntity.updateObject("nEntryNox", 0);
+            poEntity.updateNull("dReceived");
+            poEntity.updateNull("sApproved");
+            poEntity.updateNull("sApprvCde");
+            poEntity.updateNull("sOrderNox");
+            poEntity.updateString("cStockNew", "1");
             poEntity.updateObject("dModified", poGRider.getServerDate());
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
@@ -68,8 +75,20 @@ public class Model_Delivery_Schedule_Master extends Model {
     //sCompnyID
     //sBranchCd*
     //sCategrCd
-    //dSchedule*
-    //sRemarksx*
+    //dTransact*
+    //sDestinat*
+    //sRemarksx
+    //sTruckIDx
+    //nFreightx
+    //sReceived
+    //dReceived
+    //sApproved
+    //sApprvCde
+    //nTranTotl
+    //nDiscount
+    //nEntryNox
+    //sOrderNox
+    //cStockNew
     //cTranStat
 
     //sTransNox
@@ -80,8 +99,8 @@ public class Model_Delivery_Schedule_Master extends Model {
     public String getTransactionNo() {
         return (String) getValue("sTransNox");
     }
-    //sIndstCdx
 
+    //sIndstCdx
     public JSONObject setIndustryId(String industryId) {
         return setValue("sIndstCdx", industryId);
     }
@@ -126,13 +145,13 @@ public class Model_Delivery_Schedule_Master extends Model {
         return (Date) getValue("dTransact");
     }
 
-    //dSchedule
-    public JSONObject setScheduleDate(Date scheduleDate) {
-        return setValue("dSchedule", scheduleDate);
+    //sDestinat
+    public JSONObject setDestination(String destination) {
+        return setValue("sDestinat", destination);
     }
 
-    public Date getScheduleDate() {
-        return (Date) getValue("dSchedule");
+    public String getDestination() {
+        return (String) getValue("sDestinat");
     }
 
     //sRemarksx
@@ -144,22 +163,94 @@ public class Model_Delivery_Schedule_Master extends Model {
         return (String) getValue("sRemarksx");
     }
 
-    //isStockNew
-    public JSONObject isStockNew(boolean isRecordActive) {
-        return setValue("cStockNew", (isRecordActive == true) ? "1" : "0");
+    //sTruckIDx
+    public JSONObject setTruckId(String truckId) {
+        return setValue("sTruckIDx", truckId);
     }
 
-    public boolean isStockNew() {
-        return RecordStatus.ACTIVE.equals(getValue("cStockNew"));
+    public String getTruckId() {
+        return (String) getValue("sTruckIDx");
     }
 
-    //cTranStat
-    public JSONObject setStockNew(String stockNew) {
-        return setValue("cStockNew", stockNew);
+    //nFreightx
+    public JSONObject setFreight(Double freight) {
+        return setValue("nFreightx", freight);
     }
 
-    public String getStockNew() {
-        return (String) getValue("cStockNew");
+    public Double getFreight() {
+        return (Double) getValue("nFreightx");
+    }
+
+    //sReceived
+    public JSONObject setReceivedBy(String receivedBy) {
+        return setValue("sReceived", receivedBy);
+    }
+
+    public String getReceivedBy() {
+        return (String) getValue("sReceived");
+    }
+
+    //dReceived
+    public JSONObject setReceivedDate(Date receivedDate) {
+        return setValue("dReceived", receivedDate);
+    }
+
+    public Date getReceivedDate() {
+        return (Date) getValue("dReceived");
+    }
+
+    //sApproved
+    public JSONObject setApprovedBy(String approvedBy) {
+        return setValue("sApproved", approvedBy);
+    }
+
+    public String getApprovedBy() {
+        return (String) getValue("sApproved");
+    }
+
+    //sApprvCde
+    public JSONObject setApprovalCode(String approvedCode) {
+        return setValue("sApprvCde", approvedCode);
+    }
+
+    public String getApprovalCode() {
+        return (String) getValue("sApprvCde");
+    }
+
+    //nTranTotl
+    public JSONObject setTransactionTotal(Double transactionTotal) {
+        return setValue("nTranTotl", transactionTotal);
+    }
+
+    public Double getTransactionTotal() {
+        return (Double) getValue("nTranTotl");
+    }
+
+    //nDiscount
+    public JSONObject setDiscount(Double discountrate) {
+        return setValue("nDiscount", discountrate);
+    }
+
+    public Double getDiscount() {
+        return (Double) getValue("nDiscount");
+    }
+
+    //nEntryNox
+    public JSONObject setEntryNo(int entryNo) {
+        return setValue("nEntryNox", entryNo);
+    }
+
+    public int getEntryNo() {
+        return (int) getValue("nEntryNox");
+    }
+
+    //sApprvCde
+    public JSONObject setOrderNo(String orderNo) {
+        return setValue("sOrderNox", orderNo);
+    }
+
+    public String getOrderNo() {
+        return (String) getValue("sOrderNox");
     }
 
     //cTranStat

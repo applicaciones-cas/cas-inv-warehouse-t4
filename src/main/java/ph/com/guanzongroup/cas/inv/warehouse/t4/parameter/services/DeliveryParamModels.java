@@ -5,6 +5,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Are
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster_Delivery;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Others;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Inventory_Supplier;
 
 /**
  *
@@ -16,6 +17,7 @@ public class DeliveryParamModels {
     private Model_Branch_Area poBranchArea;
     private Model_Branch_Cluster poBranchCluster;
     private Model_Branch_Cluster_Delivery poBranchClusterDelivery;
+    private Model_Inventory_Supplier poSupplier;
 
     private final GRiderCAS poGRider;
 
@@ -81,6 +83,21 @@ public class DeliveryParamModels {
             this.poBranchClusterDelivery.initialize();
         }
         return this.poBranchClusterDelivery;
+    }
+
+    public Model_Inventory_Supplier InventorySupplier() {
+        if (this.poGRider == null) {
+            System.err.println("DeliveryParamModels.InventorySupplier: Application driver is not set.");
+            return null;
+        }
+        if (this.poSupplier == null) {
+            this.poSupplier = new Model_Inventory_Supplier();
+            this.poSupplier.setApplicationDriver(this.poGRider);
+            this.poSupplier.setXML("Model_Inv_Supplier");
+            this.poSupplier.setTableName("Inv_Supplier");
+            this.poSupplier.initialize();
+        }
+        return this.poSupplier;
     }
 
 }

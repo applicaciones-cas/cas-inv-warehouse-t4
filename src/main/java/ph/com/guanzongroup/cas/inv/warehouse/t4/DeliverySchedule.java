@@ -22,7 +22,7 @@ import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryScheduleModels;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster_Delivery;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Others;
@@ -98,7 +98,7 @@ public class DeliverySchedule extends Transaction {
         Model_Delivery_Schedule_Detail lastDetail = (Model_Delivery_Schedule_Detail) paDetail.get(paDetail.size() - 1);
         String clusterID = lastDetail.getClusterID();
         if (clusterID != null && !clusterID.trim().isEmpty()) {
-            Model_Delivery_Schedule_Detail newDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            Model_Delivery_Schedule_Detail newDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
             newDetail.newRecord();
             newDetail.setTransactionNo(getMaster().getTransactionNo());
             paDetail.add(newDetail);
@@ -107,7 +107,7 @@ public class DeliverySchedule extends Transaction {
         // If index is invalid or out of range, add up to that index
         while (paDetail.size() <= clusterRow) {
 
-            Model_Delivery_Schedule_Detail newDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            Model_Delivery_Schedule_Detail newDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
             newDetail.newRecord();
             newDetail.setTransactionNo(getMaster().getTransactionNo());
             paDetail.add(newDetail);
@@ -126,7 +126,7 @@ public class DeliverySchedule extends Transaction {
         }
 
         // No match found — create new
-        Model_Delivery_Schedule_Detail loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        Model_Delivery_Schedule_Detail loDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
         loDetail.newRecord();
         loDetail.setTransactionNo(getMaster().getTransactionNo());
         paDetail.add(loDetail);
@@ -137,8 +137,8 @@ public class DeliverySchedule extends Transaction {
     public JSONObject initTransaction() throws GuanzonException, SQLException {
         SOURCE_CODE = "Dlvr";
 
-        poMaster = new DeliveryScheduleModels(poGRider).DeliverySchedule();
-        poDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+        poMaster = new DeliveryIssuanceModels(poGRider).DeliverySchedule();
+        poDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
         paMaster = new ArrayList<Model>();
 
         return super.initialize();
@@ -278,6 +278,21 @@ public class DeliverySchedule extends Transaction {
     }
 
     @Override
+    protected JSONObject willSave() {
+        poJSON = new JSONObject();
+
+        poJSON = isEntryOkay(DeliveryScheduleStatus.OPEN);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        //assign values needed
+        poJSON.put("result", "success");
+        return poJSON;
+
+    }
+
+    @Override
     public JSONObject saveTransaction() throws CloneNotSupportedException, SQLException, GuanzonException {
         poJSON = new JSONObject();
 
@@ -290,10 +305,6 @@ public class DeliverySchedule extends Transaction {
         if (pnEditMode == EditMode.READY) {
             poJSON.put("result", "error");
             poJSON.put("message", "Saving of unmodified transaction is not allowed.");
-            return poJSON;
-        }
-        poJSON = isEntryOkay(DeliveryScheduleStatus.OPEN);
-        if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
         poJSON = willSave();
@@ -340,7 +351,7 @@ public class DeliverySchedule extends Transaction {
                     paDetail.get(lnCtr).setValue("dModified", pdModified);
                     System.out.println("Cluster ID : " + paDetail.get(lnCtr).getValue("sClustrID"));
                     poJSON = paDetail.get(lnCtr).saveRecord();
-                     System.out.println(poJSON.get("message"));
+                    System.out.println(poJSON.get("message"));
                     if ("error".equals((String) poJSON.get("result"))) {
                         if (!pbWthParent) {
                             poGRider.rollbackTrans();
@@ -380,7 +391,7 @@ public class DeliverySchedule extends Transaction {
         poJSON = updateTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
             Model_Delivery_Schedule_Detail loDetail;
-            loDetail = new DeliveryScheduleModels(poGRider).DeliveryScheduleDetail();
+            loDetail = new DeliveryIssuanceModels(poGRider).DeliveryScheduleDetail();
             loDetail.newRecord();
             loDetail.setTransactionNo(getMaster().getTransactionNo());
 
@@ -396,7 +407,8 @@ public class DeliverySchedule extends Transaction {
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
         loValidator.setMaster(poMaster);
-//        loValidator.setDetail(paDetail);
+        ArrayList laDetailList = new ArrayList<>(getDetailList());
+        loValidator.setDetail(laDetailList);
 
         poJSON = loValidator.validate();
         if (poJSON.containsKey("isRequiredApproval") && Boolean.TRUE.equals(poJSON.get("isRequiredApproval"))) {
@@ -438,18 +450,6 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
         poGRider.beginTrans("UPDATE STATUS", "ConfirmTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),
@@ -504,18 +504,6 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
         poGRider.beginTrans("UPDATE STATUS", "CancelTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),
@@ -569,18 +557,6 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            poJSON = ShowDialogFX.getUserApproval(poGRider);
-            if ("error".equals((String) poJSON.get("result"))) {
-                return poJSON;
-            } else {
-                if (Integer.parseInt(poJSON.get("nUserLevl").toString()) <= UserRight.ENCODER) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "User is not an authorized approving officer.");
-                    return poJSON;
-                }
-            }
-        }
         poGRider.beginTrans("UPDATE STATUS", "VoidTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),
@@ -660,7 +636,7 @@ public class DeliverySchedule extends Transaction {
         }
 
         while (loRS.next()) {
-            Model_Delivery_Schedule_Master loDeliverySchedule = new DeliveryScheduleModels(poGRider).DeliverySchedule();
+            Model_Delivery_Schedule_Master loDeliverySchedule = new DeliveryIssuanceModels(poGRider).DeliverySchedule();
 
             poJSON = loDeliverySchedule.openRecord(loRS.getString("sTransNox"));
 
@@ -712,9 +688,13 @@ public class DeliverySchedule extends Transaction {
                     return poJSON;
                 }
             }
+        } else {
+            //General
+            psCategorCD = "0007";
+
         }
-        poJSON.put("result", "error");
-        poJSON.put("message", "Industry not yet set");
+        poJSON.put("result", "success");
+        poJSON.put("message", "Industry is General");
         return poJSON;
 
     }

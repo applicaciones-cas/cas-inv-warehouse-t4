@@ -51,8 +51,8 @@ public class BranchClusterDelivery extends Parameter {
     }
 
     public JSONObject searchRecord(String value, boolean byCode) throws SQLException, GuanzonException {
-        String lsCondition = "";
-        String lsSQL = MiscUtil.addCondition(getSQ_Browse(), lsCondition);
+
+        String lsSQL = getSQ_Browse();
         this.poJSON = ShowDialogFX.Search(this.poGRider,
                 lsSQL,
                 value,
@@ -61,7 +61,7 @@ public class BranchClusterDelivery extends Parameter {
                 "sBranchCd»sClustrDs",
                 byCode ? 0 : 1);
         if (this.poJSON != null) {
-            return this.poModel.openRecord((String) this.poJSON.get("sBrgyIDxx"));
+            return this.poModel.openRecord((String) this.poJSON.get("sClustrID"));
         }
         this.poJSON = new JSONObject();
         this.poJSON.put("result", "error");

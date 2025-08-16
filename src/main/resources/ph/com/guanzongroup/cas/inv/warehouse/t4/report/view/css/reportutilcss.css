@@ -1,0 +1,41 @@
+/*
+*/
+/* 
+    Created on : 11-Aug-2025, 2:21:56 PM
+    Author     : Maynard
+*/
+.root {
+    -fx-background-color: linear-gradient(to bottom, #f4f4f4, #dcdcdc);
+    -fx-background-radius: 15;
+}
+
+/* Panel borders */
+.main-panel {
+    -fx-background-color: transparent;
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+}
+
+/* Scope all styles to a container with style class "print-button-panel" */
+.print-button-panel .button {
+    -fx-background-color: white;
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 8 10;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-color: orange;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+}
+
+.print-button-panel .button:hover {
+    -fx-background-color: #ffcc99;
+}
+
+.print-button-panel .button:pressed {
+    -fx-background-color: #ffcc99;
+}
+
