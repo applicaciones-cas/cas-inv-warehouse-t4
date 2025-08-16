@@ -13,17 +13,15 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
-import org.guanzon.cas.inv.Inventory;
-import org.guanzon.cas.inv.services.InvControllers;
-import org.guanzon.cas.parameter.services.ParamModels;
+import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail_Expiration;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Master;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryIssuanceValidatorFactory;
 
 public class InventoryStockIssuanceNeo extends Transaction {
 
@@ -184,7 +182,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
     @Override
     protected JSONObject isEntryOkay(String status) {
         poJSON = new JSONObject();
-        GValidator loValidator = InventoryStockRequestApprovalValidatorFactory.make(getMaster().getIndustryId());
+        GValidator loValidator = InventoryIssuanceValidatorFactory.make(getMaster().getIndustryId());
 
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
@@ -394,40 +392,40 @@ public class InventoryStockIssuanceNeo extends Transaction {
         }
     }
 
-    public JSONObject searchDetailByInventory(int row, String value, boolean byCode) throws SQLException, GuanzonException {
-        poJSON = new JSONObject();
-        Inventory loSubClass = new InvControllers(poGRider, logwrapr).Inventory();
-
-        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
-
-        loSubClass.getModel().setIndustryCode(psIndustryCode);
-        if (!psIndustryCode.isEmpty()) {
-            poJSON = loSubClass.searchRecord(value, byCode, "", "", psIndustryCode);
-        }
-        System.out.println("result " + (String) poJSON.get("result"));
-        if ("success".equals((String) poJSON.get("result"))) {
-            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
-                if (((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting)).getClusterID()
-                        == loSubClass.getModel().getClusterID()
-                        && loSubClass.getModel().getClusterID() != null
-                        && !loSubClass.getModel().getClusterID().isEmpty()) {
-                    poJSON = new JSONObject();
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Selected Cluster ID is already exist!");
-                    return poJSON;
-
-                }
-
-            }
-            getDetail(row).setClusterID(loSubClass.getModel().getClusterID());
-        }
-        return poJSON;
-
-    }
+//    public JSONObject searchDetailByInventory(int row, String value, boolean byCode) throws SQLException, GuanzonException {
+//        poJSON = new JSONObject();
+//        Inventory loSubClass = new InvControllers(poGRider, logwrapr).Inventory();
+//
+//        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
+//
+//        loSubClass.getModel().setIndustryCode(psIndustryCode);
+//        if (!psIndustryCode.isEmpty()) {
+//            poJSON = loSubClass.searchRecord(value, byCode, "", "", psIndustryCode);
+//        }
+//        System.out.println("result " + (String) poJSON.get("result"));
+//        if ("success".equals((String) poJSON.get("result"))) {
+//            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+//                if (((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting)).getClusterID()
+//                        == loSubClass.getModel().getClusterID()
+//                        && loSubClass.getModel().getClusterID() != null
+//                        && !loSubClass.getModel().getClusterID().isEmpty()) {
+//                    poJSON = new JSONObject();
+//                    poJSON.put("result", "error");
+//                    poJSON.put("message", "Selected Cluster ID is already exist!");
+//                    return poJSON;
+//
+//                }
+//
+//            }
+//            getDetail(row).setClusterID(loSubClass.getModel().getClusterID());
+//        }
+//        return poJSON;
+//
+//    }
 
     public JSONObject loadTransactionList()
             throws SQLException, GuanzonException, CloneNotSupportedException {
@@ -458,65 +456,19 @@ public class InventoryStockIssuanceNeo extends Transaction {
         }
 
         while (loRS.next()) {
-            Model_Inv_Stock_Request_Master loInventoryStockRequest = new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
-            poJSON = loInventoryStockRequest.openRecord(loRS.getString("sTransNox"));
+            Model_Inventory_Transfer_Master loInventoryIssuance = new DeliveryIssuanceModels(poGRider).InventoryTransferMaster();
+            poJSON = loInventoryIssuance.openRecord(loRS.getString("sTransNox"));
 
             if ("success".equals((String) poJSON.get("result"))) {
-                paMaster.add((Model) loInventoryStockRequest);
+                paMaster.add((Model) loInventoryIssuance);
             } else {
                 return poJSON;
             }
         }
 
         poJSON = new JSONObject();
-        poJSON.put(
-                "result", "success");
-        return poJSON;
-    }
-
-    public JSONObject getCategory() throws SQLException, GuanzonException {
-        if (!"".equals(psIndustryCode)) {
-
-            String lsSQL = "SELECT "
-                    + " sCategrCd"
-                    + ", sDescript"
-                    + ", sIndstCdx"
-                    + ", sInvTypCd"
-                    + ", cRecdStat "
-                    + " FROM Category "
-                    + "  WHERE cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
-                    + " AND sIndstCdx = " + SQLUtil.toSQL(psIndustryCode);
-
-            ResultSet loRS = poGRider.executeQuery(lsSQL);
-
-            if (MiscUtil.RecordCount(loRS)
-                    <= 0) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "No record found.");
-                return poJSON;
-            }
-            loRS.beforeFirst();
-            if (loRS.next()) {
-                Model_Category loCategory = new ParamModels(poGRider).Category();
-                poJSON = loCategory.openRecord(loRS.getString("sCategrCd"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    psCategorCD = loRS.getString("sCategrCd");
-                    getMaster().setCategoryId(psCategorCD);
-                    return poJSON;
-                } else {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "No record found.");
-                    return poJSON;
-                }
-            }
-        } else {
-            //General
-            psCategorCD = "0007";
-
-        }
         poJSON.put("result", "success");
-        poJSON.put("message", "Industry is General");
         return poJSON;
-
     }
+    
 }

@@ -36,6 +36,12 @@
             <version>5.2.3</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.guanzon</groupId>
+            <artifactId>cas-client</artifactId>
+            <version>0.2-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
