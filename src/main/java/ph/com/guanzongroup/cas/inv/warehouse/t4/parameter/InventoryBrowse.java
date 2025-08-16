@@ -730,8 +730,8 @@ public class InventoryBrowse {
 
         //default
         String lscolHeader = "Serial»Barcode»Description»Qty-On-Hand»Brand Name»Model Name»Color Name»UOM»Variant Name»Model Code";
-        String lscolName = "xSerialNme»xDescript»nQtyOnHnd»xBrandNme»xModelNme»xColorNme»xMeasurNm»xVrntName»xModelCde";
-        String lscolCriteria = "xSerialNme»xDescript»nQtyOnHnd»xBrandNme»xModelNme»xColorNme»xMeasurNm»xVrntName»xModelCde";
+        String lscolName = "xSerialNme»sBarcodex»xDescript»nQtyOnHnd»xBrandNme»xModelNme»xColorNme»xMeasurNm»xVrntName»xModelCde";
+        String lscolCriteria = "xSerialNme»sBarcodex»xDescript»nQtyOnHnd»xBrandNme»xModelNme»xColorNme»xMeasurNm»xVrntName»xModelCde";
 
         if (!psCustomHeader.isEmpty() && !psCustomName.isEmpty() && !psCustomCriteria.isEmpty()) {
             lscolHeader = psCustomHeader;
