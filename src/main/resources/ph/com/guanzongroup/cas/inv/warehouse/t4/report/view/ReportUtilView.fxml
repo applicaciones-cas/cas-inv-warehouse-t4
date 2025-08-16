@@ -52,14 +52,19 @@
                                                         <RowConstraints minHeight="10.0" prefHeight="26.0" vgrow="SOMETIMES" />
                                                     </rowConstraints>
                                                     <children>
-                                                        <Text fx:id="lblCaption" strokeType="OUTSIDE" strokeWidth="0.0" text="Guanzon Print Preview" GridPane.halignment="LEFT">
+                                                        <Text fx:id="lblCaption" fill="WHITE" strokeType="OUTSIDE" strokeWidth="0.0" text="Guanzon Print Preview" GridPane.halignment="LEFT">
                                                             <font>
                                                                 <Font name="System Bold" size="14.0" />
                                                             </font>
                                                             <GridPane.margin>
-                                                                <Insets left="30.0" />
+                                                                <Insets left="40.0" />
                                                             </GridPane.margin>
                                                         </Text>
+                                          <FontAwesomeIconView fill="WHITE" glyphName="PRINT" size="18">
+                                             <GridPane.margin>
+                                                <Insets left="10.0" />
+                                             </GridPane.margin>
+                                          </FontAwesomeIconView>
                                                     </children>
                                                 </GridPane>
                                                 <Separator minHeight="5.0" style="-fx-background-color: FF8201;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
@@ -69,7 +74,7 @@
                                 </VBox>
                         <Button fx:id="btnExit" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#cmdButton_Click" style="-fx-background-color: transparent;" textAlignment="CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
-                              <FontAwesomeIconView glyphName="CLOSE" />
+                              <FontAwesomeIconView fill="WHITE" glyphName="CLOSE" />
                            </graphic>
                         </Button>
                             </children>
