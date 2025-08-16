@@ -98,8 +98,6 @@ import org.json.simple.JSONObject;
  * poJSON = searchInventoryIssuance(value,bycode);// Inventory with Inventory
  * Serial(POS,Transfer,Return usage)
  *
- * poJSON = searchInventoryAllWithStock(value,bycode);// (Union Select)
- * Inventory & Inventory Master (BranchFilter) with Inventory Serial (POS usage)
  *
  * if ("!error".equals((String) poJSON.get("result"))) { set required or need
  *
