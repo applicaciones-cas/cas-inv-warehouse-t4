@@ -6,7 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import net.sf.jasperreports.engine.JRException;
 import org.guanzon.appdriver.agent.ShowDialogFX;
+import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -15,12 +18,17 @@ import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuancePrint;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail_Expiration;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Master;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.InventoryBrowse;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtil;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtilListener;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryIssuanceValidatorFactory;
 
 public class InventoryStockIssuanceNeo extends Transaction {
@@ -392,40 +400,126 @@ public class InventoryStockIssuanceNeo extends Transaction {
         }
     }
 
-//    public JSONObject searchDetailByInventory(int row, String value, boolean byCode) throws SQLException, GuanzonException {
-//        poJSON = new JSONObject();
-//        Inventory loSubClass = new InvControllers(poGRider, logwrapr).Inventory();
-//
-//        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "Industry is not set.");
-//            return poJSON;
-//        }
-//
-//        loSubClass.getModel().setIndustryCode(psIndustryCode);
-//        if (!psIndustryCode.isEmpty()) {
-//            poJSON = loSubClass.searchRecord(value, byCode, "", "", psIndustryCode);
-//        }
-//        System.out.println("result " + (String) poJSON.get("result"));
-//        if ("success".equals((String) poJSON.get("result"))) {
-//            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
-//                if (((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting)).getClusterID()
-//                        == loSubClass.getModel().getClusterID()
-//                        && loSubClass.getModel().getClusterID() != null
-//                        && !loSubClass.getModel().getClusterID().isEmpty()) {
-//                    poJSON = new JSONObject();
-//                    poJSON.put("result", "error");
-//                    poJSON.put("message", "Selected Cluster ID is already exist!");
-//                    return poJSON;
-//
-//                }
-//
-//            }
-//            getDetail(row).setClusterID(loSubClass.getModel().getClusterID());
-//        }
-//        return poJSON;
-//
-//    }
+    public JSONObject searchDetailByIssuance(int row, String value, boolean byCode) throws SQLException, GuanzonException {
+        InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
+        loBrowse.initTransaction();
+        if (!psIndustryCode.isEmpty()) {
+            loBrowse.setIndustry(psIndustryCode);
+        }
+        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setBranch(poGRider.getBranchCode());
+
+        poJSON = new JSONObject();
+
+        poJSON = loBrowse.searchInventoryIssaunce(value, byCode);
+        System.out.println("result " + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
+                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
+                    if (!loExisting.getSerialID().isEmpty()) {
+                        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                            if (loExisting.getSerialID() != loBrowse.getModelInventorySerial().getSerialId()) {
+                                continue;
+                            }
+                        }
+                    }
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Selected Inventory is already exist!");
+                    return poJSON;
+
+                }
+            }
+        }
+
+        getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
+        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+            getDetail(row).setSerialID(loBrowse.getModelInventorySerial().getSerialId());
+        }
+
+        getDetail(row).setQuantity(1.00);
+
+        return poJSON;
+
+    }
+
+    public JSONObject searchDetailBySerial(int row, String value, boolean byCode) throws SQLException, GuanzonException {
+        InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
+        loBrowse.initTransaction();
+        if (!psIndustryCode.isEmpty()) {
+            loBrowse.setIndustry(psIndustryCode);
+        }
+        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setBranch(poGRider.getBranchCode());
+
+        poJSON = new JSONObject();
+
+        poJSON = loBrowse.searchInventoryIssaunce(value, byCode);
+        System.out.println("result " + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
+                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
+                    if (!loExisting.getSerialID().isEmpty()) {
+                        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                            if (loExisting.getSerialID() != loBrowse.getModelInventorySerial().getSerialId()) {
+                                continue;
+                            }
+                        }
+                    }
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Selected Inventory is already exist!");
+                    return poJSON;
+
+                }
+            }
+        }
+
+        getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
+        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+            getDetail(row).setSerialID(loBrowse.getModelInventorySerial().getSerialId());
+        }
+
+        getDetail(row).setQuantity(1.00);
+
+        return poJSON;
+
+    }
+
+    public JSONObject searchDetailByBarcode(int row, String value, boolean byCode) throws SQLException, GuanzonException {
+        InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
+        loBrowse.initTransaction();
+        if (!psIndustryCode.isEmpty()) {
+            loBrowse.setIndustry(psIndustryCode);
+        }
+        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setBranch(poGRider.getBranchCode());
+        loBrowse.isSerializeInventory(false);
+
+        poJSON = new JSONObject();
+
+        poJSON = loBrowse.searchInventoryWithStock(value, byCode);
+        System.out.println("result " + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
+                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Selected Inventory is already exist!");
+                    return poJSON;
+
+                }
+            }
+        }
+
+        getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
+        getDetail(row).setQuantity(1.00);
+        return poJSON;
+
+    }
 
     public JSONObject loadTransactionList()
             throws SQLException, GuanzonException, CloneNotSupportedException {
@@ -470,5 +564,291 @@ public class InventoryStockIssuanceNeo extends Transaction {
         poJSON.put("result", "success");
         return poJSON;
     }
-    
+
+    private String getCategory() {
+        String lsCategory;
+        switch (psIndustryCode) {
+            case "01"://CP
+                lsCategory = "0001";
+                break;
+            case "02"://MC
+                lsCategory = "0003»0004";
+                break;
+            case "03"://Car
+                lsCategory = "0005»0006";
+                break;
+            case "04"://Monarch
+                lsCategory = "0009";
+                break;
+            case "05"://LP
+                lsCategory = "0008";
+                break;
+            case "07"://Appliance
+                lsCategory = "0002";
+                break;
+            default://Appliance
+                lsCategory = "0007";
+                break;
+
+        }
+
+        return lsCategory;
+    }
+
+    public JSONObject printRecord() throws SQLException, JRException, CloneNotSupportedException, GuanzonException {
+
+        poJSON = new JSONObject();
+
+        poJSON = isEntryOkay(StockRequestStatus.CONFIRMED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        ReportUtil poReportJasper = new ReportUtil(poGRider);
+
+        if (psCategorCD == null && psCategorCD.isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Category is Required for this Transaction");
+            return poJSON;
+        }
+        if (getMaster().getTransactionNo() == null && getMaster().getTransactionNo().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record is Selected");
+            return poJSON;
+
+        }
+        poJSON = OpenTransaction(getMaster().getTransactionNo());
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        // Attach listener
+        poReportJasper.setReportListener(new ReportUtilListener() {
+            @Override
+            public void onReportOpen() {
+                System.out.println("Report opened.");
+            }
+
+            @Override
+            public void onReportClose() {
+                //fetch/add if needed
+                System.out.println("Report closed.");
+            }
+
+            @Override
+            public void onReportPrint() {
+                System.out.println("Report printing...");
+                try {
+                    if (!isJSONSuccess(PrintTransaction(), "Print Record",
+                            "Initialize Record Print! ")) {
+                        return;
+
+                    }
+
+                    if (!isJSONSuccess(ProcessTransaction(), "Print Record",
+                            "Initialize Record Print! ")) {
+                    }
+
+                    poReportJasper.CloseReportUtil();
+
+                } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
+                    Logger.getLogger(InventoryRequestApproval.class.getName()).log(Level.SEVERE, null, ex);
+                    ShowMessageFX.Error("", "", ex.getMessage());
+                }
+            }
+
+            @Override
+            public void onReportExport() {
+                System.out.println("Report exported.");
+                if (!isJSONSuccess(poReportJasper.exportReportbyExcel(), "Export Record",
+                        "Initialize Record Export! ")) {
+                    return;
+                }
+
+//                poReportJasper.CloseReportUtil();
+                //if used a model or array please create function 
+            }
+
+            @Override
+            public void onReportExportPDF() {
+                System.out.println("Report exported.");
+//                poReportJasper.CloseReportUtil();
+            }
+
+        });
+        //add Parameter
+        poReportJasper.addParameter("BranchName", poGRider.getBranchName());
+        poReportJasper.addParameter("Address", poGRider.getAddress());
+        poReportJasper.addParameter("CompanyName", poGRider.getClientName());
+        poReportJasper.addParameter("TransactionNo", getMaster().getTransactionNo());
+        poReportJasper.addParameter("TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
+        poReportJasper.addParameter("Remarks", getMaster().getRemarks());
+        poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
+
+        poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
+
+        poReportJasper.setReportName("InventoryRequestApproval");
+        poReportJasper.setJasperPath(InventoryStockIssuancePrint.getJasperReport(psIndustryCode));
+
+        //process by ResultSet
+        String lsSQL = InventoryStockIssuancePrint.PrintRecordQuery();
+        lsSQL = MiscUtil.addCondition(lsSQL, "InventoryStockRequestMaster.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
+
+        poReportJasper.setSQLReport(lsSQL);
+        System.out.println("Print Data Query :" + lsSQL);
+
+        //process by JasperCollection parse ur List / ArrayList
+        //JRBeanCollectionDataSource jrRS = new JRBeanCollectionDataSource(R1data);
+        //poReportJasper.setJRBeanCollectionDataSource(jrRS);
+        //direct pass JasperViewer
+        //         reportPrint = JasperFillManager.fillReport(poGRider.getReportPath() + psJasperPath + ".jasper",
+        //                    poParamater,
+        //                    yourDATA);
+        //        poReportJasper.setJasperPrint(report0Print);
+        poReportJasper.isAlwaysTop(false);
+        poReportJasper.isWithUI(true);
+        poReportJasper.isWithExport(true);
+        poReportJasper.isWithExportPDF(true);
+        poReportJasper.willExport(true);
+        return poReportJasper.generateReport();
+
+    }
+
+    private JSONObject PrintTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        poJSON = OpenTransaction(getMaster().getTransactionNo());
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already Processed.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.CONFIRMED.equals((String) poMaster.getValue("cProcessd"))) {
+            poJSON.put("result", "success");
+            poJSON.put("message", "Transaction Printed successfully.");
+            return poJSON;
+        }
+        //validator
+        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+
+        String lsSQL = "UPDATE "
+                + poMaster.getTable()
+                + " SET   cProcessd = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED)
+                + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
+
+        Long lnResult = poGRider.executeQuery(lsSQL,
+                poMaster.getTable(),
+                poGRider.getBranchCode(), "", "");
+        if (lnResult <= 0L) {
+            poGRider.rollbackTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Error updating the transaction status.");
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction Printed successfully.");
+
+        return poJSON;
+    }
+
+    public JSONObject ProcessTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid Edit Mode");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already processed.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already cancelled.");
+            return poJSON;
+        }
+
+        if (StockRequestStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already voided.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "ProcessTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "ProcessTransaction",
+                StockRequestStatus.PROCESSED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+//        poJSON.put("message", "Transaction processed successfully.");
+
+        return poJSON;
+    }
+
+    private boolean isJSONSuccess(JSONObject loJSON, String module, String fsModule) {
+        String result = (String) loJSON.get("result");
+        if ("error".equals(result)) {
+            String message = (String) loJSON.get("message");
+            Platform.runLater(() -> {
+                if (message != null) {
+                    ShowMessageFX.Warning(null, module, fsModule + ": " + message);
+                }
+            });
+            return false;
+        }
+        String message = (String) loJSON.get("message");
+
+        Platform.runLater(() -> {
+            if (message != null) {
+                ShowMessageFX.Information(null, module, fsModule + ": " + message);
+            }
+        });
+        return true;
+
+    }
+
 }

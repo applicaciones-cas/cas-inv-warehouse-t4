@@ -135,6 +135,7 @@ public class InventoryBrowse {
     private String psCustomName = "";
     private String psCustomCriteria = "";
     private boolean pbisWithQty = true;
+    private boolean pbisSerialize = true;
 
     public InventoryBrowse(GRiderCAS applicationDriver, LogWrapper logWrapper) {
         this.poGRider = applicationDriver;
@@ -206,6 +207,10 @@ public class InventoryBrowse {
 
     public void isWithQuantityStock(boolean isWithStockQuantity) {
         pbisWithQty = isWithStockQuantity;
+    }
+
+    public void isSerializeInventory(boolean isSerializeInveotry) {
+        pbisSerialize = isSerializeInveotry;
     }
 
     public void setCustomColHeader(String columnheaderNameSearch) {
@@ -611,6 +616,11 @@ public class InventoryBrowse {
         if (pbisWithQty) {
             lsSQL = MiscUtil.addCondition(lsSQL, "bb.nQtyOnHnd > 0");
         }
+        if (!pbisSerialize) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.cSerialze = 0");
+        } else {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.cSerialze = 1");
+        }
         //default
         String lscolHeader = "Barcode»Description»Brand»Model»UOM»Branch Name";
         String lscolName = "sBarCodex»sDescript»xBrandNme»xModelNme»xMeasurNm»xBranchNm";
@@ -684,7 +694,7 @@ public class InventoryBrowse {
                 lscolHeader,
                 lscolName,
                 lscolCriteria,
-                byCode ? 0 : 1
+                byCode ? 2 : 1
         );
         if (this.poJSON != null) {
             JSONObject result = new JSONObject();

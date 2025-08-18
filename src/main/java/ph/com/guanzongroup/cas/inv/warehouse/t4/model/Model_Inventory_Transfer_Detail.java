@@ -6,6 +6,7 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
 import org.json.simple.JSONObject;
@@ -17,6 +18,7 @@ import org.json.simple.JSONObject;
 public class Model_Inventory_Transfer_Detail extends Model {
 
     private Model_Inventory poInventory;
+    private Model_Inv_Serial poInventorySerial;
 
     @Override
     public void initialize() {
@@ -47,6 +49,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
             ID2 = poEntity.getMetaData().getColumnLabel(2);
 
             poInventory = new InvModels(poGRider).Inventory();
+            poInventorySerial = new InvModels(poGRider).InventorySerial();
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -64,6 +67,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
     //nInvCostx
     //nReceived
     //sRecvIDxx
+    //sSerialID
     //sNotesxxx
 
     //sTransNox
@@ -147,6 +151,15 @@ public class Model_Inventory_Transfer_Detail extends Model {
         return (String) getValue("sRecvIDxx");
     }
 
+    //sSerialID
+    public JSONObject setSerialID(String serialID) {
+        return setValue("sSerialID", serialID);
+    }
+
+    public String getSerialID() {
+        return (String) getValue("sSerialID");
+    }
+
     //sModified
     public JSONObject setModifyingId(String modifyingId) {
         return setValue("sModified", modifyingId);
@@ -185,6 +198,23 @@ public class Model_Inventory_Transfer_Detail extends Model {
         }
         poInventory.initialize();
         return this.poInventory;
+    }
+
+    public Model_Inv_Serial InventorySerial() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sSerialID"))) {
+            if (this.poInventorySerial.getEditMode() == 1 && this.poInventory
+                    .getStockId().equals(getValue("sSerialID"))) {
+                return this.poInventorySerial;
+            }
+            this.poJSON = this.poInventorySerial.openRecord((String) getValue("sSerialID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poInventorySerial;
+            }
+            this.poInventorySerial.initialize();
+            return this.poInventorySerial;
+        }
+        poInventorySerial.initialize();
+        return this.poInventorySerial;
     }
 
 }
