@@ -164,6 +164,11 @@ public class InventoryStockIssuanceNeo extends Transaction {
         return openTransaction(transactionNo);
     }
 
+    public JSONObject NewTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        return newTransaction();
+    }
+
+
     public JSONObject SaveTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         return saveTransaction();
     }
