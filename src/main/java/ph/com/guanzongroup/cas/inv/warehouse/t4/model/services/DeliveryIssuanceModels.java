@@ -71,8 +71,8 @@ public class DeliveryIssuanceModels {
         if (poInventoryTransferMaster == null) {
             poInventoryTransferMaster = new Model_Inventory_Transfer_Master();
             poInventoryTransferMaster.setApplicationDriver(poGRider);
-            poInventoryTransferMaster.setXML("Model_Inventory_Transfer_Master");
-            poInventoryTransferMaster.setTableName("Inventory_Transfer_Master");
+            poInventoryTransferMaster.setXML("Model_Inv_Transfer_Master");
+            poInventoryTransferMaster.setTableName("Inv_Transfer_Master");
             poInventoryTransferMaster.initialize();
         }
 
@@ -88,8 +88,8 @@ public class DeliveryIssuanceModels {
         if (poInventoryTransferDetail == null) {
             poInventoryTransferDetail = new Model_Inventory_Transfer_Detail();
             poInventoryTransferDetail.setApplicationDriver(poGRider);
-            poInventoryTransferDetail.setXML("Model_Inventory_Transfer_Detail");
-            poInventoryTransferDetail.setTableName("Inventory_Transfer_Detail");
+            poInventoryTransferDetail.setXML("Model_Inv_Transfer_Detail");
+            poInventoryTransferDetail.setTableName("Inv_Transfer_Detail");
             poInventoryTransferDetail.initialize();
         }
 
@@ -105,8 +105,8 @@ public class DeliveryIssuanceModels {
         if (poInventoryTransferDetailExpiration == null) {
             poInventoryTransferDetailExpiration = new Model_Inventory_Transfer_Detail_Expiration();
             poInventoryTransferDetailExpiration.setApplicationDriver(poGRider);
-            poInventoryTransferDetailExpiration.setXML("Model_Inventory_Transfer_Detail_Expiration");
-            poInventoryTransferDetailExpiration.setTableName("Inventory_Transfer_Detail_Expiration");
+            poInventoryTransferDetailExpiration.setXML("Model_Inv_Transfer_Detail_Expiration");
+            poInventoryTransferDetailExpiration.setTableName("Inv_Transfer_Detail_Expiration");
             poInventoryTransferDetailExpiration.initialize();
         }
 

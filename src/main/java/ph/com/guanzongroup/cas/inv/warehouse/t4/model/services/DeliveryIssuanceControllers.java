@@ -4,6 +4,7 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.LogWrapper;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.DeliverySchedule;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.InventoryRequestApproval;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.InventoryStockIssuanceNeo;
 
 public class DeliveryIssuanceControllers {
 
@@ -12,10 +13,30 @@ public class DeliveryIssuanceControllers {
 
     private DeliverySchedule poDeliverySchedule;
     private InventoryRequestApproval poInventoryRequestApproval;
+    private InventoryStockIssuanceNeo poInventoryIssuanceNeo;
 
     public DeliveryIssuanceControllers(GRiderCAS applicationDriver, LogWrapper logWrapper) {
         poGRider = applicationDriver;
         poLogWrapper = logWrapper;
+    }
+
+    public InventoryStockIssuanceNeo InventoryStockIssuanceNeo() {
+        if (poGRider == null) {
+            poLogWrapper.severe("DeliveryIssuanceControllers.InventoryStockIssuanceNeo: Application driver is not set.");
+            return null;
+        }
+
+        if (poInventoryIssuanceNeo != null) {
+            return poInventoryIssuanceNeo;
+        }
+
+        poInventoryIssuanceNeo = new InventoryStockIssuanceNeo();
+        poInventoryIssuanceNeo.setApplicationDriver(poGRider);
+        poInventoryIssuanceNeo.setBranchCode(poGRider.getBranchCode());
+        poInventoryIssuanceNeo.setVerifyEntryNo(true);
+        poInventoryIssuanceNeo.setWithParent(false);
+        poInventoryIssuanceNeo.setLogWrapper(poLogWrapper);
+        return poInventoryIssuanceNeo;
     }
 
     public InventoryRequestApproval InventoryRequestApproval() {
