@@ -444,6 +444,50 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
     }
 
+    public JSONObject searchDetailByIssuance(int row, String value, boolean byCode, boolean byExact) throws SQLException, GuanzonException {
+        InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
+        loBrowse.initTransaction();
+        if (!psIndustryCode.isEmpty()) {
+            loBrowse.setIndustry(psIndustryCode);
+        }
+        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setBranch(poGRider.getBranchCode());
+
+        poJSON = new JSONObject();
+
+        poJSON = loBrowse.searchInventoryIssaunce(value, byCode, byExact);
+        System.out.println("result " + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
+                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
+                    if (!loExisting.getSerialID().isEmpty()) {
+                        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                            if (loExisting.getSerialID() != loBrowse.getModelInventorySerial().getSerialId()) {
+                                continue;
+                            }
+                        }
+                    }
+                    poJSON = new JSONObject();
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Selected Inventory is already exist!");
+                    return poJSON;
+
+                }
+            }
+        }
+
+        getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
+        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+            getDetail(row).setSerialID(loBrowse.getModelInventorySerial().getSerialId());
+        }
+
+        getDetail(row).setQuantity(1.00);
+
+        return poJSON;
+
+    }
+
     public JSONObject searchDetailBySerial(int row, String value, boolean byCode) throws SQLException, GuanzonException {
         InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
         loBrowse.initTransaction();
@@ -455,7 +499,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
         poJSON = new JSONObject();
 
-        poJSON = loBrowse.searchInventoryIssaunce(value, byCode);
+        poJSON = loBrowse.searchInventorySerialWithStock(value, byCode);
         System.out.println("result " + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
