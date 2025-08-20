@@ -17,6 +17,7 @@ import org.json.simple.JSONObject;
  */
 public class Model_Inventory_Transfer_Detail extends Model {
 
+    private Model_Inventory poInventorySupersede;
     private Model_Inventory poInventory;
     private Model_Inv_Serial poInventorySerial;
 
@@ -49,6 +50,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
             ID2 = poEntity.getMetaData().getColumnLabel(2);
 
             poInventory = new InvModels(poGRider).Inventory();
+            poInventorySupersede = new InvModels(poGRider).Inventory();
             poInventorySerial = new InvModels(poGRider).InventorySerial();
 
             pnEditMode = EditMode.UNKNOWN;
@@ -198,6 +200,23 @@ public class Model_Inventory_Transfer_Detail extends Model {
         }
         poInventory.initialize();
         return this.poInventory;
+    }
+
+    public Model_Inventory InventorySupersede() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sOrigIDxx"))) {
+            if (this.poInventorySupersede.getEditMode() == 1 && this.poInventorySupersede
+                    .getStockId().equals(getValue("sOrigIDxx"))) {
+                return this.poInventorySupersede;
+            }
+            this.poJSON = this.poInventorySupersede.openRecord((String) getValue("sOrigIDxx"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poInventorySupersede;
+            }
+            this.poInventorySupersede.initialize();
+            return this.poInventory;
+        }
+        poInventorySupersede.initialize();
+        return this.poInventorySupersede;
     }
 
     public Model_Inv_Serial InventorySerial() throws SQLException, GuanzonException {
