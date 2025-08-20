@@ -24,6 +24,7 @@ public class Model_Inventory_Transfer_Master extends Model {
     Model_Industry poIndustry;
     Model_Company poCompany;
     Model_Branch poBranch;
+    Model_Branch poBranchDestination;
     Model_Category poCategory;
 
     @Override
@@ -283,6 +284,23 @@ public class Model_Inventory_Transfer_Master extends Model {
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+    }
+
+    public Model_Branch BranchDestination() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sDestinat"))) {
+            if (this.poBranchDestination.getEditMode() == 1 && this.poBranchDestination
+                    .getBranchCode().equals(getValue("sDestinat"))) {
+                return this.poBranchDestination;
+            }
+            this.poJSON = this.poBranchDestination.openRecord((String) getValue("sDestinat"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poBranchDestination;
+            }
+            this.poBranchDestination.initialize();
+            return this.poBranchDestination;
+        }
+        this.poBranchDestination.initialize();
+        return this.poBranchDestination;
     }
 
     public Model_Category Category() throws SQLException, GuanzonException {
