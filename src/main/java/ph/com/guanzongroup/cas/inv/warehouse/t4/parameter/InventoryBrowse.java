@@ -888,8 +888,8 @@ public class InventoryBrowse {
         }
 
         if (pbisWithQty) {
-            lsSQL = MiscUtil.addCondition(lsSQL, "bb.nQtyOnHnd > 0");
-            lsSQL = MiscUtil.addCondition(lsSQL, "b.cSoldStat = '0' ");
+            lsSQL = MiscUtil.addCondition(lsSQL, " bb.nQtyOnHnd > 0 ");
+            lsSQL = MiscUtil.addCondition(lsSQL, " b.sSerial01 IS NULL OR b.cSoldStat = '0' ");
         }
 
         //default

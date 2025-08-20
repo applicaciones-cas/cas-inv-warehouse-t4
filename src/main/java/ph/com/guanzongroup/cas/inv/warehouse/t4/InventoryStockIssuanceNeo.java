@@ -91,6 +91,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
             Model_Inventory_Transfer_Detail newDetail = new DeliveryIssuanceModels(poGRider).InventoryTransferDetail();
             newDetail.newRecord();
             newDetail.setTransactionNo(getMaster().getTransactionNo());
+            newDetail.setEntryNo(paDetail.size() + 1);
             paDetail.add(newDetail);
         }
 
@@ -108,6 +109,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         loDetail = new DeliveryIssuanceModels(poGRider).InventoryTransferDetail();
         loDetail.newRecord();
         loDetail.setTransactionNo(getMaster().getTransactionNo());
+        loDetail.setEntryNo(entryNo);
         paDetail.add(loDetail);
 
         return loDetail;

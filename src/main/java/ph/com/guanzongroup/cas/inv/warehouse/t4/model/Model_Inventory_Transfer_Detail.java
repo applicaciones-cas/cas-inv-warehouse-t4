@@ -35,7 +35,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
 
             poEntity.absolute(1);
 
-            poEntity.updateObject("nEntryNox", 0);
+            poEntity.updateObject("nEntryNox", 1);
             poEntity.updateNull("sStockIDx");
             poEntity.updateNull("sOrigIDxx");
             poEntity.updateNull("sOrderNox");
