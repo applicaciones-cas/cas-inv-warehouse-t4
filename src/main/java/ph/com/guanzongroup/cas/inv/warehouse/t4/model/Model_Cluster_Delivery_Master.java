@@ -36,18 +36,41 @@ public class Model_Cluster_Delivery_Master extends Model {
 
             MiscUtil.initRowSet(poEntity);
 
+            //sBranchCd*
+            //sCategrCd
+            //dTransact*
+            //sSerialID*
+            //sDriverID*
+            //sEmploy01*
+            //sEmploy02
+            //sClustrID
+            //sTownIDxx
+            //dDepartre
+            //dArrivalx
+            //nEntryNox
+            //sRemarksx
+            //sReferNox
+            //cCancelld
+            //dCancelld
+            //cTranStat
+            poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateObject("nFreightx", 0.0);
             poEntity.updateObject("nTranTotl", 0.0);
             poEntity.updateObject("nDiscount", 0.0);
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateNull("dReceived");
-            poEntity.updateNull("sApproved");
+            poEntity.updateNull("sSerialID");
+            poEntity.updateNull("sDriverID");
             poEntity.updateNull("sApprvCde");
-            poEntity.updateNull("sOrderNox");
-            poEntity.updateString("cStockNew", "1");
-            poEntity.updateObject("dModified", poGRider.getServerDate());
+            poEntity.updateNull("sEmploy01");
+            poEntity.updateNull("sEmploy02");
+            poEntity.updateNull("sTownIDxx");
+            poEntity.updateNull("sTownIDxx");
+            poEntity.updateNull("dDepartre");
+            poEntity.updateNull("dCancelld");
+            poEntity.updateString("cCancelld", "0");
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
+            poEntity.updateObject("dModified", poGRider.getServerDate());
 
             this.poBranch = (new ParamModels(this.poGRider)).Branch();
             this.poCompany = (new ParamModels(this.poGRider)).Company();
@@ -76,19 +99,19 @@ public class Model_Cluster_Delivery_Master extends Model {
     //sBranchCd*
     //sCategrCd
     //dTransact*
-    //sDestinat*
-    //sRemarksx
-    //sTruckIDx
-    //nFreightx
-    //sReceived
-    //dReceived
-    //sApproved
-    //sApprvCde
-    //nTranTotl
-    //nDiscount
+    //sSerialID*
+    //sDriverID*
+    //sEmploy01*
+    //sEmploy02
+    //sClustrID
+    //sTownIDxx
+    //dDepartre
+    //dArrivalx
     //nEntryNox
-    //sOrderNox
-    //cStockNew
+    //sRemarksx
+    //sReferNox
+    //cCancelld
+    //dCancelld
     //cTranStat
 
     //sTransNox
@@ -145,94 +168,76 @@ public class Model_Cluster_Delivery_Master extends Model {
         return (Date) getValue("dTransact");
     }
 
-    //sDestinat
-    public JSONObject setDestination(String destination) {
-        return setValue("sDestinat", destination);
+    //sSerialID
+    public JSONObject setSerialId(String serialID) {
+        return setValue("sSerialID", serialID);
     }
 
-    public String getDestination() {
-        return (String) getValue("sDestinat");
+    public String getSerialId() {
+        return (String) getValue("sSerialID");
     }
 
-    //sRemarksx
-    public JSONObject setRemarks(String remarks) {
-        return setValue("sRemarksx", remarks);
+    //sDriverID
+    public JSONObject setDriverID(String driverID) {
+        return setValue("sDriverID", driverID);
     }
 
-    public String getRemarks() {
-        return (String) getValue("sRemarksx");
+    public String getDriverID() {
+        return (String) getValue("sDriverID");
     }
 
-    //sTruckIDx
-    public JSONObject setTruckId(String truckId) {
-        return setValue("sTruckIDx", truckId);
+    //sEmploy01
+    public JSONObject setEmploy01(String employ01) {
+        return setValue("sEmploy01", employ01);
     }
 
-    public String getTruckId() {
-        return (String) getValue("sTruckIDx");
+    public String getEmploy01() {
+        return (String) getValue("sEmploy01");
     }
 
-    //nFreightx
-    public JSONObject setFreight(Double freight) {
-        return setValue("nFreightx", freight);
+    //sEmploy02
+    public JSONObject setEmploy02(String employ02) {
+        return setValue("sEmploy02", employ02);
     }
 
-    public Double getFreight() {
-        return (Double) getValue("nFreightx");
+    public String getEmploy02() {
+        return (String) getValue("sEmploy02");
     }
 
-    //sReceived
-    public JSONObject setReceivedBy(String receivedBy) {
-        return setValue("sReceived", receivedBy);
+    //sClustrID
+    public JSONObject setClustrID(String clustrID) {
+        return setValue("sClustrID", clustrID);
     }
 
-    public String getReceivedBy() {
-        return (String) getValue("sReceived");
+    public String getClustrID() {
+        return (String) getValue("sClustrID");
     }
 
-    //dReceived
-    public JSONObject setReceivedDate(Date receivedDate) {
-        return setValue("dReceived", receivedDate);
+    //sTownIDxx
+    public JSONObject setTownId(String TownId) {
+        return setValue("sTownIDxx", TownId);
     }
 
-    public Date getReceivedDate() {
-        return (Date) getValue("dReceived");
+    public String getTownId() {
+        return (String) getValue("sTownIDxx");
     }
 
-    //sApproved
-    public JSONObject setApprovedBy(String approvedBy) {
-        return setValue("sApproved", approvedBy);
+    //dDepartre
+    public JSONObject setDepartreDate(Date TownId) {
+        return setValue("dDepartre", TownId);
     }
 
-    public String getApprovedBy() {
-        return (String) getValue("sApproved");
+    public Date getDepartreDate() {
+        return (Date) getValue("dDepartre");
     }
 
-    //sApprvCde
-    public JSONObject setApprovalCode(String approvedCode) {
-        return setValue("sApprvCde", approvedCode);
+    //dArrivalx
+    public JSONObject setArrivalDate(Date TownId) {
+        return setValue("dArrivalx", TownId);
     }
 
-    public String getApprovalCode() {
-        return (String) getValue("sApprvCde");
-    }
-
-    //nTranTotl
-    public JSONObject setTransactionTotal(Double transactionTotal) {
-        return setValue("nTranTotl", transactionTotal);
-    }
-
-    public Double getTransactionTotal() {
-        return (Double) getValue("nTranTotl");
-    }
-
-    //nDiscount
-    public JSONObject setDiscount(Double discountrate) {
-        return setValue("nDiscount", discountrate);
-    }
-
-    public Double getDiscount() {
-        return (Double) getValue("nDiscount");
+    public Date getArrivalDate() {
+        return (Date) getValue("dArrivalx");
     }
 
     //nEntryNox
@@ -244,13 +249,40 @@ public class Model_Cluster_Delivery_Master extends Model {
         return (int) getValue("nEntryNox");
     }
 
-    //sApprvCde
-    public JSONObject setOrderNo(String orderNo) {
-        return setValue("sOrderNox", orderNo);
+    //sRemarksx
+    public JSONObject setRemarks(String remarks) {
+        return setValue("sRemarksx", remarks);
     }
 
-    public String getOrderNo() {
-        return (String) getValue("sOrderNox");
+    public String getRemarks() {
+        return (String) getValue("sRemarksx");
+    }
+
+    //sReferNox
+    public JSONObject setReferNo(String referNo) {
+        return setValue("sReferNox", referNo);
+    }
+
+    public String getReferNo() {
+        return (String) getValue("sReferNox");
+    }
+
+    //cTranStat
+    public JSONObject setCancelled(String cancel) {
+        return setValue("cCancelld", cancel);
+    }
+
+    public String getCancelled() {
+        return (String) getValue("cCancelld");
+    }
+
+    //dCancelld
+    public JSONObject setCancelledDate(Date TownId) {
+        return setValue("dCancelld", TownId);
+    }
+
+    public Date getCancelledDate() {
+        return (Date) getValue("dCancelld");
     }
 
     //cTranStat

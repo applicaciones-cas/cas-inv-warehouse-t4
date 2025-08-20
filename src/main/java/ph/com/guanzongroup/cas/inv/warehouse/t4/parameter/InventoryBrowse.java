@@ -1,6 +1,8 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4.parameter;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -11,6 +13,7 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.client.Client;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientControllers;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.inv.InvMaster;
 import org.guanzon.cas.inv.InvSerial;
 import org.guanzon.cas.inv.Inventory;
@@ -18,12 +21,14 @@ import org.guanzon.cas.inv.model.Model_Inv_Master;
 import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvControllers;
+import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.Brand;
 import org.guanzon.cas.parameter.Category;
 import org.guanzon.cas.parameter.CategoryLevel2;
 import org.guanzon.cas.parameter.CategoryLevel3;
 import org.guanzon.cas.parameter.CategoryLevel4;
+import org.guanzon.cas.parameter.Color;
 import org.guanzon.cas.parameter.Industry;
 import org.guanzon.cas.parameter.InvType;
 import org.guanzon.cas.parameter.Measure;
@@ -42,6 +47,7 @@ import org.guanzon.cas.parameter.model.Model_Measure;
 import org.guanzon.cas.parameter.model.Model_Model;
 import org.guanzon.cas.parameter.model.Model_Model_Variant;
 import org.guanzon.cas.parameter.services.ParamControllers;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 
 /**
@@ -109,27 +115,27 @@ public class InventoryBrowse {
     private final GRiderCAS poGRider;
     private LogWrapper poLogWrapper;
     private JSONObject poJSON;
-    private Inventory poInventory;
-    private InvMaster poInvMaster;
-    private InvSerial poInventorySerial;
+    private Model_Inventory poInventory;
+    private Model_Inv_Master poInvMaster;
+    private Model_Inv_Serial poInventorySerial;
 
-    private Branch poBranch;
-    private Industry poIndustry;
-    private InventorySupplier poInvSupplier;
-    private Client poSupplierCompany;
-    private Category poCategory1;
-    private Category poCategory2;
-    private Category poCategory3;
-    private Category poCategory4;
-    private CategoryLevel2 poCategoryLevel2;
-    private CategoryLevel3 poCategoryLevel3;
-    private CategoryLevel4 poCategoryLevel4;
-    private Brand poBrand;
-    private Model poModel;
-    private org.guanzon.cas.parameter.Color poColor;
-    private Measure poMeasure;
-    private InvType poInvType;
-    private ModelVariant poModelVariant;
+    private Model_Branch poBranch;
+    private Model_Industry poIndustry;
+//    private Model_Inv_Supplier poInvSupplier;
+    private Model_Client_Master poSupplierCompany;
+    private Model_Category poCategory1;
+    private Model_Category poCategory2;
+    private Model_Category poCategory3;
+    private Model_Category poCategory4;
+    private Model_Category_Level2 poCategoryLevel2;
+    private Model_Category_Level3 poCategoryLevel3;
+    private Model_Category_Level4 poCategoryLevel4;
+    private Model_Brand poBrand;
+    private Model_Model poModel;
+    private Model_Color poColor;
+    private Model_Measure poMeasure;
+    private Model_Inv_Type poInvType;
+    private Model_Model_Variant poModelVariant;
     private String psRecdStat;
     private String psCustomHeader = "";
     private String psCustomName = "";
@@ -143,62 +149,38 @@ public class InventoryBrowse {
     }
 
     public JSONObject initTransaction() throws GuanzonException, SQLException {
-        InvControllers inventoryObject = new InvControllers(poGRider, poLogWrapper);
-        ParamControllers parameterObject = new ParamControllers(poGRider, poLogWrapper);
-        poSupplierCompany = new ClientControllers(poGRider, poLogWrapper).Client();
-        poSupplierCompany.Master().setRecordStatus(RecordStatus.ACTIVE);
-        poSupplierCompany.Master().setClientType("1");
+        InvModels inventoryModel = new InvModels(poGRider);
+        poSupplierCompany = new ClientModels(poGRider).ClientMaster();
 
         // Inventory-related
-        this.poInventory = inventoryObject.Inventory();
-        this.poInvMaster = inventoryObject.InventoryMaster();
-        this.poInventorySerial = inventoryObject.InventorySerial();
+        this.poInventory = inventoryModel.Inventory();
+        this.poInvMaster = inventoryModel.InventoryMaster();
+        this.poInventorySerial = inventoryModel.InventorySerial();
 
         this.poInvMaster.setRecordStatus(psRecdStat);
         this.poInventory.setRecordStatus(psRecdStat);
-        this.poInventorySerial.setRecordStatus(psRecdStat);
+//        this.poInventorySerial.setLocation(psRecdStat);
 
         // Parameter-related
-        this.poBranch = parameterObject.Branch();
-        this.poIndustry = parameterObject.Industry();
-        this.poCategory1 = parameterObject.Category();
-        this.poCategory2 = parameterObject.Category();
-        this.poCategory3 = parameterObject.Category();
-        this.poCategory4 = parameterObject.Category();
-        this.poCategoryLevel2 = parameterObject.CategoryLevel2();
-        this.poCategoryLevel3 = parameterObject.CategoryLevel3();
-        this.poCategoryLevel4 = parameterObject.CategoryLevel4();
-        this.poBrand = parameterObject.Brand();
-        this.poModel = parameterObject.Model();
-        this.poColor = parameterObject.Color();
-        this.poMeasure = parameterObject.Measurement();
-        this.poInvType = parameterObject.InventoryType();
-        this.poModelVariant = parameterObject.ModelVariant();
-
-        // Set status for all parameter objects
-        setRecordStatusForParams(psRecdStat);
+        this.poBranch = new ParamModels(poGRider).Branch();
+        this.poIndustry = new ParamModels(poGRider).Industry();
+        this.poCategory1 = new ParamModels(poGRider).Category();
+        this.poCategory2 = new ParamModels(poGRider).Category();
+        this.poCategory3 = new ParamModels(poGRider).Category();
+        this.poCategory4 = new ParamModels(poGRider).Category();
+        this.poCategoryLevel2 = new ParamModels(poGRider).Category2();
+        this.poCategoryLevel3 = new ParamModels(poGRider).Category3();
+        this.poCategoryLevel4 = new ParamModels(poGRider).Category4();
+        this.poBrand = new ParamModels(poGRider).Brand();
+        this.poModel = new ParamModels(poGRider).Model();
+        this.poColor = new ParamModels(poGRider).Color();
+        this.poMeasure = new ParamModels(poGRider).Measurement();
+        this.poInvType = new ParamModels(poGRider).InventoryType();
+        this.poModelVariant = new ParamModels(poGRider).ModelVariant();
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;
-    }
-
-    private void setRecordStatusForParams(String status) {
-        poBranch.setRecordStatus(status);
-        poIndustry.setRecordStatus(status);
-        poCategory1.setRecordStatus(status);
-        poCategory2.setRecordStatus(status);
-        poCategory3.setRecordStatus(status);
-        poCategory4.setRecordStatus(status);
-        poCategoryLevel2.setRecordStatus(status);
-        poCategoryLevel3.setRecordStatus(status);
-        poCategoryLevel4.setRecordStatus(status);
-        poBrand.setRecordStatus(status);
-        poModel.setRecordStatus(status);
-        poColor.setRecordStatus(status);
-        poMeasure.setRecordStatus(status);
-        poInvType.setRecordStatus(status);
-        poModelVariant.setRecordStatus(status);
     }
 
     public void setRecordStatus(String recordStatus) {
@@ -260,7 +242,7 @@ public class InventoryBrowse {
     //Set Filter Purpose
     public JSONObject setSupplier(String supplierFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poSupplierCompany.Master().openRecord(supplierFilter);
+        return poSupplierCompany.openRecord(supplierFilter);
     }
 
     public JSONObject setCategory1(String categoryfilter) throws SQLException, GuanzonException {
@@ -330,153 +312,265 @@ public class InventoryBrowse {
 
     public JSONObject searchIndustry(String searchIndustryFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poIndustry.searchRecord(searchIndustryFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Industry loParameter = parameterModel.Industry();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchIndustryFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poIndustry = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategory1(String searchCategory1Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategory1.searchRecord(searchCategory1Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Category loParameter = parameterModel.Category();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategory1Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategory1 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategory2(String searchCategory2Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategory2.searchRecord(searchCategory2Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Category loParameter = parameterModel.Category();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategory2Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategory2 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategory3(String searchCategory3Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategory3.searchRecord(searchCategory3Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Category loParameter = parameterModel.Category();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategory3Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategory3 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategory4(String searchCategory4Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategory3.searchRecord(searchCategory4Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Category loParameter = parameterModel.Category();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategory4Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategory4 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategoryLevel2(String searchCategoryLevel2Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategoryLevel2.searchRecord(searchCategoryLevel2Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        CategoryLevel2 loParameter = parameterModel.CategoryLevel2();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategoryLevel2Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategoryLevel2 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategoryLevel3(String searchCategoryLevel3Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategoryLevel3.searchRecord(searchCategoryLevel3Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        CategoryLevel3 loParameter = parameterModel.CategoryLevel3();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategoryLevel3Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategoryLevel3 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchCategoryLevel4(String searchCategoryLevel4Filter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poCategoryLevel4.searchRecord(searchCategoryLevel4Filter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        CategoryLevel4 loParameter = parameterModel.CategoryLevel4();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchCategoryLevel4Filter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poCategoryLevel4 = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchBrand(String searchBrandFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poBrand.searchRecord(searchBrandFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Brand loParameter = parameterModel.Brand();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchBrandFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poBrand = loParameter.getModel();
+        }
+        return poJSON;
     }
 
-    public JSONObject searchModel(String searchBrandFilter) throws SQLException, GuanzonException {
+    public JSONObject searchModel(String searchModelFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poModel.searchRecord(searchBrandFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Model loParameter = parameterModel.Model();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchModelFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poModel = loParameter.getModel();
+        }
+        return poJSON;
     }
 
-    public JSONObject searchColor(String searchBrandFilter) throws SQLException, GuanzonException {
+    public JSONObject searchColor(String searchColorFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poColor.searchRecord(searchBrandFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Color loParameter = parameterModel.Color();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchColorFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poColor = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchMeasure(String searchMeasureFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poMeasure.searchRecord(searchMeasureFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        Measure loParameter = parameterModel.Measurement();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchMeasureFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poMeasure = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchInvType(String searchInvTypeFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poInvType.searchRecord(searchInvTypeFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        InvType loParameter = parameterModel.InventoryType();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchInvTypeFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poInvType = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     public JSONObject searchModelVariant(String searchModelVariantFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
-        return poModelVariant.searchRecord(searchModelVariantFilter, false);
+        ParamControllers parameterModel = new ParamControllers(poGRider, poLogWrapper);
+        ModelVariant loParameter = parameterModel.ModelVariant();
+        loParameter.setRecordStatus(psRecdStat);
+
+        poJSON = loParameter.searchRecord(searchModelVariantFilter, false);
+        if ("success".equals((String) poJSON.get("result"))) {
+            poModelVariant = loParameter.getModel();
+        }
+        return poJSON;
     }
 
     // FOR UI PURPOSE'S
     public Model_Client_Master getModelSupplierMaster() {
-        return poSupplierCompany.Master().getModel();
-    }
-
-    public Client getSupplier() {
         return poSupplierCompany;
     }
+//
+//    public Client getSupplier() {
+//        return poSupplierCompany;
+//    }
 
     public Model_Inventory getModelInventory() {
-        return poInventory.getModel();
+        return poInventory;
     }
 
     public Model_Inv_Serial getModelInventorySerial() {
-        return poInventorySerial.getModel();
+        return poInventorySerial;
     }
 
     public Model_Inv_Master getModelInventoryMaster() {
-        return poInvMaster.getModel();
+        return poInvMaster;
     }
 
     public Model_Branch getModelBranch() {
-        return poBranch.getModel();
+        return poBranch;
     }
 
     public Model_Industry getModelIndustry() {
-        return poIndustry.getModel();
+        return poIndustry;
     }
 
     public Model_Category getModelCategory() {
-        return poCategory1.getModel();
+        return poCategory1;
     }
 
     public Model_Category getModelCategory2() {
-        return poCategory2.getModel();
+        return poCategory2;
     }
 
     public Model_Category getModelCategory3() {
-        return poCategory3.getModel();
+        return poCategory3;
     }
 
     public Model_Category getModelCategory4() {
-        return poCategory4.getModel();
+        return poCategory4;
     }
 
     public Model_Category_Level2 getModelCategoryLevel2() {
-        return poCategoryLevel2.getModel();
+        return poCategoryLevel2;
     }
 
     public Model_Category_Level3 getModelCategoryLevel3() {
-        return poCategoryLevel3.getModel();
+        return poCategoryLevel3;
     }
 
     public Model_Category_Level4 getModelCategoryLevel4() {
-        return poCategoryLevel4.getModel();
+        return poCategoryLevel4;
     }
 
     public Model_Brand getModelBrand() {
-        return poBrand.getModel();
+        return poBrand;
     }
 
     public Model_Model getModelModel() {
-        return poModel.getModel();
+        return poModel;
     }
 
     public Model_Color getModelColor() {
-        return poColor.getModel();
+        return poColor;
     }
 
     public Model_Measure getModelMeasure() {
-        return poMeasure.getModel();
+        return poMeasure;
     }
 
     public Model_Inv_Type getModelInvType() {
-        return poInvType.getModel();
+        return poInvType;
     }
 
     public Model_Model_Variant getModelModel_Variant() {
-        return poModelVariant.getModel();
+        return poModelVariant;
     }
 
     public JSONObject searchInventory(String value, boolean byCode) throws SQLException, GuanzonException {
@@ -687,6 +781,7 @@ public class InventoryBrowse {
             lscolCriteria = psCustomCriteria;
         }
 
+        System.out.println("Search Dialog Query : " + lsSQL);
         this.poJSON = ShowDialogFX.Search(
                 poGRider,
                 lsSQL,
@@ -723,7 +818,7 @@ public class InventoryBrowse {
         return this.poJSON;
     }
 
-    public JSONObject searchInventorySerialWithStock(String value, boolean byCode,boolean byExact) throws SQLException, GuanzonException {
+    public JSONObject searchInventorySerialWithStock(String value, boolean byCode, boolean byExact) throws SQLException, GuanzonException {
         String lsSQL = getSQ_BrowseInventorySerialwithStock();
 
         String lsCondition = generateConditionSerial();
@@ -747,6 +842,7 @@ public class InventoryBrowse {
             lscolCriteria = psCustomCriteria;
         }
 
+        System.out.println("Search Dialog Query : " + lsSQL);
         this.poJSON = ShowDialogFX.Search(
                 poGRider,
                 lsSQL,
@@ -793,7 +889,7 @@ public class InventoryBrowse {
 
         if (pbisWithQty) {
             lsSQL = MiscUtil.addCondition(lsSQL, "bb.nQtyOnHnd > 0");
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.cSoldStat = '0' ");
+            lsSQL = MiscUtil.addCondition(lsSQL, "b.cSoldStat = '0' ");
         }
 
         //default
@@ -807,6 +903,7 @@ public class InventoryBrowse {
             lscolCriteria = psCustomCriteria;
         }
 
+        System.out.println("Search Dialog Query : " + lsSQL);
         this.poJSON = ShowDialogFX.Search(
                 poGRider,
                 lsSQL,
@@ -853,13 +950,14 @@ public class InventoryBrowse {
 
         if (pbisWithQty) {
             lsSQL = MiscUtil.addCondition(lsSQL, "bb.nQtyOnHnd > 0");
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.cSoldStat = '0' ");
+            lsSQL = MiscUtil.addCondition(lsSQL, "b.sSerial01 IS NULL OR b.cSoldStat = '0' ");
         }
 
         //default
         String lscolHeader = "Serial»Barcode»Description»Qty-On-Hand»Brand Name»Model Name»Color Name»UOM»Variant Name»Model Code";
         String lscolName = "xSerialNme»sBarcodex»xDescript»nQtyOnHnd»xBrandNme»xModelNme»xColorNme»xMeasurNm»xVrntName»xModelCde";
-        String lscolCriteria = "xSerialNme»sBarcodex»xDescript»nQtyOnHnd»xBrandNme»xModelNme»xColorNme»xMeasurNm»xVrntName»xModelCde";
+        String lscolCriteria = "TRIM(CONCAT (IFNULL (b.sSerial01, ''),IF (b.sSerial01 IS NOT NULL AND b.sSerial02 IS NOT NULL,'/ ',''),IFNULL (b.sSerial02, '')) )»"
+                + "sBarcodex»a.sDescript»nQtyOnHnd»c.sDescript»d.sDescript»e.sDescript»f.sDescript»g.sDescript»d.sModelCde";
 
         if (!psCustomHeader.isEmpty() && !psCustomName.isEmpty() && !psCustomCriteria.isEmpty()) {
             lscolHeader = psCustomHeader;
@@ -867,6 +965,7 @@ public class InventoryBrowse {
             lscolCriteria = psCustomCriteria;
         }
 
+        System.out.println("Search Dialog Query : " + lsSQL);
         this.poJSON = ShowDialogFX.Search(
                 poGRider,
                 lsSQL,
@@ -881,16 +980,17 @@ public class InventoryBrowse {
 
             result = this.poInvMaster.openRecord((String) this.poJSON.get("sStockIDx"), (String) this.poJSON.get("sBranchCd"));
             if ("error".equals((String) result.get("result"))) {
-                return poJSON;
-            }
-
-            result = this.poInventorySerial.openRecord((String) this.poJSON.get("sSerialID"));
-            if ("error".equals((String) result.get("result"))) {
-                return poJSON;
+                return result;
             }
             result = this.poInventory.openRecord((String) this.poJSON.get("sStockIDx"));
             if ("error".equals((String) result.get("result"))) {
-                return poJSON;
+                return result;
+            }
+            if ((String) this.poJSON.get("sSerialID") != null && !this.poJSON.get("sSerialID").toString().isEmpty()) {
+                result = this.poInventorySerial.openRecord((String) this.poJSON.get("sSerialID"));
+                if ("error".equals((String) result.get("result"))) {
+                    return result;
+                }
             }
 
             this.poJSON.put("result", "success");
@@ -912,7 +1012,7 @@ public class InventoryBrowse {
         loClientSupplier.Master().setClientType("1");
         poJSON = loClientSupplier.Master().searchRecord(value, byCode);
         if ("success".equals((String) poJSON.get("result"))) {
-            poSupplierCompany = loClientSupplier;
+            poSupplierCompany = loClientSupplier.Master().getModel();
         }
 
         return poJSON;
@@ -924,36 +1024,55 @@ public class InventoryBrowse {
             //supplier
             {"ba.sSupplier", this.getModelSupplierMaster() != null ? this.getModelSupplierMaster().getClientId() : null},
             // inventory
-            {"a.IndustryId", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
-            {"a.IndustryId", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
+            {"a.sIndstCdx", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
             {"a.sCategCd1", this.getModelCategory() != null ? this.getModelCategory().getCategoryId() : null},
-            {"a.sCategCd2", this.getModelCategory2() != null ? this.getModelCategory2().getCategoryId() : null},
-            {"a.sCategCd3", this.getModelCategory3() != null ? this.getModelCategory3().getCategoryId() : null},
-            {"a.sCategCd4", this.getModelCategory4() != null ? this.getModelCategory4().getCategoryId() : null},
-            {"a.sCategLvl2", this.getModelCategoryLevel2() != null ? this.getModelCategoryLevel2().getCategoryId() : null},
-            {"a.sCategLvl3", this.getModelCategoryLevel3() != null ? this.getModelCategoryLevel3().getCategoryId() : null},
-            {"a.sCategLvl4", this.getModelCategoryLevel4() != null ? this.getModelCategoryLevel4().getCategoryId() : null},
-            {"a.sBrandId", this.getModelBrand() != null ? this.getModelBrand().getBrandId() : null},
-            {"a.sModelId", this.getModelModel() != null ? this.getModelModel().getModelId() : null},
-            {"a.sColorId", this.getModelColor() != null ? this.getModelColor().getColorId() : null},
-            {"a.sMeasureId", this.getModelMeasure() != null ? this.getModelMeasure().getMeasureId() : null},
-            {"a.sInvTypeId", this.getModelInvType() != null ? this.getModelInvType().getInventoryTypeId() : null},
-            {"a.sVariantId", this.getModelModel_Variant() != null ? this.getModelModel_Variant().getModelId() : null}
+            {"a.sCategCd1", this.getModelCategory2() != null ? this.getModelCategory2().getCategoryId() : null},
+            {"a.sCategCd1", this.getModelCategory3() != null ? this.getModelCategory3().getCategoryId() : null},
+            {"a.sCategCd1", this.getModelCategory4() != null ? this.getModelCategory4().getCategoryId() : null},
+            {"a.sCategCd2", this.getModelCategoryLevel2() != null ? this.getModelCategoryLevel2().getCategoryId() : null},
+            {"a.sCategCd3", this.getModelCategoryLevel3() != null ? this.getModelCategoryLevel3().getCategoryId() : null},
+            {"a.sCategCd4", this.getModelCategoryLevel4() != null ? this.getModelCategoryLevel4().getCategoryId() : null},
+            {"a.sBrandIDx", this.getModelBrand() != null ? this.getModelBrand().getBrandId() : null},
+            {"a.sModelIDx", this.getModelModel() != null ? this.getModelModel().getModelId() : null},
+            {"a.sColorIDx", this.getModelColor() != null ? this.getModelColor().getColorId() : null},
+            {"a.sVrntIDxx", this.getModelMeasure() != null ? this.getModelMeasure().getMeasureId() : null},
+            {"a.sMeasurID", this.getModelInvType() != null ? this.getModelInvType().getInventoryTypeId() : null},
+            {"a.sInvTypCd", this.getModelModel_Variant() != null ? this.getModelModel_Variant().getModelId() : null}
         };
 
         StringBuilder lsCondition = new StringBuilder();
+
+        // Collect all CategCd1 values for IN clause
+        List<String> categCd1Values = new ArrayList<>();
 
         for (int lnFilter = 0; lnFilter < filters.length; lnFilter++) {
             if (!isWithBranch && lnFilter == 0) {
                 continue;
             }
 
-            if (filters[lnFilter][1] != null) {
-                if (lsCondition.length() > 0) {
-                    lsCondition.append(" AND ");
+            String column = filters[lnFilter][0];
+            String value = filters[lnFilter][1];
+
+            if (value != null) {
+                if ("a.sCategCd1".equals(column)) {
+                    categCd1Values.add(SQLUtil.toSQL(value));
+                } else {
+                    if (lsCondition.length() > 0) {
+                        lsCondition.append(" AND ");
+                    }
+                    lsCondition.append(column).append(" = ").append(SQLUtil.toSQL(value));
                 }
-                lsCondition.append(filters[lnFilter][0]).append(" = ").append(SQLUtil.toSQL(filters[lnFilter][1]));
             }
+        }
+
+        // Add IN clause for sCategCd1 if there are multiple values
+        if (!categCd1Values.isEmpty()) {
+            if (lsCondition.length() > 0) {
+                lsCondition.append(" AND ");
+            }
+            lsCondition.append("a.sCategCd1 IN (")
+                    .append(String.join(", ", categCd1Values))
+                    .append(")");
         }
 
         return lsCondition.toString();
@@ -965,33 +1084,52 @@ public class InventoryBrowse {
             //supplier
             {"ba.sSupplier", this.getModelSupplierMaster() != null ? this.getModelSupplierMaster().getClientId() : null},
             // inventory
-            {"b.IndustryId", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
-            {"b.IndustryId", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
+            {"b.sIndstCdx", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
             {"b.sCategCd1", this.getModelCategory() != null ? this.getModelCategory().getCategoryId() : null},
-            {"b.sCategCd2", this.getModelCategory2() != null ? this.getModelCategory2().getCategoryId() : null},
-            {"b.sCategCd3", this.getModelCategory3() != null ? this.getModelCategory3().getCategoryId() : null},
-            {"b.sCategCd4", this.getModelCategory4() != null ? this.getModelCategory4().getCategoryId() : null},
-            {"b.sCategLvl2", this.getModelCategoryLevel2() != null ? this.getModelCategoryLevel2().getCategoryId() : null},
-            {"b.sCategLvl3", this.getModelCategoryLevel3() != null ? this.getModelCategoryLevel3().getCategoryId() : null},
-            {"b.sCategLvl4", this.getModelCategoryLevel4() != null ? this.getModelCategoryLevel4().getCategoryId() : null},
-            {"b.sBrandId", this.getModelBrand() != null ? this.getModelBrand().getBrandId() : null},
-            {"b.sModelId", this.getModelModel() != null ? this.getModelModel().getModelId() : null},
-            {"b.sColorId", this.getModelColor() != null ? this.getModelColor().getColorId() : null},
-            {"b.sMeasureId", this.getModelMeasure() != null ? this.getModelMeasure().getMeasureId() : null},
-            {"b.sInvTypeId", this.getModelInvType() != null ? this.getModelInvType().getInventoryTypeId() : null},
-            {"b.sVariantId", this.getModelModel_Variant() != null ? this.getModelModel_Variant().getModelId() : null}
+            {"b.sCategCd1", this.getModelCategory2() != null ? this.getModelCategory2().getCategoryId() : null},
+            {"b.sCategCd1", this.getModelCategory3() != null ? this.getModelCategory3().getCategoryId() : null},
+            {"b.sCategCd1", this.getModelCategory4() != null ? this.getModelCategory4().getCategoryId() : null},
+            {"b.sCategCd2", this.getModelCategoryLevel2() != null ? this.getModelCategoryLevel2().getCategoryId() : null},
+            {"b.sCategCd3", this.getModelCategoryLevel3() != null ? this.getModelCategoryLevel3().getCategoryId() : null},
+            {"b.sCategCd4", this.getModelCategoryLevel4() != null ? this.getModelCategoryLevel4().getCategoryId() : null},
+            {"b.sBrandIDx", this.getModelBrand() != null ? this.getModelBrand().getBrandId() : null},
+            {"b.sModelIDx", this.getModelModel() != null ? this.getModelModel().getModelId() : null},
+            {"b.sColorIDx", this.getModelColor() != null ? this.getModelColor().getColorId() : null},
+            {"b.sVrntIDxx", this.getModelMeasure() != null ? this.getModelMeasure().getMeasureId() : null},
+            {"b.sMeasurID", this.getModelInvType() != null ? this.getModelInvType().getInventoryTypeId() : null},
+            {"b.sInvTypCd", this.getModelModel_Variant() != null ? this.getModelModel_Variant().getModelId() : null}
         };
 
         StringBuilder lsCondition = new StringBuilder();
 
+        // Collect all CategCd1 values for IN clause
+        List<String> categCd1Values = new ArrayList<>();
+
         for (int lnFilter = 0; lnFilter < filters.length; lnFilter++) {
 
-            if (filters[lnFilter][1] != null) {
-                if (lsCondition.length() > 0) {
-                    lsCondition.append(" AND ");
+            String column = filters[lnFilter][0];
+            String value = filters[lnFilter][1];
+
+            if (value != null) {
+                if ("a.sCategCd1".equals(column)) {
+                    categCd1Values.add(SQLUtil.toSQL(value));
+                } else {
+                    if (lsCondition.length() > 0) {
+                        lsCondition.append(" AND ");
+                    }
+                    lsCondition.append(column).append(" = ").append(SQLUtil.toSQL(value));
                 }
-                lsCondition.append(filters[lnFilter][0]).append(" = ").append(SQLUtil.toSQL(filters[lnFilter][1]));
             }
+        }
+
+        // Add IN clause for sCategCd1 if there are multiple values
+        if (!categCd1Values.isEmpty()) {
+            if (lsCondition.length() > 0) {
+                lsCondition.append(" AND ");
+            }
+            lsCondition.append("a.sCategCd1 IN (")
+                    .append(String.join(", ", categCd1Values))
+                    .append(")");
         }
 
         return lsCondition.toString();
@@ -1241,30 +1379,31 @@ public class InventoryBrowse {
 
     public String getSQ_BrowseInventoryIssuance() {
         String lsSQL = " SELECT "
-                + "  TRIM(CONCAT(IFNULL (b.sSerial01, ''),IF(b.sSerial01 IS NOT NULL AND b.sSerial02 IS NOT NULL,'/ ',''),IFNULL (b.sSerial02, ''))) AS xSerialNme,"
-                + "  IFNULL(a.sBarCodex, '') sBarcodex,"
-                + "  IFNULL(a.sDescript, '') xDescript,"
-                + "  IFNULL(bb.nQtyOnHnd, 0.00) nQtyOnHnd,"
-                + "  IFNULL(c.sDescript, '') xBrandNme,"
-                + "  IFNULL(d.sDescript, '') xModelNme,"
-                + "  IFNULL(e.sDescript, '') xColorNme,"
-                + "  IFNULL(f.sDescript, '') xMeasurNm,"
-                + "  TRIM(CONCAT(IFNULL (g.sDescript, ''),' ',IFNULL (g.nYearMdlx, ''))) xVrntName,"
-                + "  IFNULL(d.sModelCde, '') xModelCde,"
-                + "  IFNULL(bc.sBranchNm, '') xBranchNm,"
-                + "  IFNULL(bc.sBranchCd, '') sBranchCd,"
-                + "  IFNULL(b.sSerialID, '') sSerialID"
+                + "  TRIM(CONCAT(IFNULL (b.sSerial01, ''),IF(b.sSerial01 IS NOT NULL AND b.sSerial02 IS NOT NULL,'/ ',''),IFNULL (b.sSerial02, ''))) AS xSerialNme"
+                + ",  IFNULL(a.sBarCodex, '') sBarcodex"
+                + ",  IFNULL(a.sDescript, '') xDescript"
+                + ",  IFNULL(bb.nQtyOnHnd, 0.00) nQtyOnHnd"
+                + ",  IFNULL(c.sDescript, '') xBrandNme"
+                + ",  IFNULL(d.sDescript, '') xModelNme"
+                + ",  IFNULL(e.sDescript, '') xColorNme"
+                + ",  IFNULL(f.sDescript, '') xMeasurNm"
+                + ",  TRIM(CONCAT(IFNULL (g.sDescript, ''),' ',IFNULL (g.nYearMdlx, ''))) xVrntName"
+                + ",  IFNULL(d.sModelCde, '') xModelCde"
+                + ",  IFNULL(bc.sBranchNm, '') xBranchNm"
+                + ",  IFNULL(bc.sBranchCd, '') sBranchCd"
+                + ",  IFNULL(b.sSerialID, '') sSerialID"
+                + ",  a.sStockIDx"
                 + " FROM Inventory a"
-                + "  LEFT JOIN Inv_Serial bON a.sStockIDx = b.sStockIDx"
+                + "  LEFT JOIN Inv_Serial b ON a.sStockIDx = b.sStockIDx"
                 + "  LEFT JOIN Brand c ON a.sBrandIDx = c.sBrandIDx"
                 + "  LEFT JOIN Model d ON a.sModelIDx = d.sModelIDx"
                 + "  LEFT JOIN Color e ON a.sColorIDx = e.sColorIDx"
                 + "  LEFT JOIN Measure f ON a.sMeasurID = f.sMeasurID"
                 + "  LEFT JOIN Model_Variant g ON a.sVrntIDxx = g.sVrntIDxx"
                 + "  LEFT JOIN Inv_Supplier ba ON a.sStockIDx = ba.sStockIDx"
-                + "  LEFT JOIN Inv_Master bb ON a.sStockIDx = bb.sStockIDx AND bb.sBranchCd = b.sBranchCd"
-                + "  LEFT JOIN Branch bc ON bb.sBranchCd = bc.sBranchCd"
-                + "         ORDER BY xSerialNme DESC, sBarcodex ASC, nQtyOnHnd DESC";
+                + "  LEFT JOIN Inv_Master bb ON a.sStockIDx = bb.sStockIDx"
+                + "  LEFT JOIN Branch bc ON bb.sBranchCd = bc.sBranchCd";
+//                + "         ORDER BY xSerialNme DESC, sBarcodex ASC, nQtyOnHnd DESC";
         return lsSQL;
     }
 }

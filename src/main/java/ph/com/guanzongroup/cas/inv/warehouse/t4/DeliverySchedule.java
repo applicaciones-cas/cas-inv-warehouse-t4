@@ -91,7 +91,7 @@ public class DeliverySchedule extends Transaction {
     }
 
     public Model_Delivery_Schedule_Detail getDetail(int clusterRow) {
-        if (getMaster().getTransactionNo().isEmpty() || getMaster().getIndustryId().isEmpty()) {
+        if (getMaster().getTransactionNo().isEmpty()) {
             return null;
         }
         //autoadd detail if empty
