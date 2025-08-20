@@ -84,6 +84,16 @@ public class InventoryStockIssuanceNeo extends Transaction {
             return null;
         }
 
+        //autoadd detail if empty
+        Model_Inventory_Transfer_Detail lastDetail = (Model_Inventory_Transfer_Detail) paDetail.get(paDetail.size() - 1);
+        String stockID = lastDetail.getStockId();
+        if (stockID != null && !stockID.trim().isEmpty()) {
+            Model_Inventory_Transfer_Detail newDetail = new DeliveryIssuanceModels(poGRider).InventoryTransferDetail();
+            newDetail.newRecord();
+            newDetail.setTransactionNo(getMaster().getTransactionNo());
+            paDetail.add(newDetail);
+        }
+
         Model_Inventory_Transfer_Detail loDetail;
 
         //find the detail record
