@@ -609,12 +609,12 @@ public class InventoryStockIssuanceNeo extends Transaction {
         Model_Client_Master loBrowse = new ClientModels(poGRider).ClientMaster();
 
         String lsSQL = "SELECT"
-                + "  a.`sClientID`"
-                + ", IFNULL(b.`sCompnyNm`,'') xClientNm"
-                + ", IFNULL(c.`sCompnyNm`,'') xCPerName"
-                + " FROM `AP_Client_Master` a"
-                + "  LEFT JOIN Client_Master b ON a.`sClientID` = b.`sClientID`"
-                + "  LEFT JOIN Client_Master c ON a.`sClientID` = c.`sClientID`;";
+                + "  a.sClientID"
+                + ", IFNULL(b.sCompnyNm,'') xClientNm"
+                + ", IFNULL(c.sCompnyNm,'') xCPerName"
+                + " FROM AP_Client_Master a"
+                + "  LEFT JOIN Client_Master b ON a.sClientID = b.sClientID"
+                + "  LEFT JOIN Client_Master c ON a.sClientID = c.sClientID";
 
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
