@@ -18,6 +18,9 @@ import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
+import org.guanzon.cas.client.model.Model_AP_Client_Master;
+import org.guanzon.cas.client.model.Model_Client_Master;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.services.ParamModels;
@@ -593,6 +596,42 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
             if ("success".equals((String) poJSON.get("result"))) {
                 getMaster().setDestination(loBrowse.getBranchCode());
+                return poJSON;
+            }
+
+        }
+        this.poJSON = new JSONObject();
+        this.poJSON.put("result", "error");
+        this.poJSON.put("message", "No record loaded.");
+        return this.poJSON;
+
+    }
+
+    public JSONObject searchTransactionTrucking(String value, boolean byCode) throws SQLException, GuanzonException {
+        Model_Client_Master loBrowse = new ClientModels(poGRider).ClientMaster();
+
+        String lsSQL = "SELECT"
+                + "  a.`sClientID`"
+                + ", IFNULL(b.`sCompnyNm`,'') xClientNm"
+                + ", IFNULL(c.`sCompnyNm`,'') xCPerName"
+                + " FROM `AP_Client_Master` a"
+                + "  LEFT JOIN Client_Master b ON a.`sClientID` = b.`sClientID`"
+                + "  LEFT JOIN Client_Master c ON a.`sClientID` = c.`sClientID`;";
+
+        poJSON = ShowDialogFX.Search(poGRider,
+                lsSQL,
+                value,
+                "ID»Client Name»Contact Person",
+                "sClientID»b.sCompnyNm»c.sCompnyNm",
+                "sClientID»b.sCompnyNm»c.sCompnyNm",
+                byCode ? 0 : 1);
+
+        if (poJSON != null) {
+            poJSON = loBrowse.openRecord((String) this.poJSON.get("sClientID"));
+            System.out.println("result " + (String) poJSON.get("result"));
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                getMaster().setTruckId(loBrowse.getClientId());
                 return poJSON;
             }
 

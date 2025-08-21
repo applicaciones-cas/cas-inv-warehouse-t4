@@ -6,6 +6,8 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.client.model.Model_Client_Master;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
@@ -26,6 +28,7 @@ public class Model_Inventory_Transfer_Master extends Model {
     Model_Branch poBranch;
     Model_Branch poBranchDestination;
     Model_Category poCategory;
+    Model_Client_Master poTrucking;
 
     @Override
     public void initialize() {
@@ -50,6 +53,8 @@ public class Model_Inventory_Transfer_Master extends Model {
             poEntity.updateObject("dModified", poGRider.getServerDate());
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
+            this.poTrucking = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poBranchDestination = (new ParamModels(this.poGRider)).Branch();
             this.poBranch = (new ParamModels(this.poGRider)).Branch();
             this.poCompany = (new ParamModels(this.poGRider)).Company();
             this.poIndustry = (new ParamModels(this.poGRider)).Industry();
@@ -284,6 +289,23 @@ public class Model_Inventory_Transfer_Master extends Model {
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+    }
+
+    public Model_Client_Master TruckingCompany() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sTruckIDx"))) {
+            if (this.poTrucking.getEditMode() == 1 && this.poTrucking
+                    .getClientId().equals(getValue("sTruckIDx"))) {
+                return this.poTrucking;
+            }
+            this.poJSON = this.poTrucking.openRecord((String) getValue("sTruckIDx"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poTrucking;
+            }
+            this.poTrucking.initialize();
+            return this.poTrucking;
+        }
+        this.poTrucking.initialize();
+        return this.poTrucking;
     }
 
     public Model_Branch BranchDestination() throws SQLException, GuanzonException {
