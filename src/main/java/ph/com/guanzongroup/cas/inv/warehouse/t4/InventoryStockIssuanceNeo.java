@@ -16,6 +16,7 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.model.Model_Client_Master;
@@ -203,6 +204,11 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+
+        getMaster().setIndustryId(psIndustryCode);
+        getMaster().setCompanyID(psCompanyID);
+        getMaster().setCategoryId(psCategorCD);
+        getMaster().setBranchCode(poGRider.getBranchCode());
 
         //assign values needed
         poJSON.put("result", "success");
@@ -614,7 +620,8 @@ public class InventoryStockIssuanceNeo extends Transaction {
                 + ", IFNULL(c.sCompnyNm,'') xCPerName"
                 + " FROM AP_Client_Master a"
                 + "  LEFT JOIN Client_Master b ON a.sClientID = b.sClientID"
-                + "  LEFT JOIN Client_Master c ON a.sClientID = c.sClientID";
+                + "  LEFT JOIN Client_Master c ON a.sClientID = c.sClientID"
+                + " WHERE a.cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE);
 
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
@@ -832,7 +839,6 @@ public class InventoryStockIssuanceNeo extends Transaction {
         poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
 
 //        poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
-
         poReportJasper.setReportName("Inventory Issuance");
         poReportJasper.setJasperPath(InventoryStockIssuancePrint.getJasperReport(psIndustryCode));
 
