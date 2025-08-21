@@ -214,8 +214,24 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        int lnDetailCount = 0;
+        
         //assign values needed
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Inventory_Transfer_Detail loDetail = (Model_Inventory_Transfer_Detail) paDetail.get(lnCtr);
+            if (loDetail.getQuantity() > 0 && !loDetail.getStockId().isEmpty()) {
+
+                lnDetailCount++;
+                loDetail.setTransactionNo(getMaster().getTransactionNo());
+                loDetail.setEntryNo(lnDetailCount);
+            } else {
+                paDetail.remove(lnCtr);
+
+            }
+        }
+        
+        getMaster().setEntryNo(lnDetailCount);
+
         poJSON.put("result", "success");
         return poJSON;
 
