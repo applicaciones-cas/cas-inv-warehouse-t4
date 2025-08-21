@@ -34,18 +34,15 @@ public class InventoryStockIssuancePrint {
                 + ",  IFNULL(Measure.sDescript,'') MeasureName"
                 + ",  IFNULL(InventoryType.sDescript,'') InventoryTypeName"
                 + ",  IFNULL(Variant.sDescript,'') VariantName"
-                + ",  InventoryStockRequestDetail.nQtyOnHnd nQtyOnHnd"
-                + ",  InventoryStockRequestDetail.nQuantity nQuantity"
-                + ",  InventoryStockRequestDetail.nApproved nApproved"
-                + ",  InventoryStockRequestDetail.nCancelld nCancelld"
+                + ",  InventoryTransferDetail.nQuantity nQuantity"
                 + "   FROM Inv_Transfer_Master InventoryTransferMaster"
                 + "     LEFT JOIN Inv_Transfer_Detail InventoryTransferDetail"
                 + "         ON InventoryTransferMaster.sTransNox = InventoryTransferDetail.sTransNox"
                 + "     LEFT JOIN Inventory Inventory"
-                + "         ON InventoryStockRequestDetail.sStockIDx = Inventory.sStockIDx"
+                + "         ON InventoryTransferDetail.sStockIDx = Inventory.sStockIDx"
                 + "     LEFT JOIN Inv_Serial InventorySerial"
                 + "         ON Inventory.sStockIDx = InventorySerial.sStockIDx "
-                + "             AND InventoryStockRequestDetail.sSerialID = InventorySerial.sSerialID "
+                + "             AND InventoryTransferDetail.sSerialID = InventorySerial.sSerialID "
                 + "     LEFT JOIN Category Category"
                 + "         ON Inventory.sCategCd1 = Category.sCategrCd"
                 + "     LEFT JOIN Category_Level2 Category_Level2"
@@ -66,7 +63,7 @@ public class InventoryStockIssuancePrint {
                 + "         ON Inventory.sInvTypCd = InventoryType.sInvTypCd"
                 + "     LEFT JOIN Model_Variant Variant"
                 + "         ON Inventory.sVrntIDxx = Variant.sVrntIDxx"
-                + "             ORDER BY InventoryStockRequestDetail.nEntryNox ASC";
+                + "             ORDER BY InventoryTransferDetail.nEntryNox ASC";
 
         return lsSQL;
     }

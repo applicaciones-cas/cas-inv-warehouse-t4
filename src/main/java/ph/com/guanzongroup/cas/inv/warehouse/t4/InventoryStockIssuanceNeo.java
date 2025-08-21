@@ -18,10 +18,8 @@ import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.client.model.Model_AP_Client_Master;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModels;
-import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
@@ -720,7 +718,30 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
         poJSON = new JSONObject();
 
-        poJSON = isEntryOkay(StockRequestStatus.CONFIRMED);
+        if (InventoryStockIssuanceStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already Processed.");
+            return poJSON;
+        }
+
+        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        if (InventoryStockIssuanceStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already cancelled.");
+            return poJSON;
+        }
+
+        if (InventoryStockIssuanceStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already voided.");
+            return poJSON;
+        }
+        poJSON = isEntryOkay(InventoryStockIssuanceStatus.CONFIRMED);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -761,14 +782,15 @@ public class InventoryStockIssuanceNeo extends Transaction {
             public void onReportPrint() {
                 System.out.println("Report printing...");
                 try {
-                    if (!isJSONSuccess(PrintTransaction(), "Print Record",
-                            "Initialize Record Print! ")) {
-                        return;
-
-                    }
-
-                    if (!isJSONSuccess(ProcessTransaction(), "Print Record",
-                            "Initialize Record Print! ")) {
+//                    if (!isJSONSuccess(PrintTransaction(), "Print Record",
+//                            "Initialize Record Print! ")) {
+//                        return;
+//
+//                    }
+                    if (getMaster().getTransactionStatus().equals(InventoryStockIssuanceStatus.OPEN)) {
+                        if (!isJSONSuccess(CloseTransaction(), "Print Record",
+                                "Initialize Close Transaction! ")) {
+                        }
                     }
 
                     poReportJasper.CloseReportUtil();
@@ -805,11 +827,13 @@ public class InventoryStockIssuanceNeo extends Transaction {
         poReportJasper.addParameter("TransactionNo", getMaster().getTransactionNo());
         poReportJasper.addParameter("TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
         poReportJasper.addParameter("Remarks", getMaster().getRemarks());
+        poReportJasper.addParameter("Destination", getMaster().BranchDestination().getBranchName());
+        poReportJasper.addParameter("Trucking", getMaster().TruckingCompany().getCompanyName());
         poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
 
-        poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
+//        poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
 
-        poReportJasper.setReportName("InventoryRequestApproval");
+        poReportJasper.setReportName("Inventory Issuance");
         poReportJasper.setJasperPath(InventoryStockIssuancePrint.getJasperReport(psIndustryCode));
 
         //process by ResultSet
@@ -836,120 +860,119 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
     }
 
-    private JSONObject PrintTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
-        poJSON = new JSONObject();
-
-        poJSON = OpenTransaction(getMaster().getTransactionNo());
-        if ("error".equals((String) poJSON.get("result"))) {
-            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
-            return poJSON;
-        }
-
-        if (getEditMode() != EditMode.READY) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No transacton was loaded.");
-            return poJSON;
-        }
-
-        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already Processed.");
-            return poJSON;
-        }
-
-        if (StockRequestStatus.CONFIRMED.equals((String) poMaster.getValue("cProcessd"))) {
-            poJSON.put("result", "success");
-            poJSON.put("message", "Transaction Printed successfully.");
-            return poJSON;
-        }
-        //validator
-        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
-        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
-
-        String lsSQL = "UPDATE "
-                + poMaster.getTable()
-                + " SET   cProcessd = " + SQLUtil.toSQL(StockRequestStatus.CONFIRMED)
-                + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
-
-        Long lnResult = poGRider.executeQuery(lsSQL,
-                poMaster.getTable(),
-                poGRider.getBranchCode(), "", "");
-        if (lnResult <= 0L) {
-            poGRider.rollbackTrans();
-
-            poJSON = new JSONObject();
-            poJSON.put("result", "error");
-            poJSON.put("message", "Error updating the transaction status.");
-            return poJSON;
-        }
-
-        poGRider.commitTrans();
-
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        poJSON.put("message", "Transaction Printed successfully.");
-
-        return poJSON;
-    }
-
-    public JSONObject ProcessTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
-        poJSON = new JSONObject();
-
-        if (getEditMode() != EditMode.READY) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Invalid Edit Mode");
-            return poJSON;
-        }
-
-        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-//            poJSON.put("message", "Transaction was already processed.");
-            return poJSON;
-        }
-
-        if (StockRequestStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-//            poJSON.put("message", "Transaction was already cancelled.");
-            return poJSON;
-        }
-
-        if (StockRequestStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-//            poJSON.put("message", "Transaction was already voided.");
-            return poJSON;
-        }
-
-        //validator
-        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
-        poGRider.beginTrans("UPDATE STATUS", "ProcessTransaction", SOURCE_CODE, getMaster().getTransactionNo());
-
-        poJSON = statusChange(poMaster.getTable(),
-                (String) poMaster.getValue("sTransNox"),
-                "ProcessTransaction",
-                StockRequestStatus.PROCESSED,
-                false, true);
-        if ("error".equals((String) poJSON.get("result"))) {
-            poGRider.rollbackTrans();
-            return poJSON;
-        }
-
-        poGRider.commitTrans();
-
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-//        poJSON.put("message", "Transaction processed successfully.");
-
-        return poJSON;
-    }
-
+//    private JSONObject PrintTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+//        poJSON = new JSONObject();
+//
+//        poJSON = OpenTransaction(getMaster().getTransactionNo());
+//        if ("error".equals((String) poJSON.get("result"))) {
+//            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+//            return poJSON;
+//        }
+//
+//        if (getEditMode() != EditMode.READY) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "No transacton was loaded.");
+//            return poJSON;
+//        }
+//
+//        if (InventoryStockIssuanceStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already Processed.");
+//            return poJSON;
+//        }
+//
+//        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already confirmed.");
+//            return poJSON;
+//        }
+//        //validator
+//        poJSON = isEntryOkay(InventoryStockIssuanceStatus.CONFIRMED);
+//        if ("error".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
+//
+//        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+//
+//        String lsSQL = "UPDATE "
+//                + poMaster.getTable()
+//                + " SET   cProcessd = " + SQLUtil.toSQL(InventoryStockIssuanceStatus.CONFIRMED)
+//                + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
+//
+//        Long lnResult = poGRider.executeQuery(lsSQL,
+//                poMaster.getTable(),
+//                poGRider.getBranchCode(), "", "");
+//        if (lnResult <= 0L) {
+//            poGRider.rollbackTrans();
+//
+//            poJSON = new JSONObject();
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Error updating the transaction status.");
+//            return poJSON;
+//        }
+//
+//        poGRider.commitTrans();
+//
+//        poJSON = new JSONObject();
+//        poJSON.put("result", "success");
+//        poJSON.put("message", "Transaction Printed successfully.");
+//
+//        return poJSON;
+//    }
+//
+//    public JSONObject ProcessTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+//        poJSON = new JSONObject();
+//
+//        if (getEditMode() != EditMode.READY) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Invalid Edit Mode");
+//            return poJSON;
+//        }
+//
+//        if (StockRequestStatus.PROCESSED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+////            poJSON.put("message", "Transaction was already processed.");
+//            return poJSON;
+//        }
+//
+//        if (StockRequestStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+////            poJSON.put("message", "Transaction was already cancelled.");
+//            return poJSON;
+//        }
+//
+//        if (StockRequestStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+////            poJSON.put("message", "Transaction was already voided.");
+//            return poJSON;
+//        }
+//
+//        //validator
+//        poJSON = isEntryOkay(StockRequestStatus.PROCESSED);
+//        if ("error".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
+//
+//        poGRider.beginTrans("UPDATE STATUS", "ProcessTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+//
+//        poJSON = statusChange(poMaster.getTable(),
+//                (String) poMaster.getValue("sTransNox"),
+//                "ProcessTransaction",
+//                StockRequestStatus.PROCESSED,
+//                false, true);
+//        if ("error".equals((String) poJSON.get("result"))) {
+//            poGRider.rollbackTrans();
+//            return poJSON;
+//        }
+//
+//        poGRider.commitTrans();
+//
+//        poJSON = new JSONObject();
+//        poJSON.put("result", "success");
+////        poJSON.put("message", "Transaction processed successfully.");
+//
+//        return poJSON;
+//    }
     private boolean isJSONSuccess(JSONObject loJSON, String module, String fsModule) {
         String result = (String) loJSON.get("result");
         if ("error".equals(result)) {

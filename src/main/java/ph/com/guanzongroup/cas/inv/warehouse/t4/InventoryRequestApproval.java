@@ -353,7 +353,7 @@ public class InventoryRequestApproval extends Transaction {
         } else {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
         }
-        poReportJasper.setReportName("InventoryRequestApproval");
+        poReportJasper.setReportName("Inventory Request Approval");
         poReportJasper.setJasperPath(getJasperReport());
 
         //process by ResultSet
