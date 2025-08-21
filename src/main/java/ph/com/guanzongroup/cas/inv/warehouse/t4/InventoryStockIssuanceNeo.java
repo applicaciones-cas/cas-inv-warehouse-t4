@@ -19,9 +19,7 @@ import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.inv.warehouse.status.StockRequestStatus;
-import org.guanzon.cas.parameter.Branch;
 import org.guanzon.cas.parameter.model.Model_Branch;
-import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuancePrint;
@@ -164,16 +162,20 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
     @Override
     public void initSQL() {
-        SQL_BROWSE = " SELECT "
-                + " c.sClustrID"
+        SQL_BROWSE = "SELECT"
+                + " a.sTransNox"
+                + ", a.dTransact"
+                + ", d.sBranchNm xBranchNm"
+                + ", e.sBranchNm xDestinat"
+                + ", c.sCompnyNm sCompnyNm"
                 + ", a.sBranchCd"
-                + ", a.sIndstCdx"
-                + ", a.sCategrCd"
-                + ", a.sTransNox"
-                + " FROM Inv_Stock_Request_Master a"
-                + "     LEFT JOIN Branch_Others b ON a.sBranchCD = b.sBranchCd"
-                + "     LEFT JOIN Branch_Cluster c ON b.sClustrID = c.sClustrID"
-                + "         WHERE a.cTranStat = " + SQLUtil.toSQL(0);
+                + ", a.sDestinat"
+                + " FROM Inv_Transfer_Master a "
+                + "     LEFT JOIN AP_Client_Master b ON a.sTruckIDx = b.sClientID"
+                + "     LEFT JOIN Client_Master c ON c.sClientID = c.sClientID"
+                + "     LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd"
+                + "     LEFT JOIN Branch e ON a.sDestinat = e.sBranchCd"
+                + "     WHERE a.cTranStat = " + SQLUtil.toSQL(0);
     }
 
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -605,12 +607,11 @@ public class InventoryStockIssuanceNeo extends Transaction {
     public JSONObject loadTransactionList()
             throws SQLException, GuanzonException, CloneNotSupportedException {
 
-        if (psCategorCD.isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Category is not set");
-            return poJSON;
-
-        }
+//        if (psIndustryCode.isEmpty()) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "I is not set");
+//            return poJSON;
+//        }
         paMaster.clear();
         initSQL();
         String lsSQL = SQL_BROWSE;
