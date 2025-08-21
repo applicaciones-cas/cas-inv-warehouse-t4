@@ -620,8 +620,8 @@ public class InventoryStockIssuanceNeo extends Transaction {
                 lsSQL,
                 value,
                 "ID»Client Name»Contact Person",
-                "sClientID»b.sCompnyNm»c.sCompnyNm",
-                "sClientID»b.sCompnyNm»c.sCompnyNm",
+                "sClientID»xClientNm»xCPerName",
+                "sClientID»IFNULL(b.sCompnyNm,'')»IFNULL(c.sCompnyNm,'')",
                 byCode ? 0 : 1);
 
         if (poJSON != null) {
