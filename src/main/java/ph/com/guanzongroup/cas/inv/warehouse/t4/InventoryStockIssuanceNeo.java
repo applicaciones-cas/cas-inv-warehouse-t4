@@ -185,7 +185,17 @@ public class InventoryStockIssuanceNeo extends Transaction {
     }
 
     public JSONObject NewTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
-        return newTransaction();
+        poJSON = new JSONObject();
+        poJSON = newTransaction();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        getMaster().setIndustryId(psIndustryCode);
+        getMaster().setCompanyID(psCompanyID);
+        getMaster().setCategoryId(psCategorCD);
+        getMaster().setBranchCode(poGRider.getBranchCode());
+        return poJSON;
     }
 
     public JSONObject SaveTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
@@ -204,11 +214,6 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
-        getMaster().setIndustryId(psIndustryCode);
-        getMaster().setCompanyID(psCompanyID);
-        getMaster().setCategoryId(psCategorCD);
-        getMaster().setBranchCode(poGRider.getBranchCode());
 
         //assign values needed
         poJSON.put("result", "success");
