@@ -184,7 +184,7 @@ public class Model_Inventory_Transfer_Master extends Model {
     }
 
     public Double getFreight() {
-        return (Double) getValue("nFreightx");
+        return Double.valueOf(getValue("nFreightx").toString());
     }
 
     //sReceived
@@ -229,7 +229,7 @@ public class Model_Inventory_Transfer_Master extends Model {
     }
 
     public Double getTransactionTotal() {
-        return (Double) getValue("nTranTotl");
+        return Double.valueOf(getValue("nTranTotl").toString());
     }
 
     //nDiscount
@@ -238,7 +238,7 @@ public class Model_Inventory_Transfer_Master extends Model {
     }
 
     public Double getDiscount() {
-        return (Double) getValue("nDiscount");
+        return Double.valueOf(getValue("nDiscount").toString());
     }
 
     //nEntryNox

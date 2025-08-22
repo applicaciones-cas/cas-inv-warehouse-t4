@@ -123,7 +123,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
     }
 
     public Double getQuantity() {
-        return (Double) getValue("nQuantity");
+        return Double.valueOf(getValue("nQuantity").toString());
     }
 
     //nInvCostx
@@ -132,7 +132,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
     }
 
     public Double getInventoryCost() {
-        return (Double) getValue("nInvCostx");
+        return Double.valueOf(getValue("nInvCostx").toString());
     }
 
     //nReceived
@@ -141,7 +141,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
     }
 
     public Double getReceivedQuantity() {
-        return (Double) getValue("nReceived");
+        return Double.valueOf(getValue("nReceived").toString());
     }
 
     //sRecvIDxx
