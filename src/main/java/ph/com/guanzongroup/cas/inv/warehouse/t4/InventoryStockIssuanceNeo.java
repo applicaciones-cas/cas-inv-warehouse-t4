@@ -423,9 +423,9 @@ public class InventoryStockIssuanceNeo extends Transaction {
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
-                    "Transaction No»Date»Schedule Date",
-                    "sTransNox»dTransact»dSchedule",
-                    "sTransNox»dTransact»dSchedule",
+                    "Transaction No»Destination»Date",
+                    "sTransNox»xDestinat»dTransact",
+                    "a.sTransNox»e.sBranchNm»a.dTransact",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
