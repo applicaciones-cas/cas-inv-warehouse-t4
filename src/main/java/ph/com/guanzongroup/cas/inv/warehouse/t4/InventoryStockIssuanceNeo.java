@@ -308,6 +308,59 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
         return poJSON;
     }
+    
+    public JSONObject PostTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (InventoryStockIssuanceStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already posted.");
+            return poJSON;
+        }
+
+        poJSON = UpdateTransaction();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        poJSON = SaveTransaction();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        
+        
+        //validator
+        poJSON = isEntryOkay(InventoryStockIssuanceStatus.POSTED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "PostTransaction",
+                InventoryStockIssuanceStatus.POSTED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction posted successfully.");
+
+        return poJSON;
+    }
 
     public JSONObject CancelTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
@@ -421,6 +474,41 @@ public class InventoryStockIssuanceNeo extends Transaction {
             String lsSQL = SQL_BROWSE;
 
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+            poJSON = ShowDialogFX.Search(poGRider,
+                    lsSQL,
+                    value,
+                    "Transaction No»Destination»Date",
+                    "sTransNox»xDestinat»dTransact",
+                    "a.sTransNox»e.sBranchNm»a.dTransact",
+                    byExact ? (byCode ? 0 : 1) : 2);
+
+            if (poJSON != null) {
+                return openTransaction((String) poJSON.get("sTransNox"));
+
+//            } else if ("error".equals((String) poJSON.get("result"))) {
+//                return poJSON;
+            } else {
+                poJSON = new JSONObject();
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record loaded.");
+                return poJSON;
+
+            }
+        } catch (CloneNotSupportedException | SQLException | GuanzonException ex) {
+            Logger.getLogger(InventoryStockIssuanceNeo.class
+                    .getName()).log(Level.SEVERE, null, ex);
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+
+    public JSONObject searchTransactionPosting(String value, boolean byCode, boolean byExact) {
+        try {
+            String lsSQL = SQL_BROWSE;
+
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode()));
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
@@ -671,6 +759,52 @@ public class InventoryStockIssuanceNeo extends Transaction {
     }
 
     public JSONObject loadTransactionList()
+            throws SQLException, GuanzonException, CloneNotSupportedException {
+
+//        if (psIndustryCode.isEmpty()) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "I is not set");
+//            return poJSON;
+//        }
+        paMaster.clear();
+        initSQL();
+        String lsSQL = SQL_BROWSE;
+
+        if (!psIndustryCode.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+        }
+        if (!psCategorCD.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
+        }
+
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        System.out.println("Load Transaction list query is " + lsSQL);
+
+        if (MiscUtil.RecordCount(loRS)
+                <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
+        }
+
+        while (loRS.next()) {
+            Model_Inventory_Transfer_Master loInventoryIssuance = new DeliveryIssuanceModels(poGRider).InventoryTransferMaster();
+            poJSON = loInventoryIssuance.openRecord(loRS.getString("sTransNox"));
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                paMaster.add((Model) loInventoryIssuance);
+            } else {
+                return poJSON;
+            }
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject loadTransactionListPosting()
             throws SQLException, GuanzonException, CloneNotSupportedException {
 
 //        if (psIndustryCode.isEmpty()) {
