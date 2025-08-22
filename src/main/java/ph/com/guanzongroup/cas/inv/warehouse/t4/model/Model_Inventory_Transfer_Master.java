@@ -41,9 +41,9 @@ public class Model_Inventory_Transfer_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateDouble("nFreightx", 0.0);
-            poEntity.updateDouble("nTranTotl", 0.0);
-            poEntity.updateDouble("nDiscount", 0.0);
+            poEntity.updateDouble("nFreightx", 0.00d);
+            poEntity.updateDouble("nTranTotl", 0.00d);
+            poEntity.updateDouble("nDiscount", 0.00d);
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateNull("dReceived");
             poEntity.updateNull("sApproved");

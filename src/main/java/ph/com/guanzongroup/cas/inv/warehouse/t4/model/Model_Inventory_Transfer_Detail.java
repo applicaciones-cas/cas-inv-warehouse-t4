@@ -40,9 +40,9 @@ public class Model_Inventory_Transfer_Detail extends Model {
             poEntity.updateNull("sStockIDx");
             poEntity.updateNull("sOrigIDxx");
             poEntity.updateNull("sOrderNox");
-            poEntity.updateDouble("nQuantity", 0.0);
-            poEntity.updateDouble("nInvCostx", 0.0);
-            poEntity.updateDouble("nReceived", 0.0);
+            poEntity.updateDouble("nQuantity", 0.00d);
+            poEntity.updateDouble("nInvCostx", 0.00d);
+            poEntity.updateDouble("nReceived", 0.00d);
             poEntity.updateNull("sOrderNox");
             poEntity.updateNull("sRecvIDxx");
             poEntity.updateNull("sRecvIDxx");
