@@ -215,7 +215,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
             return poJSON;
         }
         int lnDetailCount = 0;
-        
+
         //assign values needed
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             Model_Inventory_Transfer_Detail loDetail = (Model_Inventory_Transfer_Detail) paDetail.get(lnCtr);
@@ -229,7 +229,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
             }
         }
-        
+
         getMaster().setEntryNo(lnDetailCount);
 
         poJSON.put("result", "success");
@@ -420,6 +420,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         try {
             String lsSQL = SQL_BROWSE;
 
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
@@ -687,8 +688,10 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if (!psCategorCD.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
         }
+
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
-        System.out.println("Load Transaction list query is " +lsSQL);
+        System.out.println("Load Transaction list query is " + lsSQL);
 
         if (MiscUtil.RecordCount(loRS)
                 <= 0) {
