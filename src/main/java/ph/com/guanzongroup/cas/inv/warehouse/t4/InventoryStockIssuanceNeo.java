@@ -174,7 +174,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
                 + ", a.sDestinat"
                 + " FROM Inv_Transfer_Master a "
                 + "     LEFT JOIN AP_Client_Master b ON a.sTruckIDx = b.sClientID"
-                + "     LEFT JOIN Client_Master c ON c.sClientID = c.sClientID"
+                + "     LEFT JOIN Client_Master c ON b.sClientID = c.sClientID"
                 + "     LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd"
                 + "     LEFT JOIN Branch e ON a.sDestinat = e.sBranchCd"
                 + "     WHERE a.cTranStat = " + SQLUtil.toSQL(0);
@@ -688,6 +688,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
         }
         ResultSet loRS = poGRider.executeQuery(lsSQL);
+        System.out.println("Load Transaction list query is " +lsSQL);
 
         if (MiscUtil.RecordCount(loRS)
                 <= 0) {
