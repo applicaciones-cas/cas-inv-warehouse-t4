@@ -113,12 +113,12 @@ public class InventoryStockIssuance_MC implements GValidator {
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-        if (poMaster.getCategoryId()
-                == null || poMaster.getCategoryId().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Category is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getCategoryId()
+//                == null || poMaster.getCategoryId().isEmpty()) { 
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Category is not set.");
+//            return poJSON;
+//        }
         if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Branch is not set.");

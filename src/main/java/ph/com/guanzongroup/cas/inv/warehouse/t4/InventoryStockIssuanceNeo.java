@@ -823,7 +823,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
         }
 
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode()));
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         System.out.println("Load Transaction list query is " + lsSQL);
 
