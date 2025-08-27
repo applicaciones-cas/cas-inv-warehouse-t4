@@ -40,6 +40,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
     private String psIndustryCode = "";
     private String psCompanyID = "";
     private String psCategorCD = "";
+    private String psApprovalUser = "";
     private List<Model> paMaster;
     public Model poDetailExpiration;
     public List<Model> paDetailExpiration;
@@ -176,8 +177,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
                 + "     LEFT JOIN AP_Client_Master b ON a.sTruckIDx = b.sClientID"
                 + "     LEFT JOIN Client_Master c ON b.sClientID = c.sClientID"
                 + "     LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd"
-                + "     LEFT JOIN Branch e ON a.sDestinat = e.sBranchCd"
-                + "     WHERE a.cTranStat = " + SQLUtil.toSQL(0);
+                + "     LEFT JOIN Branch e ON a.sDestinat = e.sBranchCd";
     }
 
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -207,7 +207,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
     }
 
     @Override
-    protected JSONObject willSave() {
+    protected JSONObject willSave() throws SQLException {
         poJSON = new JSONObject();
 
         poJSON = isEntryOkay(InventoryStockIssuanceStatus.OPEN);
@@ -231,6 +231,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         }
 
         getMaster().setEntryNo(lnDetailCount);
+        pdModified = poGRider.getServerDate();
 
         poJSON.put("result", "success");
         return poJSON;
@@ -239,6 +240,8 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
     @Override
     protected JSONObject isEntryOkay(String status) {
+        psApprovalUser = "";
+
         poJSON = new JSONObject();
         GValidator loValidator = InventoryIssuanceValidatorFactory.make(getMaster().getIndustryId());
 
@@ -260,10 +263,14 @@ public class InventoryStockIssuanceNeo extends Transaction {
                         poJSON.put("message", "User is not an authorized approving officer.");
                         return poJSON;
                     }
+                    psApprovalUser = poJSON.get("sUserIDxx") != null
+                            ? poJSON.get("sUserIDxx").toString()
+                            : poGRider.getUserID();
                 }
+            } else {
+                psApprovalUser = poGRider.getUserID();
             }
         }
-
         return poJSON;
     }
 
@@ -308,13 +315,14 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
         return poJSON;
     }
-    
+
     public JSONObject PostTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
-        if (getEditMode() != EditMode.READY) {
+        if (getEditMode() != EditMode.UPDATE
+                && getEditMode() != EditMode.READY) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No transacton was loaded.");
+            poJSON.put("message", "Invalid Edit Mode.");
             return poJSON;
         }
 
@@ -324,19 +332,16 @@ public class InventoryStockIssuanceNeo extends Transaction {
             return poJSON;
         }
 
-        poJSON = UpdateTransaction();
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-        
-        poJSON = SaveTransaction();
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-        
-        
         //validator
         poJSON = isEntryOkay(InventoryStockIssuanceStatus.POSTED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        poMaster.setValue("sReceived", poGRider.Encrypt(poGRider.getUserID()));
+        if (!psApprovalUser.isEmpty()) {
+            poMaster.setValue("sApproved", poGRider.Encrypt(psApprovalUser));
+        }
+        poJSON = SaveTransaction();
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -474,6 +479,21 @@ public class InventoryStockIssuanceNeo extends Transaction {
             String lsSQL = SQL_BROWSE;
 
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+
+            String lsCondition = "";
+            if (psTranStat != null) {
+                if (this.psTranStat.length() > 1) {
+                    for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                        lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                    }
+                    lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+                } else {
+                    lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+                }
+                lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+            }
+
+            System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
@@ -507,19 +527,36 @@ public class InventoryStockIssuanceNeo extends Transaction {
     public JSONObject searchTransactionPosting(String value, boolean byCode, boolean byExact) {
         try {
             String lsSQL = SQL_BROWSE;
-
+            String lsCondition = "";
+            if (psTranStat != null) {
+                if (this.psTranStat.length() > 1) {
+                    for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                        lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                    }
+                    lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+                } else {
+                    lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+                }
+                lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+            }
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+
+            System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
-                    "Transaction No»Destination»Date",
-                    "sTransNox»xDestinat»dTransact",
-                    "a.sTransNox»e.sBranchNm»a.dTransact",
+                    "Transaction No»Branch Name»Date",
+                    "sTransNox»xBranchNm»dTransact",
+                    "a.sTransNox»d.sBranchNm»a.dTransact",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
-                return openTransaction((String) poJSON.get("sTransNox"));
+                poJSON = openTransaction((String) poJSON.get("sTransNox"));
 
+                if (!"error".equals((String) poJSON.get("result"))) {
+                    return UpdateTransaction();
+                }
+                return poJSON;
 //            } else if ("error".equals((String) poJSON.get("result"))) {
 //                return poJSON;
             } else {
@@ -545,7 +582,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if (!psIndustryCode.isEmpty()) {
             loBrowse.setIndustry(psIndustryCode);
         }
-        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setCategoryFilters(psCategorCD);
         loBrowse.setBranch(poGRider.getBranchCode());
 
         poJSON = new JSONObject();
@@ -588,7 +625,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if (!psIndustryCode.isEmpty()) {
             loBrowse.setIndustry(psIndustryCode);
         }
-        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setCategoryFilters(psCategorCD);
         loBrowse.setBranch(poGRider.getBranchCode());
 
         poJSON = new JSONObject();
@@ -598,19 +635,21 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
                 Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
-                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
-                    if (!loExisting.getSerialID().isEmpty()) {
-                        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
-                            if (loExisting.getSerialID() != loBrowse.getModelInventorySerial().getSerialId()) {
-                                continue;
+                if (loExisting.getStockId() != null) {
+                    if (loExisting.getStockId().equals(loBrowse.getModelInventory().getStockId())) {
+                        if (!loExisting.getSerialID().isEmpty()) {
+                            if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                                if (!loExisting.getSerialID().equals(loBrowse.getModelInventorySerial().getSerialId())) {
+                                    continue;
+                                }
                             }
                         }
-                    }
-                    poJSON = new JSONObject();
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Selected Inventory is already exist!");
-                    return poJSON;
+                        poJSON = new JSONObject();
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Selected Inventory is already exist!");
+                        return poJSON;
 
+                    }
                 }
             }
             getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
@@ -631,7 +670,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if (!psIndustryCode.isEmpty()) {
             loBrowse.setIndustry(psIndustryCode);
         }
-        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setCategoryFilters(psCategorCD);
         loBrowse.setBranch(poGRider.getBranchCode());
 
         poJSON = new JSONObject();
@@ -675,7 +714,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if (!psIndustryCode.isEmpty()) {
             loBrowse.setIndustry(psIndustryCode);
         }
-        loBrowse.setCategoryFilters(getCategory());
+        loBrowse.setCategoryFilters(psCategorCD);
 
         poJSON = new JSONObject();
 
@@ -758,7 +797,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
     }
 
-    public JSONObject loadTransactionList()
+    public JSONObject loadTransactionList(String value, String column)
             throws SQLException, GuanzonException, CloneNotSupportedException {
 
 //        if (psIndustryCode.isEmpty()) {
@@ -769,6 +808,23 @@ public class InventoryStockIssuanceNeo extends Transaction {
         paMaster.clear();
         initSQL();
         String lsSQL = SQL_BROWSE;
+        String lsCondition = "";
+        if (psTranStat != null) {
+            if (this.psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                    lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                }
+                lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+            } else {
+                lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+            }
+            lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+        }
+
+        if (value != null && !value.isEmpty()) {
+            //a.sTransNox/e.sBranchNm #Posting/d.sBranchNm #Confirmation
+            lsSQL = MiscUtil.addCondition(lsSQL, column + " LIKE " + SQLUtil.toSQL(value + "%"));
+        }
 
         if (!psIndustryCode.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
@@ -804,7 +860,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
         return poJSON;
     }
 
-    public JSONObject loadTransactionListPosting()
+    public JSONObject loadTransactionListPosting(String value, String column)
             throws SQLException, GuanzonException, CloneNotSupportedException {
 
 //        if (psIndustryCode.isEmpty()) {
@@ -815,6 +871,23 @@ public class InventoryStockIssuanceNeo extends Transaction {
         paMaster.clear();
         initSQL();
         String lsSQL = SQL_BROWSE;
+
+        if (value != null && !value.isEmpty()) {
+            //sTransNox/dTransact/dSchedule
+            lsSQL = MiscUtil.addCondition(lsSQL, column + " LIKE " + SQLUtil.toSQL(value + "%"));
+        }
+        String lsCondition = "";
+        if (psTranStat != null) {
+            if (this.psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                    lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                }
+                lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+            } else {
+                lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+            }
+            lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+        }
 
         if (!psIndustryCode.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));

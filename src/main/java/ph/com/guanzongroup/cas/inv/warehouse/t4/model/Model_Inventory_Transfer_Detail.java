@@ -162,6 +162,15 @@ public class Model_Inventory_Transfer_Detail extends Model {
         return (String) getValue("sSerialID");
     }
 
+    //sNotesxxx
+    public JSONObject setNote(String notereceiver) {
+        return setValue("sNotesxxx", notereceiver);
+    }
+
+    public String getNote() {
+        return (String) getValue("sNotesxxx");
+    }
+
     //sModified
     public JSONObject setModifyingId(String modifyingId) {
         return setValue("sModified", modifyingId);
@@ -221,7 +230,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
 
     public Model_Inv_Serial InventorySerial() throws SQLException, GuanzonException {
         if (!"".equals(getValue("sSerialID"))) {
-            if (this.poInventorySerial.getEditMode() == 1 && this.poInventory
+            if (this.poInventorySerial.getEditMode() == 1 && this.poInventorySerial
                     .getStockId().equals(getValue("sSerialID"))) {
                 return this.poInventorySerial;
             }

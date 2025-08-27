@@ -1,6 +1,8 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4.model;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -50,6 +52,7 @@ public class Model_Inventory_Transfer_Master extends Model {
             poEntity.updateNull("sApprvCde");
             poEntity.updateNull("sOrderNox");
             poEntity.updateString("cStockNew", "1");
+            poEntity.updateString("cDelivrTp", "0");
             poEntity.updateObject("dModified", poGRider.getServerDate());
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
@@ -95,6 +98,7 @@ public class Model_Inventory_Transfer_Master extends Model {
     //nEntryNox
     //sOrderNox
     //cStockNew
+    //cDelivrTp
     //cTranStat
 
     //sTransNox
@@ -197,8 +201,8 @@ public class Model_Inventory_Transfer_Master extends Model {
     }
 
     //dReceived
-    public JSONObject setReceivedDate(Date receivedDate) {
-        return setValue("dReceived", receivedDate);
+    public JSONObject setReceivedDate(LocalDateTime  receivedDate) {
+        return setValue("dReceived", Timestamp.valueOf(receivedDate));
     }
 
     public Date getReceivedDate() {
@@ -257,6 +261,24 @@ public class Model_Inventory_Transfer_Master extends Model {
 
     public String getOrderNo() {
         return (String) getValue("sOrderNox");
+    }
+
+    //cStockNew
+    public JSONObject setStockNew(String stockNew) {
+        return setValue("cStockNew", stockNew);
+    }
+
+    public String getStockNew() {
+        return (String) getValue("cStockNew");
+    }
+
+    //cDelivrTp
+    public JSONObject setDeliveryType(String orderNo) {
+        return setValue("cDelivrTp", orderNo);
+    }
+
+    public String getDeliveryType() {
+        return (String) getValue("cDelivrTp");
     }
 
     //cTranStat

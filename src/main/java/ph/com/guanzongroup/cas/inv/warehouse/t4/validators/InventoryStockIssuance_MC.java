@@ -149,6 +149,16 @@ public class InventoryStockIssuance_MC implements GValidator {
                     poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
                     return poJSON;
                 }
+                if (paDetail.get(lnCtr).getSerialID() != null
+                        && !paDetail.get(lnCtr).getStockId().isEmpty()) {
+
+                    if (paDetail.get(lnCtr).getQuantity() == null
+                            || paDetail.get(lnCtr).getQuantity() < 1) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Quantity for serialize cannot be divided. Row = " + (lnCtr + 1));
+                        return poJSON;
+                    }
+                }
             }
         }
 
@@ -218,6 +228,41 @@ public class InventoryStockIssuance_MC implements GValidator {
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }
+
+        if (poMaster.getReceivedDate() == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid Received Transaction Date.");
+            return poJSON;
+        }
+
+        //validate date
+        if (poMaster.getReceivedDate().before(poMaster.getTransactionDate())) {
+
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction Date is greater than received Date.");
+            return poJSON;
+        }
+        int lnDetailCount = 0;
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getStockId() != null
+                    && !paDetail.get(lnCtr).getStockId().isEmpty()) {
+
+                lnDetailCount++;
+                if (paDetail.get(lnCtr).getQuantity() == null
+                        || paDetail.get(lnCtr).getReceivedQuantity() <= 0) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
+                    return poJSON;
+                }
+            }
+        }
+
+        if (lnDetailCount <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Detail is not set.");
+            return poJSON;
+        }
+
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
