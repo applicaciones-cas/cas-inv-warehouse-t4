@@ -375,12 +375,12 @@ public class InventoryStockIssuanceNeo extends Transaction {
             poJSON.put("message", "Invalid Edit Mode");
             return poJSON;
         }
-
-        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already confirmed.");
-            return poJSON;
-        }
+//
+//        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already confirmed.");
+//            return poJSON;
+//        }
 
         if (InventoryStockIssuanceStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
@@ -492,6 +492,9 @@ public class InventoryStockIssuanceNeo extends Transaction {
                 }
                 lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
             }
+            if (!psCategorCD.isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, " a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
+            }
 
             System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
@@ -541,6 +544,9 @@ public class InventoryStockIssuanceNeo extends Transaction {
             }
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode()));
 
+            if (!psCategorCD.isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, " a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
+            }
             System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
@@ -592,19 +598,21 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
                 Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
-                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
-                    if (!loExisting.getSerialID().isEmpty()) {
-                        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
-                            if (loExisting.getSerialID() != loBrowse.getModelInventorySerial().getSerialId()) {
-                                continue;
+                if (loExisting.getStockId() != null) {
+                    if (loExisting.getStockId().equals(loBrowse.getModelInventory().getStockId())) {
+                        if (!loExisting.getSerialID().isEmpty()) {
+                            if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                                if (!loExisting.getSerialID().equals(loBrowse.getModelInventorySerial().getSerialId())) {
+                                    continue;
+                                }
                             }
                         }
-                    }
-                    poJSON = new JSONObject();
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Selected Inventory is already exist!");
-                    return poJSON;
+                        poJSON = new JSONObject();
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Selected Inventory is already exist!");
+                        return poJSON;
 
+                    }
                 }
             }
             getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
@@ -680,19 +688,21 @@ public class InventoryStockIssuanceNeo extends Transaction {
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
                 Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
-                if (loExisting.getStockId() == loBrowse.getModelInventory().getStockId()) {
-                    if (!loExisting.getSerialID().isEmpty()) {
-                        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
-                            if (loExisting.getSerialID() != loBrowse.getModelInventorySerial().getSerialId()) {
-                                continue;
+                if (loExisting.getStockId() != null) {
+                    if (loExisting.getStockId().equals(loBrowse.getModelInventory().getStockId())) {
+                        if (!loExisting.getSerialID().isEmpty()) {
+                            if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                                if (!loExisting.getSerialID().equals(loBrowse.getModelInventorySerial().getSerialId())) {
+                                    continue;
+                                }
                             }
                         }
-                    }
-                    poJSON = new JSONObject();
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Selected Inventory is already exist!");
-                    return poJSON;
+                        poJSON = new JSONObject();
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Selected Inventory is already exist!");
+                        return poJSON;
 
+                    }
                 }
             }
         }
@@ -733,8 +743,9 @@ public class InventoryStockIssuanceNeo extends Transaction {
         Model_Branch loBrowse = new ParamModels(poGRider).Branch();
 
         String lsSQL = "SELECT sBranchCd, sBranchNm FROM Branch";
-        lsSQL = MiscUtil.addCondition(lsSQL, "sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
-
+        if (!psIndustryCode.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+        }
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
                 value,
@@ -962,12 +973,12 @@ public class InventoryStockIssuanceNeo extends Transaction {
             poJSON.put("message", "Transaction was already Processed.");
             return poJSON;
         }
-
-        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already confirmed.");
-            return poJSON;
-        }
+//
+//        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already confirmed.");
+//            return poJSON;
+//        }
 
         if (InventoryStockIssuanceStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
@@ -1076,7 +1087,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
         //process by ResultSet
         String lsSQL = InventoryStockIssuancePrint.PrintRecordQuery();
-        lsSQL = MiscUtil.addCondition(lsSQL, "InventoryStockRequestMaster.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
+        lsSQL = MiscUtil.addCondition(lsSQL, "InventoryTransferMaster.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
 
         poReportJasper.setSQLReport(lsSQL);
         System.out.println("Print Data Query :" + lsSQL);
