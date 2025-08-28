@@ -13,11 +13,8 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
-import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
-import org.guanzon.cas.parameter.model.Model_Category;
-import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
@@ -147,7 +144,22 @@ public class DeliverySchedule extends Transaction {
     public JSONObject searchTransaction(String value, boolean byCode, boolean byExact) {
         try {
             String lsSQL = SQL_BROWSE;
+            String lsCondition = "";
+            if (psTranStat != null) {
+                if (this.psTranStat.length() > 1) {
+                    for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                        lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                    }
+                    lsCondition = "cTranStat IN (" + lsCondition.substring(2) + ")";
+                } else {
+                    lsCondition = "cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+                }
+                lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+            }
 
+            if (!psCategorCD.isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, "sCategrCd = " + SQLUtil.toSQL(psCategorCD));
+            }
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
@@ -256,16 +268,6 @@ public class DeliverySchedule extends Transaction {
         getMaster().setCompanyID(psCompanyID);
         getMaster().setCategoryId(psCategorCD);
         getMaster().setBranchCode(poGRider.getBranchCode());
-
-        if (!psIndustryCode.isEmpty()) {
-            if (psCategorCD.isEmpty()) {
-                try {
-                    getCategory();
-                } catch (SQLException | GuanzonException ex) {
-                    Logger.getLogger(DeliverySchedule.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        }
 
         pnEditMode = EditMode.ADDNEW;
 
@@ -387,6 +389,11 @@ public class DeliverySchedule extends Transaction {
 
     public JSONObject UpdateTransaction() {
         poJSON = new JSONObject();
+        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
 
         poJSON = updateTransaction();
         if ("success".equals((String) poJSON.get("result"))) {
@@ -480,18 +487,16 @@ public class DeliverySchedule extends Transaction {
             return poJSON;
         }
 
-        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already confirmed.");
-            return poJSON;
-        }
-
-        if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already cancelled.");
-            return poJSON;
-        }
-
+//        if (DeliveryScheduleStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already confirmed.");
+//            return poJSON;
+//        }
+//        if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already cancelled.");
+//            return poJSON;
+//        }
         if (DeliveryScheduleStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already voided.");
@@ -539,12 +544,11 @@ public class DeliverySchedule extends Transaction {
 //            poJSON.put("message", "Transaction was already confirmed.");
 //            return poJSON;
 //        }
-        if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already cancelled.");
-            return poJSON;
-        }
-
+//        if (DeliveryScheduleStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Transaction was already cancelled.");
+//            return poJSON;
+//        }
         if (DeliveryScheduleStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already voided.");
@@ -582,28 +586,30 @@ public class DeliverySchedule extends Transaction {
         poJSON = new JSONObject();
         BranchCluster loSubClass = new DeliveryParamController(poGRider, logwrapr).BranchCluster();
 
-        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
+//        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
+        if (!psIndustryCode.isEmpty()) {
+            loSubClass.getModel().setIndustryCode(psIndustryCode);
         }
-
-        loSubClass.getModel().setIndustryCode(psIndustryCode);
-
         poJSON = loSubClass.searchRecordbyIndustry(value, byCode);
 
         System.out.println("result " + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
             for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
-                if (((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting)).getClusterID()
-                        == loSubClass.getModel().getClusterID()
-                        && loSubClass.getModel().getClusterID() != null
-                        && !loSubClass.getModel().getClusterID().isEmpty()) {
-                    poJSON = new JSONObject();
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Selected Cluster ID is already exist!");
-                    return poJSON;
+                Model_Delivery_Schedule_Detail loExisting = ((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting));
+                if (loExisting.getClusterID() != null) {
+                    if (loExisting.getClusterID().equals(loSubClass.getModel().getClusterID())
+                            && loSubClass.getModel().getClusterID() != null
+                            && !loSubClass.getModel().getClusterID().isEmpty()) {
+                        poJSON = new JSONObject();
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Selected Cluster ID is already exist!");
+                        return poJSON;
 
+                    }
                 }
 
             }
@@ -619,6 +625,18 @@ public class DeliverySchedule extends Transaction {
 
         paMaster.clear();
         String lsSQL = SQL_BROWSE;
+        String lsCondition = "";
+        if (psTranStat != null) {
+            if (this.psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                    lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                }
+                lsCondition = "cTranStat IN (" + lsCondition.substring(2) + ")";
+            } else {
+                lsCondition = "cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+            }
+            lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+        }
         if (value != null && !value.isEmpty()) {
             //sTransNox/dTransact/dSchedule
             lsSQL = MiscUtil.addCondition(lsSQL, column + "= " + SQLUtil.toSQL(value));
@@ -653,49 +671,92 @@ public class DeliverySchedule extends Transaction {
         return poJSON;
     }
 
-    public JSONObject getCategory() throws SQLException, GuanzonException {
-        if (!"".equals(psIndustryCode)) {
+    public JSONObject PostTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
 
-            String lsSQL = "SELECT "
-                    + " sCategrCd"
-                    + ", sDescript"
-                    + ", sIndstCdx"
-                    + ", sInvTypCd"
-                    + ", cRecdStat "
-                    + " FROM Category "
-                    + "  WHERE cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
-                    + " AND sIndstCdx = " + SQLUtil.toSQL(psIndustryCode);
-
-            ResultSet loRS = poGRider.executeQuery(lsSQL);
-
-            if (MiscUtil.RecordCount(loRS)
-                    <= 0) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "No record found.");
-                return poJSON;
-            }
-            loRS.beforeFirst();
-            if (loRS.next()) {
-                Model_Category loCategory = new ParamModels(poGRider).Category();
-                poJSON = loCategory.openRecord(loRS.getString("sCategrCd"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    psCategorCD = loRS.getString("sCategrCd");
-                    getMaster().setCategoryId(psCategorCD);
-                    return poJSON;
-                } else {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "No record found.");
-                    return poJSON;
-                }
-            }
-        } else {
-            //General
-            psCategorCD = "0007";
-
+        if (getEditMode() != EditMode.UPDATE
+                && getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid Edit Mode.");
+            return poJSON;
         }
-        poJSON.put("result", "success");
-        poJSON.put("message", "Industry is General");
-        return poJSON;
 
+        if (DeliveryScheduleStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already posted.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(DeliveryScheduleStatus.POSTED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "PostTransaction",
+                DeliveryScheduleStatus.POSTED,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction posted successfully.");
+
+        return poJSON;
     }
+
+//    public JSONObject getCategory() throws SQLException, GuanzonException {
+//        if (!"".equals(psIndustryCode)) {
+//
+//            String lsSQL = "SELECT "
+//                    + " sCategrCd"
+//                    + ", sDescript"
+//                    + ", sIndstCdx"
+//                    + ", sInvTypCd"
+//                    + ", cRecdStat "
+//                    + " FROM Category "
+//                    + "  WHERE cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE)
+//                    + " AND sIndstCdx = " + SQLUtil.toSQL(psIndustryCode);
+//
+//            ResultSet loRS = poGRider.executeQuery(lsSQL);
+//
+//            if (MiscUtil.RecordCount(loRS)
+//                    <= 0) {
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "No record found.");
+//                return poJSON;
+//            }
+//            loRS.beforeFirst();
+//            if (loRS.next()) {
+//                Model_Category loCategory = new ParamModels(poGRider).Category();
+//                poJSON = loCategory.openRecord(loRS.getString("sCategrCd"));
+//                if ("success".equals((String) poJSON.get("result"))) {
+//                    psCategorCD = loRS.getString("sCategrCd");
+//                    getMaster().setCategoryId(psCategorCD);
+//                    return poJSON;
+//                } else {
+//                    poJSON.put("result", "error");
+//                    poJSON.put("message", "No record found.");
+//                    return poJSON;
+//                }
+//            }
+//        } else {
+//            //General
+//            psCategorCD = "0007";
+//
+//        }
+//        poJSON.put("result", "success");
+//        poJSON.put("message", "Industry is General");
+//        return poJSON;
+//
+//    }
 }
