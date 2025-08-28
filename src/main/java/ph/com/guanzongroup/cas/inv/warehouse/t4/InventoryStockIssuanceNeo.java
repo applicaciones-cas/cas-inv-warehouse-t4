@@ -203,6 +203,13 @@ public class InventoryStockIssuanceNeo extends Transaction {
     }
 
     public JSONObject UpdateTransaction() {
+        poJSON = new JSONObject();
+        if (InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
         return updateTransaction();
     }
 
