@@ -13,6 +13,7 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
@@ -585,7 +586,7 @@ public class DeliverySchedule extends Transaction {
     public JSONObject searchClusterBranch(int row, String value, boolean byCode) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         BranchCluster loSubClass = new DeliveryParamController(poGRider, logwrapr).BranchCluster();
-
+        loSubClass.setRecordStatus(RecordStatus.ACTIVE);
 //        if (getMaster().getIndustryId() == null || "".equals(getMaster().getIndustryId())) {
 //            poJSON.put("result", "error");
 //            poJSON.put("message", "Industry is not set.");

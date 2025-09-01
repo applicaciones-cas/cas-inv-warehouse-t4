@@ -6,13 +6,18 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.cas.client.model.Model_Client_Master;
+import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.model.Model_TownCity;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
 
 /**
  *
@@ -25,6 +30,11 @@ public class Model_Cluster_Delivery_Master extends Model {
     Model_Company poCompany;
     Model_Branch poBranch;
     Model_Category poCategory;
+    Model_Client_Master poClient;
+    Model_Client_Master poClient01;
+    Model_Client_Master poClient02;
+    Model_Branch_Cluster poBranchCluster;
+    Model_TownCity poTownCity;
 
     @Override
     public void initialize() {
@@ -35,38 +45,19 @@ public class Model_Cluster_Delivery_Master extends Model {
             poEntity.moveToInsertRow();
 
             MiscUtil.initRowSet(poEntity);
-
-            //sBranchCd*
-            //sCategrCd
-            //dTransact*
-            //sSerialID*
-            //sDriverID*
-            //sEmploy01*
-            //sEmploy02
-            //sClustrID
-            //sTownIDxx
-            //dDepartre
-            //dArrivalx
-            //nEntryNox
-            //sRemarksx
-            //sReferNox
-            //cCancelld
-            //dCancelld
-            //cTranStat
             poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateObject("nFreightx", 0.0);
-            poEntity.updateObject("nTranTotl", 0.0);
-            poEntity.updateObject("nDiscount", 0.0);
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateNull("sSerialID");
             poEntity.updateNull("sDriverID");
             poEntity.updateNull("sApprvCde");
             poEntity.updateNull("sEmploy01");
             poEntity.updateNull("sEmploy02");
-            poEntity.updateNull("sTownIDxx");
+            poEntity.updateNull("sClustrID");
             poEntity.updateNull("sTownIDxx");
             poEntity.updateNull("dDepartre");
+            poEntity.updateNull("dArrivalx");
+            poEntity.updateNull("sReferNox");
             poEntity.updateNull("dCancelld");
             poEntity.updateString("cCancelld", "0");
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
@@ -76,6 +67,11 @@ public class Model_Cluster_Delivery_Master extends Model {
             this.poCompany = (new ParamModels(this.poGRider)).Company();
             this.poIndustry = (new ParamModels(this.poGRider)).Industry();
             this.poCategory = (new ParamModels(this.poGRider)).Category();
+            this.poClient = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poClient01 = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poClient02 = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poBranchCluster = (new DeliveryParamModels(poGRider)).BranchCluster();
+            this.poTownCity = (new ParamModels(this.poGRider)).TownCity();
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -205,11 +201,11 @@ public class Model_Cluster_Delivery_Master extends Model {
     }
 
     //sClustrID
-    public JSONObject setClustrID(String clustrID) {
+    public JSONObject setClusterID(String clustrID) {
         return setValue("sClustrID", clustrID);
     }
 
-    public String getClustrID() {
+    public String getClusterID() {
         return (String) getValue("sClustrID");
     }
 
@@ -383,6 +379,93 @@ public class Model_Cluster_Delivery_Master extends Model {
         }
         this.poIndustry.initialize();
         return this.poIndustry;
+    }
+
+    public Model_Client_Master CompanyDriver() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sDriverID"))) {
+            if (this.poClient.getEditMode() == 1 && this.poClient
+                    .getClientId().equals(getValue("sDriverID"))) {
+                return this.poClient;
+            }
+            this.poJSON = this.poClient.openRecord((String) getValue("sDriverID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poClient;
+            }
+            this.poClient.initialize();
+            return this.poClient;
+        }
+        this.poClient.initialize();
+        return this.poClient;
+    }
+
+    public Model_Client_Master CompanyEmployee01() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sEmploy01"))) {
+            if (this.poClient01.getEditMode() == 1 && this.poClient01
+                    .getClientId().equals(getValue("sEmploy01"))) {
+                return this.poClient01;
+            }
+            this.poJSON = this.poClient01.openRecord((String) getValue("sEmploy01"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poClient01;
+            }
+            this.poClient01.initialize();
+            return this.poClient01;
+        }
+        this.poClient01.initialize();
+        return this.poClient01;
+    }
+
+    public Model_Client_Master CompanyEmployee02() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sEmploy02"))) {
+            if (this.poClient02.getEditMode() == 1 && this.poClient02
+                    .getClientId().equals(getValue("sEmploy02"))) {
+                return this.poClient02;
+            }
+            this.poJSON = this.poClient02.openRecord((String) getValue("sEmploy02"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poClient02;
+            }
+            this.poClient02.initialize();
+            return this.poClient02;
+        }
+        this.poClient02.initialize();
+        return this.poClient02;
+    }
+
+    public Model_Branch_Cluster BranchCluster() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sClustrID"))) {
+            if (this.poBranchCluster.getEditMode() == 1 && this.poBranchCluster
+                    .getClusterID().equals(getValue("sClustrID"))) {
+                return this.poBranchCluster;
+            }
+            this.poJSON = this.poBranchCluster.openRecord((String) getValue("sClustrID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poBranchCluster;
+            }
+            this.poBranchCluster.initialize();
+            return this.poBranchCluster;
+        }
+        poBranchCluster.initialize();
+        return this.poBranchCluster;
+
+    }
+
+    public Model_TownCity TownCity() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sTownIDxx"))) {
+            if (this.poTownCity.getEditMode() == 1 && this.poTownCity
+                    .getTownId().equals(getValue("sTownIDxx"))) {
+                return this.poTownCity;
+            }
+            this.poJSON = this.poTownCity.openRecord((String) getValue("sTownIDxx"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poTownCity;
+            }
+            this.poTownCity.initialize();
+            return this.poTownCity;
+        }
+        poTownCity.initialize();
+        return this.poTownCity;
+
     }
 
 }
