@@ -80,7 +80,7 @@ public class InventoryRequestApproval extends Transaction {
             return null;
         }
 
-        if (entryNo <= 0 || entryNo > paDetail.size() ) {
+        if (entryNo <= 0 || entryNo > paDetail.size()) {
             return null;
         }
 
@@ -144,7 +144,6 @@ public class InventoryRequestApproval extends Transaction {
         }
 
         //assign values needed
-        
         poJSON.put("result", "success");
         return poJSON;
 
@@ -349,12 +348,12 @@ public class InventoryRequestApproval extends Transaction {
         poReportJasper.addParameter("TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
         poReportJasper.addParameter("Remarks", getMaster().getRemarks());
         poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
-        if (!"1".equals(getMaster().getProcessed()) && !StockRequestStatus.PROCESSED.equals(getMaster().getTransactionStatus())) {
+        if ("1".equals(getMaster().getProcessed()) && !StockRequestStatus.PROCESSED.equals(getMaster().getTransactionStatus())) {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approvedreprint.png");
         } else {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\approved.png");
         }
-        poReportJasper.setReportName("InventoryRequestApproval");
+        poReportJasper.setReportName("Inventory Request Approval");
         poReportJasper.setJasperPath(getJasperReport());
 
         //process by ResultSet

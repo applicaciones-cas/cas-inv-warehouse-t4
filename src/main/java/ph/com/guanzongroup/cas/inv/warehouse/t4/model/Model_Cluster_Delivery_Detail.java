@@ -15,7 +15,7 @@ import org.json.simple.JSONObject;
  *
  * @author maynevval 08-09-2025
  */
-public class Model_Inventory_Transfer_Detail extends Model {
+public class Model_Cluster_Delivery_Detail extends Model {
 
     private Model_Inventory poInventorySupersede;
     private Model_Inventory poInventory;
@@ -37,15 +37,12 @@ public class Model_Inventory_Transfer_Detail extends Model {
             poEntity.absolute(1);
 
             poEntity.updateObject("nEntryNox", 1);
-            poEntity.updateNull("sStockIDx");
-            poEntity.updateNull("sOrigIDxx");
-            poEntity.updateNull("sOrderNox");
-            poEntity.updateDouble("nQuantity", 0.00d);
-            poEntity.updateDouble("nInvCostx", 0.00d);
-            poEntity.updateDouble("nReceived", 0.00d);
-            poEntity.updateNull("sOrderNox");
-            poEntity.updateNull("sRecvIDxx");
-            poEntity.updateNull("sRecvIDxx");
+            poEntity.updateObject("nNoItemsx", 0);
+            poEntity.updateNull("sReferNox");
+            poEntity.updateNull("sSourceCd");
+            poEntity.updateNull("sBranchCd");
+            poEntity.updateString("cCancelld", "0");
+            poEntity.updateNull("dCancelld");
             ID = poEntity.getMetaData().getColumnLabel(1);
             ID2 = poEntity.getMetaData().getColumnLabel(2);
 
@@ -62,15 +59,13 @@ public class Model_Inventory_Transfer_Detail extends Model {
     //Getter & Setter 
     //sTransNox
     //nEntryNox*
-    //sStockIDx*
-    //sOrigIDxx*
-    //sOrderNox
-    //nQuantity
-    //nInvCostx
-    //nReceived
-    //sRecvIDxx
-    //sSerialID
-    //sNotesxxx
+    //sReferNox*
+    //sSourceCd*
+    //sBranchCd
+    //nNoItemsx
+    //cCancelld
+    //dCancelld
+    //dModified
 
     //sTransNox
     public JSONObject setTransactionNo(String transactionNo) {
@@ -90,86 +85,60 @@ public class Model_Inventory_Transfer_Detail extends Model {
         return (int) getValue("nEntryNox");
     }
 
-    //sStockIDx
-    public JSONObject setStockId(String stockid) {
-        return setValue("sStockIDx", stockid);
+    //sReferNox
+    public JSONObject setReferNo(String referno) {
+        return setValue("sReferNox", referno);
     }
 
-    public String getStockId() {
-        return (String) getValue("sStockIDx");
+    public String getReferNo() {
+        return (String) getValue("sReferNox");
     }
 
-    //sOrigIDxx
-    public JSONObject setOriginalId(String originalid) {
-        return setValue("sOrigIDxx", originalid);
+    //sSourceCd
+    public JSONObject setSourceCode(String sourceCode) {
+        return setValue("sSourceCd", sourceCode);
     }
 
-    public String getOriginalId() {
-        return (String) getValue("sOrigIDxx");
+    public String getSourceCode() {
+        return (String) getValue("sSourceCd");
     }
 
-    //sOrigIDxx
-    public JSONObject setOrderNo(String orderno) {
-        return setValue("sOrderNox", orderno);
+    //sBranchCd
+    public JSONObject setBranchCode(String branchCode) {
+        return setValue("sBranchCd", branchCode);
     }
 
-    public String getOrderNo() {
-        return (String) getValue("sOrderNox");
+    public String getBranchCode() {
+        return (String) getValue("sBranchCd");
     }
 
-    //nQuantity
-    public JSONObject setQuantity(Double quantity) {
-        return setValue("nQuantity", quantity);
+    //nNoItemsx
+    public JSONObject setNoOfItem(Double quantity) {
+        return setValue("nNoItemsx", quantity);
     }
 
-    public Double getQuantity() {
-        return Double.valueOf(getValue("nQuantity").toString());
+    public Double getNoOfItem() {
+        return Double.valueOf(getValue("nNoItemsx").toString());
     }
 
-    //nInvCostx
-    public JSONObject setInventoryCost(Double inventoryCost) {
-        return setValue("nInvCostx", inventoryCost);
+    //cCancelld
+    public JSONObject setCancelled(String isCancelled) {
+        return setValue("cCancelld", isCancelled);
     }
 
-    public Double getInventoryCost() {
-        return Double.valueOf(getValue("nInvCostx").toString());
+    public String getCancelled() {
+        return (String) getValue("cCancelld");
+    }
+    
+    //dCancelld
+    public JSONObject setCancelledDate(Date modifiedDate) {
+        return setValue("dCancelld", modifiedDate);
     }
 
-    //nReceived
-    public JSONObject setReceivedQuantity(Double receivedQuantity) {
-        return setValue("nReceived", receivedQuantity);
+    public Date getCancelledDate() {
+        return (Date) getValue("dCancelld");
     }
 
-    public Double getReceivedQuantity() {
-        return Double.valueOf(getValue("nReceived").toString());
-    }
-
-    //sRecvIDxx
-    public JSONObject setReceivedId(String receivedQuantity) {
-        return setValue("sRecvIDxx", receivedQuantity);
-    }
-
-    public String getReceivedId() {
-        return (String) getValue("sRecvIDxx");
-    }
-
-    //sSerialID
-    public JSONObject setSerialID(String serialID) {
-        return setValue("sSerialID", serialID);
-    }
-
-    public String getSerialID() {
-        return (String) getValue("sSerialID");
-    }
-
-    //sNotesxxx
-    public JSONObject setNote(String notereceiver) {
-        return setValue("sNotesxxx", notereceiver);
-    }
-
-    public String getNote() {
-        return (String) getValue("sNotesxxx");
-    }
 
     //sModified
     public JSONObject setModifyingId(String modifyingId) {

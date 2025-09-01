@@ -107,6 +107,22 @@ public class DeliverySchedule_General implements GValidator {
             isRequiredApproval = true;
         }
 
+//        if (poMaster.getIndustryId() == null) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
+        if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Company is not set.");
+            return poJSON;
+        }
+        if (poMaster.getCategoryId()
+                == null || poMaster.getCategoryId().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Category is not set.");
+            return poJSON;
+        }
         if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Branch is not set.");
@@ -125,7 +141,6 @@ public class DeliverySchedule_General implements GValidator {
                     poJSON.put("message", "Truck Size is not set. Row = " + (lnCtr + 1));
                     return poJSON;
                 }
-                //add more if required
             }
         }
 
@@ -133,6 +148,10 @@ public class DeliverySchedule_General implements GValidator {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");
             return poJSON;
+        }
+
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
         }
 
         poJSON.put("result", "success");

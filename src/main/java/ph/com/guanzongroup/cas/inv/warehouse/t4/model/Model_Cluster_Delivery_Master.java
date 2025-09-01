@@ -1,8 +1,6 @@
 package ph.com.guanzongroup.cas.inv.warehouse.t4.model;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
@@ -14,23 +12,29 @@ import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Industry;
+import org.guanzon.cas.parameter.model.Model_TownCity;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamModels;
 
 /**
  *
  * @author maynevval 08-09-2025
  */
-public class Model_Inventory_Transfer_Master extends Model {
+public class Model_Cluster_Delivery_Master extends Model {
 
     //reference objects
     Model_Industry poIndustry;
     Model_Company poCompany;
     Model_Branch poBranch;
-    Model_Branch poBranchDestination;
     Model_Category poCategory;
-    Model_Client_Master poTrucking;
+    Model_Client_Master poClient;
+    Model_Client_Master poClient01;
+    Model_Client_Master poClient02;
+    Model_Branch_Cluster poBranchCluster;
+    Model_TownCity poTownCity;
 
     @Override
     public void initialize() {
@@ -41,27 +45,33 @@ public class Model_Inventory_Transfer_Master extends Model {
             poEntity.moveToInsertRow();
 
             MiscUtil.initRowSet(poEntity);
-
+            poEntity.updateObject("sBranchCd", poGRider.getBranchCode());
             poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateDouble("nFreightx", 0.00d);
-            poEntity.updateDouble("nTranTotl", 0.00d);
-            poEntity.updateDouble("nDiscount", 0.00d);
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateNull("dReceived");
-            poEntity.updateNull("sApproved");
+            poEntity.updateNull("sSerialID");
+            poEntity.updateNull("sDriverID");
             poEntity.updateNull("sApprvCde");
-            poEntity.updateNull("sOrderNox");
-            poEntity.updateString("cStockNew", "1");
-            poEntity.updateString("cDelivrTp", "0");
-            poEntity.updateObject("dModified", poGRider.getServerDate());
+            poEntity.updateNull("sEmploy01");
+            poEntity.updateNull("sEmploy02");
+            poEntity.updateNull("sClustrID");
+            poEntity.updateNull("sTownIDxx");
+            poEntity.updateNull("dDepartre");
+            poEntity.updateNull("dArrivalx");
+            poEntity.updateNull("sReferNox");
+            poEntity.updateNull("dCancelld");
+            poEntity.updateString("cCancelld", "0");
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
+            poEntity.updateObject("dModified", poGRider.getServerDate());
 
-            this.poTrucking = (new ClientModels(this.poGRider)).ClientMaster();
-            this.poBranchDestination = (new ParamModels(this.poGRider)).Branch();
             this.poBranch = (new ParamModels(this.poGRider)).Branch();
             this.poCompany = (new ParamModels(this.poGRider)).Company();
             this.poIndustry = (new ParamModels(this.poGRider)).Industry();
             this.poCategory = (new ParamModels(this.poGRider)).Category();
+            this.poClient = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poClient01 = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poClient02 = (new ClientModels(this.poGRider)).ClientMaster();
+            this.poBranchCluster = (new DeliveryParamModels(poGRider)).BranchCluster();
+            this.poTownCity = (new ParamModels(this.poGRider)).TownCity();
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -85,20 +95,19 @@ public class Model_Inventory_Transfer_Master extends Model {
     //sBranchCd*
     //sCategrCd
     //dTransact*
-    //sDestinat*
-    //sRemarksx
-    //sTruckIDx
-    //nFreightx
-    //sReceived
-    //dReceived
-    //sApproved
-    //sApprvCde
-    //nTranTotl
-    //nDiscount
+    //sSerialID*
+    //sDriverID*
+    //sEmploy01*
+    //sEmploy02
+    //sClustrID
+    //sTownIDxx
+    //dDepartre
+    //dArrivalx
     //nEntryNox
-    //sOrderNox
-    //cStockNew
-    //cDelivrTp
+    //sRemarksx
+    //sReferNox
+    //cCancelld
+    //dCancelld
     //cTranStat
 
     //sTransNox
@@ -155,94 +164,76 @@ public class Model_Inventory_Transfer_Master extends Model {
         return (Date) getValue("dTransact");
     }
 
-    //sDestinat
-    public JSONObject setDestination(String destination) {
-        return setValue("sDestinat", destination);
+    //sSerialID
+    public JSONObject setSerialId(String serialID) {
+        return setValue("sSerialID", serialID);
     }
 
-    public String getDestination() {
-        return (String) getValue("sDestinat");
+    public String getSerialId() {
+        return (String) getValue("sSerialID");
     }
 
-    //sRemarksx
-    public JSONObject setRemarks(String remarks) {
-        return setValue("sRemarksx", remarks);
+    //sDriverID
+    public JSONObject setDriverID(String driverID) {
+        return setValue("sDriverID", driverID);
     }
 
-    public String getRemarks() {
-        return (String) getValue("sRemarksx");
+    public String getDriverID() {
+        return (String) getValue("sDriverID");
     }
 
-    //sTruckIDx
-    public JSONObject setTruckId(String truckId) {
-        return setValue("sTruckIDx", truckId);
+    //sEmploy01
+    public JSONObject setEmploy01(String employ01) {
+        return setValue("sEmploy01", employ01);
     }
 
-    public String getTruckId() {
-        return (String) getValue("sTruckIDx");
+    public String getEmploy01() {
+        return (String) getValue("sEmploy01");
     }
 
-    //nFreightx
-    public JSONObject setFreight(Double freight) {
-        return setValue("nFreightx", freight);
+    //sEmploy02
+    public JSONObject setEmploy02(String employ02) {
+        return setValue("sEmploy02", employ02);
     }
 
-    public Double getFreight() {
-        return Double.valueOf(getValue("nFreightx").toString());
+    public String getEmploy02() {
+        return (String) getValue("sEmploy02");
     }
 
-    //sReceived
-    public JSONObject setReceivedBy(String receivedBy) {
-        return setValue("sReceived", receivedBy);
+    //sClustrID
+    public JSONObject setClusterID(String clustrID) {
+        return setValue("sClustrID", clustrID);
     }
 
-    public String getReceivedBy() {
-        return (String) getValue("sReceived");
+    public String getClusterID() {
+        return (String) getValue("sClustrID");
     }
 
-    //dReceived
-    public JSONObject setReceivedDate(LocalDateTime  receivedDate) {
-        return setValue("dReceived", Timestamp.valueOf(receivedDate));
+    //sTownIDxx
+    public JSONObject setTownId(String TownId) {
+        return setValue("sTownIDxx", TownId);
     }
 
-    public Date getReceivedDate() {
-        return (Date) getValue("dReceived");
+    public String getTownId() {
+        return (String) getValue("sTownIDxx");
     }
 
-    //sApproved
-    public JSONObject setApprovedBy(String approvedBy) {
-        return setValue("sApproved", approvedBy);
+    //dDepartre
+    public JSONObject setDepartreDate(Date TownId) {
+        return setValue("dDepartre", TownId);
     }
 
-    public String getApprovedBy() {
-        return (String) getValue("sApproved");
+    public Date getDepartreDate() {
+        return (Date) getValue("dDepartre");
     }
 
-    //sApprvCde
-    public JSONObject setApprovalCode(String approvedCode) {
-        return setValue("sApprvCde", approvedCode);
+    //dArrivalx
+    public JSONObject setArrivalDate(Date TownId) {
+        return setValue("dArrivalx", TownId);
     }
 
-    public String getApprovalCode() {
-        return (String) getValue("sApprvCde");
-    }
-
-    //nTranTotl
-    public JSONObject setTransactionTotal(Double transactionTotal) {
-        return setValue("nTranTotl", transactionTotal);
-    }
-
-    public Double getTransactionTotal() {
-        return Double.valueOf(getValue("nTranTotl").toString());
-    }
-
-    //nDiscount
-    public JSONObject setDiscount(Double discountrate) {
-        return setValue("nDiscount", discountrate);
-    }
-
-    public Double getDiscount() {
-        return Double.valueOf(getValue("nDiscount").toString());
+    public Date getArrivalDate() {
+        return (Date) getValue("dArrivalx");
     }
 
     //nEntryNox
@@ -254,31 +245,40 @@ public class Model_Inventory_Transfer_Master extends Model {
         return (int) getValue("nEntryNox");
     }
 
-    //sApprvCde
-    public JSONObject setOrderNo(String orderNo) {
-        return setValue("sOrderNox", orderNo);
+    //sRemarksx
+    public JSONObject setRemarks(String remarks) {
+        return setValue("sRemarksx", remarks);
     }
 
-    public String getOrderNo() {
-        return (String) getValue("sOrderNox");
+    public String getRemarks() {
+        return (String) getValue("sRemarksx");
     }
 
-    //cStockNew
-    public JSONObject setStockNew(String stockNew) {
-        return setValue("cStockNew", stockNew);
+    //sReferNox
+    public JSONObject setReferNo(String referNo) {
+        return setValue("sReferNox", referNo);
     }
 
-    public String getStockNew() {
-        return (String) getValue("cStockNew");
+    public String getReferNo() {
+        return (String) getValue("sReferNox");
     }
 
-    //cDelivrTp
-    public JSONObject setDeliveryType(String orderNo) {
-        return setValue("cDelivrTp", orderNo);
+    //cTranStat
+    public JSONObject setCancelled(String cancel) {
+        return setValue("cCancelld", cancel);
     }
 
-    public String getDeliveryType() {
-        return (String) getValue("cDelivrTp");
+    public String getCancelled() {
+        return (String) getValue("cCancelld");
+    }
+
+    //dCancelld
+    public JSONObject setCancelledDate(Date TownId) {
+        return setValue("dCancelld", TownId);
+    }
+
+    public Date getCancelledDate() {
+        return (Date) getValue("dCancelld");
     }
 
     //cTranStat
@@ -311,40 +311,6 @@ public class Model_Inventory_Transfer_Master extends Model {
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
-    }
-
-    public Model_Client_Master TruckingCompany() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sTruckIDx"))) {
-            if (this.poTrucking.getEditMode() == 1 && this.poTrucking
-                    .getClientId().equals(getValue("sTruckIDx"))) {
-                return this.poTrucking;
-            }
-            this.poJSON = this.poTrucking.openRecord((String) getValue("sTruckIDx"));
-            if ("success".equals(this.poJSON.get("result"))) {
-                return this.poTrucking;
-            }
-            this.poTrucking.initialize();
-            return this.poTrucking;
-        }
-        this.poTrucking.initialize();
-        return this.poTrucking;
-    }
-
-    public Model_Branch BranchDestination() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sDestinat"))) {
-            if (this.poBranchDestination.getEditMode() == 1 && this.poBranchDestination
-                    .getBranchCode().equals(getValue("sDestinat"))) {
-                return this.poBranchDestination;
-            }
-            this.poJSON = this.poBranchDestination.openRecord((String) getValue("sDestinat"));
-            if ("success".equals(this.poJSON.get("result"))) {
-                return this.poBranchDestination;
-            }
-            this.poBranchDestination.initialize();
-            return this.poBranchDestination;
-        }
-        this.poBranchDestination.initialize();
-        return this.poBranchDestination;
     }
 
     public Model_Category Category() throws SQLException, GuanzonException {
@@ -413,6 +379,93 @@ public class Model_Inventory_Transfer_Master extends Model {
         }
         this.poIndustry.initialize();
         return this.poIndustry;
+    }
+
+    public Model_Client_Master CompanyDriver() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sDriverID"))) {
+            if (this.poClient.getEditMode() == 1 && this.poClient
+                    .getClientId().equals(getValue("sDriverID"))) {
+                return this.poClient;
+            }
+            this.poJSON = this.poClient.openRecord((String) getValue("sDriverID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poClient;
+            }
+            this.poClient.initialize();
+            return this.poClient;
+        }
+        this.poClient.initialize();
+        return this.poClient;
+    }
+
+    public Model_Client_Master CompanyEmployee01() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sEmploy01"))) {
+            if (this.poClient01.getEditMode() == 1 && this.poClient01
+                    .getClientId().equals(getValue("sEmploy01"))) {
+                return this.poClient01;
+            }
+            this.poJSON = this.poClient01.openRecord((String) getValue("sEmploy01"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poClient01;
+            }
+            this.poClient01.initialize();
+            return this.poClient01;
+        }
+        this.poClient01.initialize();
+        return this.poClient01;
+    }
+
+    public Model_Client_Master CompanyEmployee02() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sEmploy02"))) {
+            if (this.poClient02.getEditMode() == 1 && this.poClient02
+                    .getClientId().equals(getValue("sEmploy02"))) {
+                return this.poClient02;
+            }
+            this.poJSON = this.poClient02.openRecord((String) getValue("sEmploy02"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poClient02;
+            }
+            this.poClient02.initialize();
+            return this.poClient02;
+        }
+        this.poClient02.initialize();
+        return this.poClient02;
+    }
+
+    public Model_Branch_Cluster BranchCluster() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sClustrID"))) {
+            if (this.poBranchCluster.getEditMode() == 1 && this.poBranchCluster
+                    .getClusterID().equals(getValue("sClustrID"))) {
+                return this.poBranchCluster;
+            }
+            this.poJSON = this.poBranchCluster.openRecord((String) getValue("sClustrID"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poBranchCluster;
+            }
+            this.poBranchCluster.initialize();
+            return this.poBranchCluster;
+        }
+        poBranchCluster.initialize();
+        return this.poBranchCluster;
+
+    }
+
+    public Model_TownCity TownCity() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sTownIDxx"))) {
+            if (this.poTownCity.getEditMode() == 1 && this.poTownCity
+                    .getTownId().equals(getValue("sTownIDxx"))) {
+                return this.poTownCity;
+            }
+            this.poJSON = this.poTownCity.openRecord((String) getValue("sTownIDxx"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poTownCity;
+            }
+            this.poTownCity.initialize();
+            return this.poTownCity;
+        }
+        poTownCity.initialize();
+        return this.poTownCity;
+
     }
 
 }

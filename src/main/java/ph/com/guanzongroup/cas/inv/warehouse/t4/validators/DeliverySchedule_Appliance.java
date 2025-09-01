@@ -107,11 +107,11 @@ public class DeliverySchedule_Appliance implements GValidator {
             isRequiredApproval = true;
         }
 
-        if (poMaster.getIndustryId() == null) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getIndustryId() == null) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
         if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Company is not set.");

@@ -14,22 +14,22 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryScheduleStatus;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Master;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Master;
 
 /**
  *
  * @author MNV t4
  */
-public class DeliverySchedule_Vehicle implements GValidator {
+public class DeliveryIssuance_Appliance implements GValidator {
 
     GRiderCAS poGRider;
     String psTranStat;
     JSONObject poJSON;
 
-    Model_Delivery_Schedule_Master poMaster;
-    ArrayList<Model_Delivery_Schedule_Detail> paDetail;
+    Model_Inventory_Transfer_Master poMaster;
+    ArrayList<Model_Inventory_Transfer_Detail> paDetail;
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
@@ -43,13 +43,13 @@ public class DeliverySchedule_Vehicle implements GValidator {
 
     @Override
     public void setMaster(Object value) {
-        poMaster = (Model_Delivery_Schedule_Master) value;
+        poMaster = (Model_Inventory_Transfer_Master) value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void setDetail(ArrayList<Object> value) {
-        paDetail = (ArrayList<Model_Delivery_Schedule_Detail>) (ArrayList<?>) value;
+        paDetail = (ArrayList<Model_Inventory_Transfer_Detail>) (ArrayList<?>) value;
     }
 
     @Override
@@ -61,15 +61,15 @@ public class DeliverySchedule_Vehicle implements GValidator {
     public JSONObject validate() {
         try {
             switch (psTranStat) {
-                case DeliveryScheduleStatus.OPEN:
+                case InventoryStockIssuanceStatus.OPEN:
                     return validateNew();
-                case DeliveryScheduleStatus.CONFIRMED:
+                case InventoryStockIssuanceStatus.CONFIRMED:
                     return validateConfirmed();
-                case DeliveryScheduleStatus.POSTED:
+                case InventoryStockIssuanceStatus.POSTED:
                     return validatePosted();
-                case DeliveryScheduleStatus.CANCELLED:
+                case InventoryStockIssuanceStatus.CANCELLED:
                     return validateCancelled();
-                case DeliveryScheduleStatus.VOID:
+                case InventoryStockIssuanceStatus.VOID:
                     return validateVoid();
                 default:
                     poJSON = new JSONObject();
@@ -77,12 +77,16 @@ public class DeliverySchedule_Vehicle implements GValidator {
                     poJSON.put("message", "unsupported function");
             }
         } catch (SQLException ex) {
-            Logger.getLogger(DeliverySchedule_Vehicle.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DeliveryIssuance_Appliance.class.getName()).log(Level.SEVERE, null, ex);
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", ex.getMessage());
         }
 
         return poJSON;
     }
- private JSONObject validateNew() throws SQLException {
+
+    private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
@@ -99,18 +103,11 @@ public class DeliverySchedule_Vehicle implements GValidator {
             isRequiredApproval = true;
         }
 
-        //change schedule date 
-        if (poMaster.getScheduleDate().after((Date) poGRider.getServerDate())
-                && poMaster.getScheduleDate().before((Date) poGRider.getServerDate())) {
-            poJSON.put("message", "Change of schedule date are not allowed.! Approval is Required");
-            isRequiredApproval = true;
+        if (poMaster.getIndustryId() == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
         }
-
-//        if (poMaster.getIndustryId() == null) {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "Industry is not set.");
-//            return poJSON;
-//        }
         if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Company is not set.");
@@ -128,16 +125,28 @@ public class DeliverySchedule_Vehicle implements GValidator {
             return poJSON;
         }
 
+        if (poMaster.getDestination() == null || poMaster.getDestination().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Destination is not set.");
+            return poJSON;
+        }
+
+        if (poMaster.getTruckId() == null || poMaster.getTruckId().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Trucking is not set.");
+            return poJSON;
+        }
+
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getClusterID() != null
-                    && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
-                lnDetailCount++;
+            if (paDetail.get(lnCtr).getStockId() != null
+                    && !paDetail.get(lnCtr).getStockId().isEmpty()) {
 
-                if (paDetail.get(lnCtr).getTruckSize() == null
-                        || paDetail.get(lnCtr).getTruckSize().isEmpty()) {
+                lnDetailCount++;
+                if (paDetail.get(lnCtr).getQuantity() == null
+                        || paDetail.get(lnCtr).getQuantity() <= 0) {
                     poJSON.put("result", "error");
-                    poJSON.put("message", "Truck Size is not set. Row = " + (lnCtr + 1));
+                    poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
                     return poJSON;
                 }
             }
@@ -147,10 +156,6 @@ public class DeliverySchedule_Vehicle implements GValidator {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");
             return poJSON;
-        }
-
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
         }
 
         poJSON.put("result", "success");
@@ -182,9 +187,16 @@ public class DeliverySchedule_Vehicle implements GValidator {
 
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getClusterID() != null
-                    && !paDetail.get(lnCtr).getClusterID().isEmpty()) {
+            if (paDetail.get(lnCtr).getStockId() != null
+                    && !paDetail.get(lnCtr).getStockId().isEmpty()) {
+
                 lnDetailCount++;
+                if (paDetail.get(lnCtr).getQuantity() == null
+                        || paDetail.get(lnCtr).getQuantity() <= 0) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
+                    return poJSON;
+                }
             }
         }
 
@@ -194,9 +206,6 @@ public class DeliverySchedule_Vehicle implements GValidator {
             return poJSON;
         }
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
-        }
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 

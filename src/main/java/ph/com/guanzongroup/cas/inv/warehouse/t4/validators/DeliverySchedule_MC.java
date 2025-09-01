@@ -85,8 +85,7 @@ public class DeliverySchedule_MC implements GValidator {
 
         return poJSON;
     }
-
-    private JSONObject validateNew() throws SQLException {
+ private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
@@ -110,11 +109,11 @@ public class DeliverySchedule_MC implements GValidator {
             isRequiredApproval = true;
         }
 
-        if (poMaster.getIndustryId() == null) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getIndustryId() == null) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
         if (poMaster.getCompanyID() == null || poMaster.getCompanyID().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Company is not set.");
@@ -151,6 +150,10 @@ public class DeliverySchedule_MC implements GValidator {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");
             return poJSON;
+        }
+
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
         }
 
         poJSON.put("result", "success");
