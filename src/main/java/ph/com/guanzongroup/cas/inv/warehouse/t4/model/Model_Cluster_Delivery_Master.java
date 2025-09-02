@@ -50,7 +50,6 @@ public class Model_Cluster_Delivery_Master extends Model {
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateNull("sSerialID");
             poEntity.updateNull("sDriverID");
-            poEntity.updateNull("sApprvCde");
             poEntity.updateNull("sEmploy01");
             poEntity.updateNull("sEmploy02");
             poEntity.updateNull("sClustrID");

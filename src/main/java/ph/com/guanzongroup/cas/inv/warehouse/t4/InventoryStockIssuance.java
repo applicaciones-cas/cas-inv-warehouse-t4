@@ -3,7 +3,9 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -161,12 +163,13 @@ public class InventoryStockIssuance extends Transaction {
     public JSONObject initTransaction() throws GuanzonException, SQLException {
         SOURCE_CODE = "Dlvr";
 
-        poMaster = new DeliveryIssuanceModels(poGRider).InventoryTransferMaster();
-        poDetail = new DeliveryIssuanceModels(poGRider).InventoryTransferDetail();
-        poDetailExpiration = new DeliveryIssuanceModels(poGRider).InventoryTransferDetailExpiration();
+        poMaster = new DeliveryIssuanceModels(poGRider).InventoryClusterDeliveryMaster();
+        poDetail = new DeliveryIssuanceModels(poGRider).InventoryClusterDeliveryDetail();
+//        poDetailExpiration = new DeliveryIssuanceModels(poGRider).InventoryTransferDetailExpiration();
         paMaster = new ArrayList<Model>();
         paDetail = new ArrayList<Model>();
         paDetailOther = new ArrayList<InventoryStockIssuanceNeo>();
+        paStockMaster = new ArrayList<Model>();
         initSQL();
 
         return super.initialize();
@@ -780,7 +783,7 @@ public class InventoryStockIssuance extends Transaction {
         System.out.println("result " + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
 
-            getMaster().setClusterID(loSubClass.getModel().getTownId());
+            getMaster().setTownId(loSubClass.getModel().getTownId());
         }
         return poJSON;
     }
@@ -823,6 +826,11 @@ public class InventoryStockIssuance extends Transaction {
                 + "  AND b.sClientID <> ''";
 
 //        lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+
+        if (getMaster().getEmploy01()!= null
+                && !getMaster().getEmploy01().isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, " e.sTownIDxx = " + SQLUtil.toSQL(getMaster().getTownId()));
+        }
         System.out.println("Search Query is = " + lsSQL);
         poJSON = ShowDialogFX.Search(poGRider,
                 lsSQL,
@@ -959,9 +967,14 @@ public class InventoryStockIssuance extends Transaction {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
         }
 
+        if (getMaster().getTownId() != null
+                && !getMaster().getTownId().isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, " e.sTownIDxx = " + SQLUtil.toSQL(getMaster().getTownId()));
+        }
         lsSQL = MiscUtil.addCondition(lsSQL, " b.nApproved > (b.nCancelld + b.nIssueQty + b.nOrderQty) ");
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cProcessd = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
         lsSQL = MiscUtil.addCondition(lsSQL, "d.sClustrID = " + SQLUtil.toSQL(getMaster().getClusterID()));
+
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         System.out.println("Load Transaction list query is " + lsSQL);
 
@@ -971,13 +984,26 @@ public class InventoryStockIssuance extends Transaction {
             poJSON.put("message", "No record found.");
             return poJSON;
         }
+        Set<String> processedTrans = new HashSet<>();
 
         while (loRS.next()) {
-            Model_Inv_Stock_Request_Master loInventoryRequest = new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
-            poJSON = loInventoryRequest.openRecord(loRS.getString("sTransNox"));
+            String transNo = loRS.getString("sTransNox");
+
+            // Skip if we already processed this transaction number
+            if (processedTrans.contains(transNo)) {
+                continue;
+            }
+
+            Model_Inv_Stock_Request_Master loInventoryRequest
+                    = new InvWarehouseModels(poGRider).InventoryStockRequestMaster();
+
+            poJSON = loInventoryRequest.openRecord(transNo);
 
             if ("success".equals((String) poJSON.get("result"))) {
                 paStockMaster.add((Model) loInventoryRequest);
+
+                // Mark this transaction as processed
+                processedTrans.add(transNo);
             } else {
                 return poJSON;
             }
