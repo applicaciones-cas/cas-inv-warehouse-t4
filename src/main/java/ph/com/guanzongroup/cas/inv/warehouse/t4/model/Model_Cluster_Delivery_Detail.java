@@ -9,7 +9,10 @@ import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
+import org.guanzon.cas.parameter.model.Model_Branch;
+import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 
 /**
  *
@@ -20,35 +23,38 @@ public class Model_Cluster_Delivery_Detail extends Model {
     private Model_Inventory poInventorySupersede;
     private Model_Inventory poInventory;
     private Model_Inv_Serial poInventorySerial;
+    private Model_Branch poBranch;
+    private Model_Inventory_Transfer_Master poInventoryMaster;
 
     @Override
     public void initialize() {
         try {
-            poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
+            this.poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
 
-            poEntity.last();
-            poEntity.moveToInsertRow();
+            this.poEntity.last();
+            this.poEntity.moveToInsertRow();
 
             MiscUtil.initRowSet(poEntity);
 
-            poEntity.insertRow();
-            poEntity.moveToCurrentRow();
+            this.poEntity.insertRow();
+            this.poEntity.moveToCurrentRow();
 
-            poEntity.absolute(1);
+            this.poEntity.absolute(1);
 
-            poEntity.updateObject("nEntryNox", 1);
-            poEntity.updateObject("nNoItemsx", 0);
-            poEntity.updateNull("sReferNox");
-            poEntity.updateNull("sSourceCd");
-            poEntity.updateNull("sBranchCd");
-            poEntity.updateString("cCancelld", "0");
-            poEntity.updateNull("dCancelld");
-            ID = poEntity.getMetaData().getColumnLabel(1);
-            ID2 = poEntity.getMetaData().getColumnLabel(2);
+            this.poEntity.updateObject("nEntryNox", 1);
+            this.poEntity.updateObject("nNoItemsx", 0);
+            this.poEntity.updateNull("sReferNox");
+            this.poEntity.updateNull("sSourceCd");
+            this.poEntity.updateNull("sBranchCd");
+            this.poEntity.updateString("cCancelld", "0");
+            this.poEntity.updateNull("dCancelld");
+            this.ID = poEntity.getMetaData().getColumnLabel(1);
+            this.ID2 = poEntity.getMetaData().getColumnLabel(2);
 
-            poInventory = new InvModels(poGRider).Inventory();
-            poInventorySupersede = new InvModels(poGRider).Inventory();
-            poInventorySerial = new InvModels(poGRider).InventorySerial();
+            this.poBranch = (new ParamModels(this.poGRider)).Branch();
+            this.poInventoryMaster = new DeliveryIssuanceModels(poGRider).InventoryTransferMaster();
+            this.poInventorySupersede = new InvModels(poGRider).Inventory();
+            this.poInventorySerial = new InvModels(poGRider).InventorySerial();
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -163,55 +169,39 @@ public class Model_Cluster_Delivery_Detail extends Model {
         return "";
     }
 
-    public Model_Inventory Inventory() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sStockIDx"))) {
-            if (this.poInventory.getEditMode() == 1 && this.poInventory
-                    .getStockId().equals(getValue("sStockIDx"))) {
-                return this.poInventory;
+ 
+     public Model_Branch Branch() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sBranchCd"))) {
+            if (this.poBranch.getEditMode() == 1 && this.poBranch
+                    .getBranchCode().equals(getValue("sBranchCd"))) {
+                return this.poBranch;
             }
-            this.poJSON = this.poInventory.openRecord((String) getValue("sStockIDx"));
+            this.poJSON = this.poBranch.openRecord((String) getValue("sBranchCd"));
             if ("success".equals(this.poJSON.get("result"))) {
-                return this.poInventory;
+                return this.poBranch;
             }
-            this.poInventory.initialize();
-            return this.poInventory;
+            this.poBranch.initialize();
+            return this.poBranch;
         }
-        poInventory.initialize();
-        return this.poInventory;
+        this.poBranch.initialize();
+        return this.poBranch;
     }
-
-    public Model_Inventory InventorySupersede() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sOrigIDxx"))) {
-            if (this.poInventorySupersede.getEditMode() == 1 && this.poInventorySupersede
-                    .getStockId().equals(getValue("sOrigIDxx"))) {
-                return this.poInventorySupersede;
+     
+      
+     public Model_Inventory_Transfer_Master InventoryTransferMaster() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sReferNox"))) {
+            if (this.poInventoryMaster.getEditMode() == 1 && this.poInventoryMaster
+                    .getBranchCode().equals(getValue("sReferNox"))) {
+                return this.poInventoryMaster;
             }
-            this.poJSON = this.poInventorySupersede.openRecord((String) getValue("sOrigIDxx"));
+            this.poJSON = this.poInventoryMaster.openRecord((String) getValue("sReferNox"));
             if ("success".equals(this.poJSON.get("result"))) {
-                return this.poInventorySupersede;
+                return this.poInventoryMaster;
             }
-            this.poInventorySupersede.initialize();
-            return this.poInventory;
+            this.poInventoryMaster.initialize();
+            return this.poInventoryMaster;
         }
-        poInventorySupersede.initialize();
-        return this.poInventorySupersede;
+        this.poInventoryMaster.initialize();
+        return this.poInventoryMaster;
     }
-
-    public Model_Inv_Serial InventorySerial() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sSerialID"))) {
-            if (this.poInventorySerial.getEditMode() == 1 && this.poInventorySerial
-                    .getStockId().equals(getValue("sSerialID"))) {
-                return this.poInventorySerial;
-            }
-            this.poJSON = this.poInventorySerial.openRecord((String) getValue("sSerialID"));
-            if ("success".equals(this.poJSON.get("result"))) {
-                return this.poInventorySerial;
-            }
-            this.poInventorySerial.initialize();
-            return this.poInventorySerial;
-        }
-        poInventorySerial.initialize();
-        return this.poInventorySerial;
-    }
-
 }

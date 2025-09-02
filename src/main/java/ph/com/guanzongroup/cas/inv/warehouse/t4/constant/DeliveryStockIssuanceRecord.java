@@ -22,16 +22,26 @@ public class DeliveryStockIssuanceRecord {
     public static final String APPLIANCE_REPORT = "InventoryIssuanceAppliance";
 
     public static final String StockRequestRecord() {
-        String lsSQL = "SELECT "
-                + " d.sClustrID"
-                + ", a.sBranchCd"
-                + ", a.sIndstCdx"
-                + ", a.sCategrCd"
-                + ", a.sTransNox"
+        String lsSQL = "SELECT"
+                + "  d.sClustrID,"
+                + "  a.sTransNox,"
+                + "  a.dtransact,"
+                + "  a.sBranchCd,"
+                + "  e.sBranchNm,"
+                + "  a.sIndstCdx,"
+                + "  a.sCategrCd,"
+                + "  a.sTransNox,"
+                + "  b.nQuantity,"
+                + "  b.nApproved,"
+                + "  b.nCancelld,"
+                + "  b.nIssueQty,"
+                + "  b.nOrderQty,"
+                + "  b.nReceived"
                 + " FROM Inv_Stock_Request_Master a"
-                + "     LEFT JOIN Inv_Stock_Request_Master b ON a.sTransNox = b.sTransNox"
-                + "     LEFT JOIN Branch_Others c ON a.sBranchCD = c.sBranchCd"
-                + "     LEFT JOIN Branch_Cluster d ON b.sClustrID = d.sClustrID";
+                + "  LEFT JOIN Inv_Stock_Request_Detail b ON a.sTransNox = b.sTransNox"
+                + "  LEFT JOIN Branch_Others c ON a.sBranchCD = c.sBranchCd"
+                + "  LEFT JOIN Branch_Cluster d ON c.sClustrID = d.sClustrID"
+                + "  LEFT JOIN Branch e ON a.sBranchCD = e.sBranchCd";
 
         return lsSQL;
     }
