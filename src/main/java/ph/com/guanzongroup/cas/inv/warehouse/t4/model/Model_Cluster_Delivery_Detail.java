@@ -135,7 +135,7 @@ public class Model_Cluster_Delivery_Detail extends Model {
     public String getCancelled() {
         return (String) getValue("cCancelld");
     }
-    
+
     //dCancelld
     public JSONObject setCancelledDate(Date modifiedDate) {
         return setValue("dCancelld", modifiedDate);
@@ -144,7 +144,6 @@ public class Model_Cluster_Delivery_Detail extends Model {
     public Date getCancelledDate() {
         return (Date) getValue("dCancelld");
     }
-
 
     //sModified
     public JSONObject setModifyingId(String modifyingId) {
@@ -169,8 +168,7 @@ public class Model_Cluster_Delivery_Detail extends Model {
         return "";
     }
 
- 
-     public Model_Branch Branch() throws SQLException, GuanzonException {
+    public Model_Branch Branch() throws SQLException, GuanzonException {
         if (!"".equals(getValue("sBranchCd"))) {
             if (this.poBranch.getEditMode() == 1 && this.poBranch
                     .getBranchCode().equals(getValue("sBranchCd"))) {
@@ -186,9 +184,8 @@ public class Model_Cluster_Delivery_Detail extends Model {
         this.poBranch.initialize();
         return this.poBranch;
     }
-     
-      
-     public Model_Inventory_Transfer_Master InventoryTransferMaster() throws SQLException, GuanzonException {
+
+    public Model_Inventory_Transfer_Master InventoryTransferMaster() throws SQLException, GuanzonException {
         if (!"".equals(getValue("sReferNox"))) {
             if (this.poInventoryMaster.getEditMode() == 1 && this.poInventoryMaster
                     .getBranchCode().equals(getValue("sReferNox"))) {
@@ -196,6 +193,10 @@ public class Model_Cluster_Delivery_Detail extends Model {
             }
             this.poJSON = this.poInventoryMaster.openRecord((String) getValue("sReferNox"));
             if ("success".equals(this.poJSON.get("result"))) {
+                if (poInventoryMaster.getEditMode() != EditMode.ADDNEW) {
+                    //auto update mode
+                    poInventoryMaster.updateRecord();
+                }
                 return this.poInventoryMaster;
             }
             this.poInventoryMaster.initialize();
