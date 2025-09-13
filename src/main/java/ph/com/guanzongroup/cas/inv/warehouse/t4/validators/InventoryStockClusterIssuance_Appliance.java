@@ -15,21 +15,21 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Master;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Detail;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Master;
 
 /**
  *
  * @author MNV t4
  */
-public class InventoryStockIssuance_Monarch implements GValidator {
+public class InventoryStockClusterIssuance_Appliance implements GValidator {
 
     GRiderCAS poGRider;
     String psTranStat;
     JSONObject poJSON;
 
-    Model_Inventory_Transfer_Master poMaster;
-    ArrayList<Model_Inventory_Transfer_Detail> paDetail;
+    Model_Cluster_Delivery_Master poMaster;
+    ArrayList<Model_Cluster_Delivery_Detail> paDetail;
 
     @Override
     public void setApplicationDriver(Object applicationDriver) {
@@ -43,13 +43,13 @@ public class InventoryStockIssuance_Monarch implements GValidator {
 
     @Override
     public void setMaster(Object value) {
-        poMaster = (Model_Inventory_Transfer_Master) value;
+        poMaster = (Model_Cluster_Delivery_Master) value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void setDetail(ArrayList<Object> value) {
-        paDetail = (ArrayList<Model_Inventory_Transfer_Detail>) (ArrayList<?>) value;
+        paDetail = (ArrayList<Model_Cluster_Delivery_Detail>) (ArrayList<?>) value;
     }
 
     @Override
@@ -77,19 +77,19 @@ public class InventoryStockIssuance_Monarch implements GValidator {
                     poJSON.put("message", "unsupported function");
             }
         } catch (SQLException ex) {
-            Logger.getLogger(InventoryStockIssuance_MC.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(InventoryStockClusterIssuance_Appliance.class.getName()).log(Level.SEVERE, null, ex);
             poJSON = new JSONObject();
             poJSON.put("result", "error");
             poJSON.put("message", ex.getMessage());
         }
-        
+
         return poJSON;
     }
-    
+
     private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
-        
+
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
@@ -100,6 +100,10 @@ public class InventoryStockIssuance_Monarch implements GValidator {
         if (poMaster.getTransactionDate().after((Date) poGRider.getServerDate())
                 && poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
             poJSON.put("message", "Change of transaction date are not allowed.! Approval is Required");
+            isRequiredApproval = true;
+        }
+
+        if (poMaster.getDepartreDate() != null) {
             isRequiredApproval = true;
         }
 
@@ -114,7 +118,7 @@ public class InventoryStockIssuance_Monarch implements GValidator {
             return poJSON;
         }
         if (poMaster.getCategoryId()
-                == null || poMaster.getCategoryId().isEmpty()) {            
+                == null || poMaster.getCategoryId().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Category is not set.");
             return poJSON;
@@ -124,67 +128,39 @@ public class InventoryStockIssuance_Monarch implements GValidator {
             poJSON.put("message", "Branch is not set.");
             return poJSON;
         }
-        
-        if (poMaster.getDestination() == null || poMaster.getDestination().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Destination is not set.");
-            return poJSON;
-        }
-        if (poMaster.getDeliveryType() != null && poMaster.getDeliveryType().equals("2")) {
-            if (poMaster.getTruckId() == null || poMaster.getTruckId().isEmpty()) {
-                poJSON.put("result", "error");
-                poJSON.put("message", "Trucking is not set.");
-                return poJSON;
-            }
-        }
-        
+
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getStockId() != null
-                    && !paDetail.get(lnCtr).getStockId().isEmpty()) {
-                
+            if (paDetail.get(lnCtr).getReferNo() != null
+                    && !paDetail.get(lnCtr).getReferNo().isEmpty()) {
+
                 lnDetailCount++;
-                if (paDetail.get(lnCtr).getQuantity() == null
-                        || paDetail.get(lnCtr).getQuantity() <= 0) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
-                    return poJSON;
-                }
-                if (paDetail.get(lnCtr).getSerialID() != null
-                        && !paDetail.get(lnCtr).getStockId().isEmpty()) {
-                    
-                    if (paDetail.get(lnCtr).getQuantity() == null
-                            || paDetail.get(lnCtr).getQuantity() < 1) {
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "Quantity for serialize cannot be divided. Row = " + (lnCtr + 1));
-                        return poJSON;
-                    }
-                }
+
             }
         }
-        
+
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
-        
+
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
-        
+
         return poJSON;
     }
-    
+
     private JSONObject validateConfirmed() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
-        
+
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
-        
+
         if (poMaster.getIndustryId() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Industry is not set.");
@@ -195,84 +171,66 @@ public class InventoryStockIssuance_Monarch implements GValidator {
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-        
+
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getStockId() != null
-                    && !paDetail.get(lnCtr).getStockId().isEmpty()) {
-                
+            if (paDetail.get(lnCtr).getReferNo() != null
+                    && !paDetail.get(lnCtr).getReferNo().isEmpty()) {
                 lnDetailCount++;
-                if (paDetail.get(lnCtr).getQuantity() == null
-                        || paDetail.get(lnCtr).getQuantity() <= 0) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
-                    return poJSON;
-                }
+
             }
         }
-        
+
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
-        
+
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
-        
+
         return poJSON;
     }
-    
+
     private JSONObject validatePosted() {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }
-        
-        if (poMaster.getReceivedDate() == null) {
+
+        if (poMaster.getArrivalDate() == null) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Invalid Received Transaction Date.");
+            poJSON.put("message", "Invalid Arrival Transaction Date.");
             return poJSON;
         }
 
-        //validate date
-        if (poMaster.getReceivedDate().before(poMaster.getTransactionDate())) {
-            
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction Date is greater than received Date.");
-            return poJSON;
-        }
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            if (paDetail.get(lnCtr).getStockId() != null
-                    && !paDetail.get(lnCtr).getStockId().isEmpty()) {
-                
+            if (paDetail.get(lnCtr).getReferNo() != null
+                    && !paDetail.get(lnCtr).getReferNo().isEmpty()) {
+
                 lnDetailCount++;
-                if (paDetail.get(lnCtr).getQuantity() == null
-                        || paDetail.get(lnCtr).getReceivedQuantity() <= 0) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Quantity is not set. Row = " + (lnCtr + 1));
-                    return poJSON;
-                }
+
             }
         }
-        
+
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");
             return poJSON;
         }
-        
+
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
-    
+
     private JSONObject validateCancelled() throws SQLException {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
-        
+
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }
@@ -280,11 +238,11 @@ public class InventoryStockIssuance_Monarch implements GValidator {
         poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
-    
+
     private JSONObject validateVoid() throws SQLException {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
-        
+
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }
@@ -292,5 +250,5 @@ public class InventoryStockIssuance_Monarch implements GValidator {
         poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
-    
+
 }

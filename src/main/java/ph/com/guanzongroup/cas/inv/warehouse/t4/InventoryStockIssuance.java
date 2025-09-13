@@ -26,24 +26,21 @@ import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Master;
 import org.guanzon.cas.inv.warehouse.services.InvWarehouseModels;
 import org.guanzon.cas.parameter.TownCity;
-import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.services.ParamControllers;
-import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryStockIssuanceRecord;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuancePrint;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Master;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Delivery_Schedule_Detail;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceControllers;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.BranchCluster;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.InventoryBrowse;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.DeliveryParamController;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtil;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtilListener;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryIssuanceValidatorFactory;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.InventoryClusterIssuanceValidatorFactory;
 
 public class InventoryStockIssuance extends Transaction {
 
@@ -54,7 +51,7 @@ public class InventoryStockIssuance extends Transaction {
     private List<Model> paMaster;
     private List<Model> paStockMaster;
     public Model poDetailExpiration;
-    public List<InventoryStockIssuanceNeo> paDetailOther;
+//    public List<InventoryStockIssuanceNeo> paDetailOther;
 
     public void setIndustryID(String industryId) {
         psIndustryCode = industryId;
@@ -92,7 +89,7 @@ public class InventoryStockIssuance extends Transaction {
         return (List<Model_Cluster_Delivery_Detail>) (List<?>) paDetail;
     }
 
-    public Model_Cluster_Delivery_Detail getDetail(int entryNo) {
+    public Model_Cluster_Delivery_Detail getDetail(int entryNo) throws SQLException, GuanzonException, CloneNotSupportedException {
         if (getMaster().getTransactionNo().isEmpty() || entryNo <= 0) {
             return null;
         }
@@ -101,105 +98,112 @@ public class InventoryStockIssuance extends Transaction {
 
         //auto add detail
         Model_Cluster_Delivery_Detail lastDetail = (Model_Cluster_Delivery_Detail) paDetail.get(paDetail.size() - 1);
-        String referNo = lastDetail.getReferNo();
-        if (referNo != null && !referNo.trim().isEmpty()) {
-            Model_Cluster_Delivery_Detail newDetail = new DeliveryIssuanceModels(poGRider).InventoryClusterDeliveryDetail();
-            newDetail.newRecord();
-            newDetail.setTransactionNo(getMaster().getTransactionNo());
-            newDetail.setEntryNo(paDetail.size() + 1);
-            paDetail.add(newDetail);
+
+        if (lastDetail.InventoryTransfer().getEditMode() == EditMode.ADDNEW) {
+//            if (referNo == null || referNo.isEmpty()) {
+            lastDetail.setTransactionNo(getMaster().getTransactionNo());
+            lastDetail.setEntryNo(getDetailCount());
+//            }
         }
 
         //find the detail record
-        for (int lnCtr = 0; lnCtr <= paDetail.size() - 1; lnCtr++) {
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             loDetail = (Model_Cluster_Delivery_Detail) paDetail.get(lnCtr);
-
-            if (loDetail.getEntryNo() == entryNo) {
+            if (loDetail.getEntryNo() == entryNo) {                loDetail.InventoryTransfer();
+                loDetail.InventoryTransfer().getMaster().setBranchCode(psBranchCode);
+                loDetail.InventoryTransfer().getMaster().setCompanyID(psCompanyID);
+                loDetail.InventoryTransfer().getMaster().setCategoryId(psCategoryCD);
+                loDetail.InventoryTransfer().getMaster().setIndustryId(psIndustryCode);
+                //keep getting nextcode avoid conflict to other
+                if (loDetail.InventoryTransfer().getEditMode() == EditMode.ADDNEW) {
+                    loDetail.InventoryTransfer().getMaster().getNextCode();
+                    loDetail.setReferNo(loDetail.InventoryTransfer().getMaster().getTransactionNo());
+                }
                 return loDetail;
             }
         }
 
-        loDetail = new DeliveryIssuanceModels(poGRider).InventoryClusterDeliveryDetail();
-        loDetail.newRecord();
-        loDetail.setTransactionNo(getMaster().getTransactionNo());
-        loDetail.setEntryNo(entryNo);
-        paDetail.add(loDetail);
+        Model_Cluster_Delivery_Detail loDetailNew = new DeliveryIssuanceModels(poGRider).InventoryClusterDeliveryDetail();
+        loDetailNew.newRecord();
+        loDetailNew.setTransactionNo(getMaster().getTransactionNo());
+        loDetailNew.setEntryNo(entryNo);
+        loDetailNew.InventoryTransfer().NewTransaction();
+        loDetailNew.setReferNo(loDetailNew.InventoryTransfer().getMaster().getTransactionNo());
+        System.out.println("Transaction no transfer = " + loDetailNew.InventoryTransfer().getMaster().getTransactionNo());
+        paDetail.add(loDetailNew);
 
-        return loDetail;
-    }
-
-    public InventoryStockIssuanceNeo getDetailOther(int entryNo) throws SQLException, GuanzonException, CloneNotSupportedException {
-        if (getMaster().getTransactionNo().isEmpty() || entryNo <= 0) {
-            return null;
-        }
-
-        InventoryStockIssuanceNeo loDetailOther;
-        Model_Cluster_Delivery_Detail loDetail = getDetail(entryNo);
-
-        //find the detail record
-        for (int lnCtr = 0; lnCtr <= paDetailOther.size() - 1; lnCtr++) {
-            loDetailOther = (InventoryStockIssuanceNeo) paDetailOther.get(lnCtr);
-
-            if (loDetail.getReferNo() == loDetailOther.getMaster().getTransactionNo()) {
-                return loDetailOther;
-            }
-        }
-        loDetailOther = new DeliveryIssuanceControllers(poGRider, null).InventoryStockIssuanceNeo();
-        loDetailOther.initTransaction();
-        loDetailOther.setBranchCode(psBranchCode);
-        loDetailOther.setIndustryID(psIndustryCode);
-        loDetailOther.setCategoryID(psCategoryCD);
-        loDetailOther.setCompanyID(psCompanyID);
-        loDetailOther.NewTransaction();
-        paDetailOther.add(loDetailOther);
-
-        return loDetailOther;
+        return loDetailNew;
     }
 
     public JSONObject requestDetail(int stockRequest)
             throws GuanzonException, CloneNotSupportedException, SQLException {
         poJSON = new JSONObject();
         Model_Inv_Stock_Request_Master loStockMaster = (Model_Inv_Stock_Request_Master) paStockMaster.get(stockRequest);
-        InventoryStockIssuanceNeo loDetailOther;
         Model_Cluster_Delivery_Detail loDetail;
 
         //check if last is already Saved
-        if (getDetailOther(paDetail.size()) != null) {
-            if (getDetailOther(paDetail.size()).getEditMode() == EditMode.ADDNEW) {
+        InventoryStockIssuanceNeo loDetailOther = getDetail(paDetail.size()).InventoryTransfer();
+        if (loDetailOther != null) {
+            if (loDetailOther.getEditMode() == EditMode.ADDNEW) {
+                if (loDetailOther.getMaster().getOrderNo() != null
+                        && !loDetailOther.getMaster().getOrderNo().isEmpty()) {
+                    poJSON.put("result", "error");
+//                    poJSON.put("message", "Unsaved Transaction Detected");
+                    return poJSON;
 
-                poJSON.put("result", "error");
-                poJSON.put("message", "Unsaved Transaction Detected");
-                return poJSON;
-
+                }
             }
         }
 
         //check if Stock Request already in Detail Other (Transfer Detail)
-        for (int lnCtr = 0; lnCtr <= paDetailOther.size() - 1; lnCtr++) {
-            loDetailOther = (InventoryStockIssuanceNeo) paDetailOther.get(lnCtr);
-            if (loDetailOther.getMaster().getTransactionNo() != null) {
-                if (loDetailOther.getMaster().getOrderNo() != null) {
-                    if (loDetailOther.getMaster().getOrderNo().equals(loStockMaster.getTransactionNo())) {
-                        poJSON.put("result", "success");
-                        return poJSON;
+        for (int lnCtr = 1; lnCtr <= paDetail.size(); lnCtr++) {
+            InventoryStockIssuanceNeo loExistingTransfer = getDetail(lnCtr).InventoryTransfer();
+            if (loExistingTransfer.getMaster().getTransactionNo() != null) {
+                if (loExistingTransfer.getMaster().getOrderNo() != null) {
+                    if (loExistingTransfer.getMaster().getOrderNo().equals(loStockMaster.getTransactionNo())) {
+                        if (loExistingTransfer.getEditMode() != EditMode.ADDNEW) {
+                            poJSON.put("result", "success");
+                            poJSON.put("message", "Stock Request is Already added! Delivery No." + loExistingTransfer.getMaster().getTransactionNo());
+                            return poJSON;
+                        }
                     }
                 }
             }
         }
 
         //Add to Detail Not Existing
-        loDetailOther = getDetailOther(paDetail.size());
-        loDetail = getDetail(paDetail.size());
-        loDetail.setReferNo(loDetailOther.getMaster().getTransactionNo());
-        loDetail.setSourceCode(loDetailOther.getSourceCode());
-        loDetail.setBranchCode(loDetailOther.getMaster().getBranchCode());
+        if (loDetailOther.getEditMode() == EditMode.ADDNEW) {
+            loDetail = getDetail(paDetail.size());
+        } else {
+            loDetail = getDetail(paDetail.size() + 1);
+        }
+        loDetail.setReferNo(loDetail.InventoryTransfer().getMaster().getTransactionNo());
+        loDetail.setSourceCode(loDetail.InventoryTransfer().getSourceCode());
+        loDetail.setBranchCode(loDetail.InventoryTransfer().getMaster().getBranchCode());
 
         //Inventory Transfer Master
-        loDetailOther.getMaster().setOrderNo(loStockMaster.getTransactionNo());
-        loDetailOther.getMaster().setDestination(loStockMaster.getBranchCode());
-        loDetailOther.getMaster().setDeliveryType("1");
+        loDetail.InventoryTransfer().getMaster().setOrderNo(loStockMaster.getTransactionNo());
+        loDetail.InventoryTransfer().getMaster().setDestination(loStockMaster.getBranchCode());
+        loDetail.InventoryTransfer().getMaster().setDeliveryType("1");
         //Inventory Transfer Detail
 
+        //clone detail to transfer
+        InventoryRequestApproval loStockRequest = getRequestApproval(loStockMaster.getTransactionNo());
+        if (loStockRequest != null) {
+            int lnDetail = 0;
+            for (int lnCtr = 1; lnCtr <= loStockRequest.getDetailCount(); lnCtr++) {
+                if (loStockRequest.getDetail(lnCtr).getApproved() >= 1) {
+                    lnDetail++;
+                    loDetail.InventoryTransfer().getDetail(lnDetail).setOrderNo(loStockRequest.getMaster().getTransactionNo());
+                    loDetail.InventoryTransfer().getDetail(lnDetail).setStockId(loStockRequest.getDetail(lnCtr).getStockId());
+                    loDetail.InventoryTransfer().getDetail(lnDetail).setInventoryCost(((Number) loStockRequest.getDetail(lnCtr).Inventory().getCost()).doubleValue());
+                }
+            }
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Unable to Retrieve Detail");
+            return poJSON;
+        }
         poJSON.put("result", "success");
 //        poJSON.put("message", "Detail added successfully.");
         return poJSON;
@@ -212,28 +216,26 @@ public class InventoryStockIssuance extends Transaction {
         InventoryStockIssuanceNeo loDetailOther;
         Model_Cluster_Delivery_Detail loDetail;
 
-
         //check if Stock Request already in Detail (Delivery Cluster Detail)
         for (int lnDetail = 0; lnDetail <= paDetail.size() - 1; lnDetail++) {
             loDetail = (Model_Cluster_Delivery_Detail) paDetail.get(lnDetail);
-            for (int lnCtr = 0; lnCtr <= paDetailOther.size() - 1; lnCtr++) {
-                loDetailOther = (InventoryStockIssuanceNeo) paDetailOther.get(lnCtr);
-                if (loDetailOther.getMaster().getTransactionNo() != null) {
-                    if (loDetailOther.getMaster().getOrderNo() != null) {
-                        if (loDetailOther.getMaster().getOrderNo().equals(loStockMaster.getTransactionNo())) {
-                            poJSON.put("result", "success");
-                            poJSON.put("result", "Stock Request is Already added! Delivery No." + loDetail.getTransactionNo());
-                            return poJSON;
-                        }
+            loDetailOther = loDetail.InventoryTransfer();
+            if (loDetailOther.getMaster().getTransactionNo() != null) {
+                if (loDetailOther.getMaster().getOrderNo() != null) {
+                    if (loDetailOther.getMaster().getOrderNo().equals(loStockMaster.getTransactionNo())) {
+                        poJSON.put("result", "success");
+                        poJSON.put("message", "Stock Request is Already added! Delivery No." + loDetailOther.getMaster().getTransactionNo());
+                        return poJSON;
                     }
                 }
             }
+
         }
 
         //Add to Detail Not Existing
-        loDetailOther = getDetailOther(entryNo);
         loDetail = getDetail(entryNo);
         //clear record
+        loDetailOther = loDetail.InventoryTransfer();
         loDetailOther.NewTransaction();
 
         loDetail.setReferNo(loDetailOther.getMaster().getTransactionNo());
@@ -241,19 +243,43 @@ public class InventoryStockIssuance extends Transaction {
         loDetail.setBranchCode(loDetailOther.getMaster().getBranchCode());
 
         //Inventory Transfer Master
-        loDetailOther.getMaster().setOrderNo(loStockMaster.getTransactionNo());
-        loDetailOther.getMaster().setDestination(loStockMaster.getBranchCode());
-        loDetailOther.getMaster().setDeliveryType("1");
+        loDetail.InventoryTransfer().getMaster().setOrderNo(loStockMaster.getTransactionNo());
+        loDetail.InventoryTransfer().getMaster().setDestination(loStockMaster.getBranchCode());
+        loDetail.InventoryTransfer().getMaster().setDeliveryType("1");
         //Inventory Transfer Detail
 
+        //clone detail to transfer
+        InventoryRequestApproval loStockRequest = getRequestApproval(loStockMaster.getTransactionNo());
+
+        if (loStockRequest != null) {
+            for (int lnCtr = 1; lnCtr <= loStockRequest.getDetailCount(); lnCtr++) {
+                if (loStockRequest.getDetail(lnCtr).getApproved() >= 1) {
+                    loDetail.InventoryTransfer().getDetail(loDetail.InventoryTransfer().getDetailCount()).setOrderNo(loStockRequest.getMaster().getTransactionNo());
+                    loDetail.InventoryTransfer().getDetail(loDetail.InventoryTransfer().getDetailCount()).setStockId(loStockRequest.getDetail(lnCtr).getStockId());
+                    loDetail.InventoryTransfer().getDetail(loDetail.InventoryTransfer().getDetailCount()).setInventoryCost(((Number) loStockRequest.getDetail(lnCtr).Inventory().getCost()).doubleValue());
+                }
+            }
+        } else {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Unable to Retrieve Detail");
+            return poJSON;
+        }
         poJSON.put("result", "success");
 //        poJSON.put("message", "Detail added successfully.");
         return poJSON;
     }
 
-    @SuppressWarnings("unchecked")
-    public List<InventoryStockIssuanceNeo> getDetailOtherList() {
-        return (List<InventoryStockIssuanceNeo>) (List<?>) paDetailOther;
+    private InventoryRequestApproval getRequestApproval(String transactionNo)
+            throws GuanzonException, SQLException, CloneNotSupportedException {
+        InventoryRequestApproval loSubClass = new DeliveryIssuanceControllers(poGRider, null).InventoryRequestApproval();
+        loSubClass.initTransaction();
+        loSubClass.OpenTransaction(transactionNo);
+
+        if ("error".equals((String) poJSON.get("result"))) {
+            return null;
+        }
+
+        return loSubClass;
     }
 
     public JSONObject initTransaction() throws GuanzonException, SQLException {
@@ -264,7 +290,7 @@ public class InventoryStockIssuance extends Transaction {
 //        poDetailExpiration = new DeliveryIssuanceModels(poGRider).InventoryTransferDetailExpiration();
         paMaster = new ArrayList<Model>();
         paDetail = new ArrayList<Model>();
-        paDetailOther = new ArrayList<InventoryStockIssuanceNeo>();
+//        paDetailOther = new ArrayList<InventoryStockIssuanceNeo>();
         paStockMaster = new ArrayList<Model>();
         initSQL();
 
@@ -276,16 +302,9 @@ public class InventoryStockIssuance extends Transaction {
         SQL_BROWSE = "SELECT"
                 + " a.sTransNox"
                 + ", a.dTransact"
-                + ", d.sBranchNm xBranchNm"
-                + ", e.sBranchNm xDestinat"
-                + ", c.sCompnyNm sCompnyNm"
-                + ", a.sBranchCd"
-                + ", a.sDestinat"
-                + " FROM Inv_Transfer_Master a "
-                + "     LEFT JOIN AP_Client_Master b ON a.sTruckIDx = b.sClientID"
-                + "     LEFT JOIN Client_Master c ON b.sClientID = c.sClientID"
-                + "     LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd"
-                + "     LEFT JOIN Branch e ON a.sDestinat = e.sBranchCd";
+                + ", b.sClustrDs sClustrDs"
+                + " FROM Cluster_Delivery_Master a "
+                + "     LEFT JOIN Branch_Cluster b ON a.sClustrID = b.sClustrID";
     }
 
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -314,7 +333,31 @@ public class InventoryStockIssuance extends Transaction {
     }
 
     public JSONObject SaveTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+
         return saveTransaction();
+    }
+
+    public JSONObject SaveTransactionDelivery(int deliveryNo) throws SQLException, GuanzonException, CloneNotSupportedException {
+
+        poJSON = willSave();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        System.out.println(getDetail(deliveryNo).InventoryTransfer().getMaster().getTransactionNo());
+        poJSON = getDetail(deliveryNo).InventoryTransfer().SaveTransaction();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        poJSON = SaveTransaction();
+        if (!"error".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "success");
+            pnEditMode = EditMode.READY;
+            UpdateTransaction();
+            return poJSON;
+        }
+
+        return poJSON;
     }
 
     public JSONObject UpdateTransaction() {
@@ -329,27 +372,45 @@ public class InventoryStockIssuance extends Transaction {
     }
 
     @Override
-    protected JSONObject willSave() throws SQLException {
+    protected JSONObject willSave() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         poJSON = isEntryOkay(InventoryStockIssuanceStatus.OPEN);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
+
+        if (!pbWthParent && getEditMode() == EditMode.ADDNEW) {
+            getMaster().setTransactionNo(getMaster().getNextCode());
+        }
         int lnDetailCount = 0;
-
         //assign values needed
-        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            Model_Cluster_Delivery_Detail loDetail = (Model_Cluster_Delivery_Detail) paDetail.get(lnCtr);
-            if (loDetail.getReferNo().isEmpty()) {
-
-                lnDetailCount++;
-                loDetail.setTransactionNo(getMaster().getTransactionNo());
-                loDetail.setEntryNo(lnDetailCount);
-            } else {
-                paDetail.remove(lnCtr);
-
+        for (int lnCtr = 1; lnCtr <= paDetail.size(); lnCtr++) {
+            Model_Cluster_Delivery_Detail loDetail = getDetail(lnCtr);
+            if (loDetail.getReferNo() == null || loDetail.getReferNo().isEmpty()) {
+                paDetail.remove(lnCtr - 1);
+                continue;
             }
+
+            InventoryStockIssuanceNeo loOtherDetail = getDetail(lnCtr).InventoryTransfer();
+            double lnItemofDelivery = 0;
+
+//            loOtherDetail.getMaster().setTransactionNo(loOtherDetail.getMaster().getNextCode());
+            loDetail.setReferNo(loOtherDetail.getMaster().getTransactionNo());
+            for (int lnCtrOther = loOtherDetail.getDetailCount(); lnCtrOther >= 1; lnCtrOther--) {
+                Model_Inventory_Transfer_Detail subDetail = loOtherDetail.getDetail(lnCtrOther);
+                if (subDetail.getQuantity() <= 0) {
+                    loOtherDetail.paDetail.remove(lnCtrOther - 1);
+                } else {
+                    subDetail.setTransactionNo(loOtherDetail.getMaster().getTransactionNo());
+                    lnItemofDelivery++;
+                }
+            }
+
+            lnDetailCount++;
+            loDetail.setTransactionNo(getMaster().getTransactionNo());
+            loDetail.setNoOfItem(lnItemofDelivery);
+            loDetail.setEntryNo(lnDetailCount);
         }
 
         getMaster().setEntryNo(lnDetailCount);
@@ -365,7 +426,7 @@ public class InventoryStockIssuance extends Transaction {
         psApprovalUser = "";
 
         poJSON = new JSONObject();
-        GValidator loValidator = InventoryIssuanceValidatorFactory.make(getMaster().getIndustryId());
+        GValidator loValidator = InventoryClusterIssuanceValidatorFactory.make(getMaster().getIndustryId());
 
         loValidator.setApplicationDriver(poGRider);
         loValidator.setTransactionStatus(status);
@@ -622,9 +683,9 @@ public class InventoryStockIssuance extends Transaction {
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
-                    "Transaction No»Destination»Date",
-                    "sTransNox»xDestinat»dTransact",
-                    "a.sTransNox»e.sBranchNm»a.dTransact",
+                    "Transaction No»Date»Cluster Name",
+                    "sTransNox»dTransact»sClustrDs",
+                    "a.sTransNox»a.dTransact»b.sClustrDs",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
@@ -673,9 +734,9 @@ public class InventoryStockIssuance extends Transaction {
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
-                    "Transaction No»Branch Name»Date",
-                    "sTransNox»xBranchNm»dTransact",
-                    "a.sTransNox»d.sBranchNm»a.dTransact",
+                    "Transaction No»Date»Cluster Name",
+                    "sTransNox»dTransact»sClustrDs",
+                    "a.sTransNox»a.dTransact»b.sClustrDs",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
@@ -843,16 +904,18 @@ public class InventoryStockIssuance extends Transaction {
             poJSON = loSubClass.openRecord((String) poJSON.get("sClientID"));
 
             if ("success".equals((String) poJSON.get("result"))) {
-                if (getMaster().getDriverID() != null
-                        && getMaster().getEmploy01().equals(loSubClass.getClientId())) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Same Employee Detected to Driver. Please select different Employee");
-                    return poJSON;
-                } else if (getMaster().getEmploy02() != null
-                        && getMaster().getEmploy02().equals(loSubClass.getClientId())) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Same Employee Detected. Please select different Employee");
-                    return poJSON;
+                if (getMaster().getDriverID() != null) {
+                    if (getMaster().getDriverID().equals(loSubClass.getClientId())) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Same Employee Detected to Driver. Please select different Employee");
+                        return poJSON;
+                    }
+                } else if (getMaster().getEmploy02() != null) {
+                    if (getMaster().getEmploy02().equals(loSubClass.getClientId())) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Same Employee Detected. Please select different Employee");
+                        return poJSON;
+                    }
                 }
                 getMaster().setEmploy01(loSubClass.getClientId());
             }
@@ -898,19 +961,24 @@ public class InventoryStockIssuance extends Transaction {
             poJSON = loSubClass.openRecord((String) poJSON.get("sClientID"));
 
             if ("success".equals((String) poJSON.get("result"))) {
-                if (getMaster().getDriverID() != null
-                        && getMaster().getEmploy01().equals(loSubClass.getClientId())) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Same Employee Detected to Driver. Please select different Employee");
-                    return poJSON;
-                } else if (getMaster().getEmploy02() != null
-                        && getMaster().getEmploy02().equals(loSubClass.getClientId())) {
-                    poJSON.put("result", "error");
-                    poJSON.put("message", "Same Employee Detected. Please select different Employee");
+                if (getMaster().getDriverID() != null) {
+                    if (getMaster().getDriverID().equals(loSubClass.getClientId())) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Same Employee Detected to Driver. Please select different Employee");
+                        return poJSON;
+                    }
+                } else if (getMaster().getEmploy01() != null) {
+                    if (getMaster().getEmploy01().equals(loSubClass.getClientId())) {
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Same Employee Detected. Please select different Employee");
+                        return poJSON;
+                    }
+                } else if (getMaster().getEmploy01() == null) {
+                    getMaster().setEmploy01(loSubClass.getClientId());
                     return poJSON;
                 }
-
                 getMaster().setEmploy02(loSubClass.getClientId());
+
             }
             return poJSON;
         } else {
@@ -922,11 +990,85 @@ public class InventoryStockIssuance extends Transaction {
         }
     }
 
+    public JSONObject searchDetailIssuanceSerial(int detailEntryNo, int detailTransferEntryNo, String fsValue, boolean fbByCode, boolean fbByExact)
+            throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+        InventoryStockIssuanceNeo loDetailOther = getDetail(detailEntryNo).InventoryTransfer();
+        if (loDetailOther.getDetail(detailTransferEntryNo).getOrderNo() == null
+                || loDetailOther.getDetail(detailTransferEntryNo).getOrderNo().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Unable to search add detail");
+            return poJSON;
+        }
+        if (!loDetailOther.getDetail(detailTransferEntryNo).Inventory().isSerialized()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "This Inventory is none serialize. Detail Row" + detailTransferEntryNo);
+            return poJSON;
+        }
+
+        poJSON = loDetailOther.searchDetailByClusterIssuance(detailTransferEntryNo, fsValue, fbByCode, fbByExact);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        // handle cloning if approved > 1
+        if (loDetailOther.getDetail(detailTransferEntryNo).InventoryStockRequest().getApproved() > 1) {
+
+            loDetailOther.getDetail(detailTransferEntryNo).InventoryStockRequest().setApproved(1d);
+
+            //clone detail to transfer
+            int lnStockRow = detailTransferEntryNo;
+            double lnIssuedCount = 0;
+            InventoryRequestApproval loStockRequest = getRequestApproval(loDetailOther.getMaster().getOrderNo());
+            if (loStockRequest != null) {
+                //check existing record for row and count of issued
+                for (int lnCtr = 1; lnCtr <= loStockRequest.getDetailCount(); lnCtr++) {
+                    if (loStockRequest.getDetail(lnCtr).getStockId() != null) {
+                        if (loStockRequest.getDetail(lnCtr).getStockId()
+                                .equals(loDetailOther.getDetail(detailTransferEntryNo).getStockId())) {
+                            lnStockRow = lnCtr;
+                            for (int lnRowDetail = 1; lnRowDetail <= loDetailOther.getDetailCount(); lnRowDetail++) {
+                                if (loDetailOther.getDetail(lnRowDetail).getStockId() != null) {
+
+                                    if (loStockRequest.getDetail(lnCtr).getStockId()
+                                            .equals(loDetailOther.getDetail(lnRowDetail).getStockId())) {
+
+                                        lnIssuedCount = lnIssuedCount + loDetailOther.getDetail(detailTransferEntryNo).getQuantity();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //add seperate detail
+            Model_Inventory_Transfer_Detail loLastDetailOther = loDetailOther.getDetail(loDetailOther.getDetailCount());
+            if (loLastDetailOther.getStockId() == null || loLastDetailOther.getStockId().isEmpty()) {
+                //count if the detail is already has issued
+                loLastDetailOther.setOrderNo(loStockRequest.getMaster().getTransactionNo());
+                loLastDetailOther.setStockId(loStockRequest.getDetail(lnStockRow).getStockId());
+                loLastDetailOther.setInventoryCost(((Number) loStockRequest.getDetail(lnStockRow).Inventory().getCost()).doubleValue());
+                loLastDetailOther.InventoryStockRequest().setApproved(loStockRequest.getDetail(lnStockRow).getApproved() - lnIssuedCount);
+
+            } else {
+                Model_Inventory_Transfer_Detail loNewDetailOther = loDetailOther.getDetail(loDetailOther.getDetailCount() + 1);
+                loNewDetailOther.setOrderNo(loStockRequest.getMaster().getTransactionNo());
+                loNewDetailOther.setStockId(loStockRequest.getDetail(lnStockRow).getStockId());
+                loNewDetailOther.setInventoryCost(((Number) loStockRequest.getDetail(lnStockRow).Inventory().getCost()).doubleValue());
+                loNewDetailOther.InventoryStockRequest().setApproved(loStockRequest.getDetail(lnStockRow).getApproved() - lnIssuedCount);
+
+            }
+        }
+        poJSON.put("result", "success");
+        return poJSON;
+
+    }
+
     public JSONObject loadStockTransactionList()
             throws SQLException, GuanzonException, CloneNotSupportedException {
 
         if (getMaster().getClusterID() == null
-                && getMaster().getClusterID().isEmpty()) {
+                || getMaster().getClusterID().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "No cluster is set.");
             return poJSON;
@@ -985,6 +1127,37 @@ public class InventoryStockIssuance extends Transaction {
         }
 
         poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject setDetailItemCount() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+        double lnItemValidCount;
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            lnItemValidCount = 0.0;
+            Model_Cluster_Delivery_Detail loDetail = getDetail(lnCtr);
+            if (loDetail == null) {
+                poJSON.put("result", "success");
+                return poJSON;
+            }
+            if (loDetail.getReferNo() != null && !loDetail.getReferNo().isEmpty()) {
+
+                for (int lnDetailOther = 0; lnDetailOther < loDetail.InventoryTransfer().getDetailCount(); lnDetailOther++) {
+                    if (loDetail.InventoryTransfer().getDetail(lnDetailOther).getStockId() != null
+                            && !loDetail.InventoryTransfer().getDetail(lnDetailOther).getStockId().isEmpty()) {
+                        if (loDetail.InventoryTransfer().getDetail(lnDetailOther).getQuantity() > 0) {
+
+                            lnItemValidCount = lnItemValidCount + ((Number) loDetail.InventoryTransfer().getDetail(lnDetailOther).getQuantity()).doubleValue();
+                        }
+                    }
+
+                }
+            }
+
+            loDetail.setNoOfItem(lnItemValidCount);
+        }
+
         poJSON.put("result", "success");
         return poJSON;
     }

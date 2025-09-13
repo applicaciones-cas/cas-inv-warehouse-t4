@@ -42,6 +42,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
 
             poEntity.updateObject("nEntryNox", 1);
             poEntity.updateNull("sStockIDx");
+            poEntity.updateNull("sSerialID");
             poEntity.updateNull("sOrigIDxx");
             poEntity.updateNull("sOrderNox");
             poEntity.updateDouble("nQuantity", 0.00d);
@@ -56,7 +57,7 @@ public class Model_Inventory_Transfer_Detail extends Model {
             poInventory = new InvModels(poGRider).Inventory();
             poInventorySupersede = new InvModels(poGRider).Inventory();
             poInventorySerial = new InvModels(poGRider).InventorySerial();
-            poInventoryStockRequest= new InvWarehouseModels(poGRider).InventoryStockRequestDetail();
+            poInventoryStockRequest = new InvWarehouseModels(poGRider).InventoryStockRequestDetail();
 
             pnEditMode = EditMode.UNKNOWN;
         } catch (SQLException e) {
@@ -249,17 +250,17 @@ public class Model_Inventory_Transfer_Detail extends Model {
         poInventorySerial.initialize();
         return this.poInventorySerial;
     }
-    
-        public Model_Inv_Stock_Request_Detail InventoryStockRequest() throws SQLException, GuanzonException {
+
+    public Model_Inv_Stock_Request_Detail InventoryStockRequest() throws SQLException, GuanzonException {
         if (!"".equals(getValue("sOrderNox")) && !"".equals(getValue("sStockIDx"))) {
             if (this.poInventoryStockRequest.getEditMode() == 1 && this.poInventoryStockRequest
-                    .getTransactionNo().equals(getValue("sOrderNox")) && 
-                    this.poInventoryStockRequest.getEditMode() == 1 && this.poInventoryStockRequest
+                    .getTransactionNo().equals(getValue("sOrderNox"))
+                    && this.poInventoryStockRequest.getEditMode() == 1 && this.poInventoryStockRequest
                     .getStockId().equals(getValue("sStockIDx"))) {
                 return this.poInventoryStockRequest;
             }
-            this.poJSON = this.poInventoryStockRequest.openRecordByReference((String) getValue("sOrderNox")
-                    ,(String) getValue("sStockIDx"));
+            this.poJSON = this.poInventoryStockRequest.openRecordByReference((String) getValue("sOrderNox"),
+                     (String) getValue("sStockIDx"));
             if ("success".equals(this.poJSON.get("result"))) {
                 return this.poInventoryStockRequest;
             }

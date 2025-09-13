@@ -2,6 +2,8 @@ package ph.com.guanzongroup.cas.inv.warehouse.t4.model;
 
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
@@ -12,6 +14,8 @@ import org.guanzon.cas.inv.services.InvModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.InventoryStockIssuanceNeo;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceControllers;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 
 /**
@@ -20,11 +24,10 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceM
  */
 public class Model_Cluster_Delivery_Detail extends Model {
 
-    private Model_Inventory poInventorySupersede;
-    private Model_Inventory poInventory;
-    private Model_Inv_Serial poInventorySerial;
     private Model_Branch poBranch;
     private Model_Inventory_Transfer_Master poInventoryMaster;
+    private InventoryStockIssuanceNeo poIssuance;
+
 
     @Override
     public void initialize() {
@@ -53,11 +56,10 @@ public class Model_Cluster_Delivery_Detail extends Model {
 
             this.poBranch = (new ParamModels(this.poGRider)).Branch();
             this.poInventoryMaster = new DeliveryIssuanceModels(poGRider).InventoryTransferMaster();
-            this.poInventorySupersede = new InvModels(poGRider).Inventory();
-            this.poInventorySerial = new InvModels(poGRider).InventorySerial();
-
+            this.poIssuance = new DeliveryIssuanceControllers(poGRider, null).InventoryStockIssuanceNeo();
+            poIssuance.initTransaction();
             pnEditMode = EditMode.UNKNOWN;
-        } catch (SQLException e) {
+        } catch (SQLException | GuanzonException e) {
             logwrapr.severe(e.getMessage());
             System.exit(1);
         }
@@ -185,24 +187,40 @@ public class Model_Cluster_Delivery_Detail extends Model {
         return this.poBranch;
     }
 
-    public Model_Inventory_Transfer_Master InventoryTransferMaster() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sReferNox"))) {
-            if (this.poInventoryMaster.getEditMode() == 1 && this.poInventoryMaster
-                    .getBranchCode().equals(getValue("sReferNox"))) {
-                return this.poInventoryMaster;
-            }
-            this.poJSON = this.poInventoryMaster.openRecord((String) getValue("sReferNox"));
-            if ("success".equals(this.poJSON.get("result"))) {
-                if (poInventoryMaster.getEditMode() != EditMode.ADDNEW) {
-                    //auto update mode
-                    poInventoryMaster.updateRecord();
+
+    public InventoryStockIssuanceNeo InventoryTransfer() throws SQLException, GuanzonException, CloneNotSupportedException {
+        if (!"".equals(getValue("sReferNox")) && getValue("sReferNox") != null) {
+            if (this.poIssuance
+                    .getMaster().getTransactionNo() != null) {
+                if (this.poIssuance.getEditMode() == 0 && this.poIssuance
+                        .getMaster().getTransactionNo().equals(getValue("sReferNox"))) {
+                    return this.poIssuance;
                 }
-                return this.poInventoryMaster;
+                if (this.poIssuance.getEditMode() == 1 && this.poIssuance
+                        .getMaster().getTransactionNo().equals(getValue("sReferNox"))) {
+                    return this.poIssuance;
+                }
+                if (this.poIssuance.getEditMode() == 2 && this.poIssuance
+                        .getMaster().getTransactionNo().equals(getValue("sReferNox"))) {
+                    return this.poIssuance;
+                }
             }
-            this.poInventoryMaster.initialize();
-            return this.poInventoryMaster;
+            this.poJSON = this.poIssuance.OpenTransaction((String) getValue("sReferNox"));
+            if ("success".equals(this.poJSON.get("result"))) {
+//                if (poIssuance.getEditMode() != EditMode.ADDNEW) {
+//                    //auto update mode
+////                    poIssuance.UpdateTransaction();
+//                }
+                 return this.poIssuance;
+            }
+            this.poIssuance.initTransaction();
+            poIssuance.NewTransaction();
+            setReferNo(poIssuance.getMaster().getTransactionNo());
+            return this.poIssuance;
         }
-        this.poInventoryMaster.initialize();
-        return this.poInventoryMaster;
+        this.poIssuance.initTransaction();
+        poIssuance.NewTransaction();
+        setReferNo(poIssuance.getMaster().getTransactionNo());
+        return this.poIssuance;
     }
 }

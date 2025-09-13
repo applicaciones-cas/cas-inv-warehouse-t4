@@ -49,6 +49,8 @@ public class Model_Cluster_Delivery_Master extends Model {
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateObject("nEntryNox", 0);
             poEntity.updateNull("sSerialID");
+            poEntity.updateString("sSerialID","sirMAC");
+            
             poEntity.updateNull("sDriverID");
             poEntity.updateNull("sEmploy01");
             poEntity.updateNull("sEmploy02");

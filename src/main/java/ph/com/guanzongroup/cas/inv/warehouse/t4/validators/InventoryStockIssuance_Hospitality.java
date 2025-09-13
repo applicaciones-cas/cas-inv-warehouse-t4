@@ -114,7 +114,7 @@ public class InventoryStockIssuance_Hospitality implements GValidator {
             return poJSON;
         }
         if (poMaster.getCategoryId()
-                == null || poMaster.getCategoryId().isEmpty()) { 
+                == null || poMaster.getCategoryId().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Category is not set.");
             return poJSON;
@@ -130,11 +130,12 @@ public class InventoryStockIssuance_Hospitality implements GValidator {
             poJSON.put("message", "Destination is not set.");
             return poJSON;
         }
-
-        if (poMaster.getTruckId() == null || poMaster.getTruckId().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Trucking is not set.");
-            return poJSON;
+        if (poMaster.getDeliveryType() != null && poMaster.getDeliveryType().equals("2")) {
+            if (poMaster.getTruckId() == null || poMaster.getTruckId().isEmpty()) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Trucking is not set.");
+                return poJSON;
+            }
         }
 
         int lnDetailCount = 0;

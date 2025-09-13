@@ -26,6 +26,7 @@ import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuancePrint;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail_Expiration;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Master;
@@ -77,11 +78,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
     }
 
     public Model_Inventory_Transfer_Detail getDetail(int entryNo) {
-        if (getMaster().getTransactionNo().isEmpty()) {
-            return null;
-        }
-
-        if (entryNo <= 0 || entryNo > paDetail.size()) {
+        if (getMaster().getTransactionNo().isEmpty() || entryNo <= 0) {
             return null;
         }
 
@@ -940,6 +937,108 @@ public class InventoryStockIssuanceNeo extends Transaction {
         poJSON.put("result", "success");
         return poJSON;
     }
+//
+//    public JSONObject searchDetailByClusterIssuance(int row, String value, boolean byCode, boolean byExact) throws SQLException, GuanzonException {
+//        InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
+//        loBrowse.initTransaction();
+//        if (!psIndustryCode.isEmpty()) {
+//            loBrowse.setIndustry(psIndustryCode);
+//        }
+//        loBrowse.setCategoryFilters(psCategorCD);
+//        loBrowse.setBranch(poGRider.getBranchCode());
+//
+//        poJSON = new JSONObject();
+//
+//        poJSON = loBrowse.searchInventoryIssaunce(value, byCode, byExact);
+//        System.out.println("result " + (String) poJSON.get("result"));
+//        if ("success".equals((String) poJSON.get("result"))) {
+//            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+//                Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
+//                if (loExisting.getStockId() != null) {
+//                    if (loExisting.getStockId().equals(loBrowse.getModelInventory().getStockId())) {
+//                        if (!loExisting.getSerialID().isEmpty()) {
+//                            if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+//                                if (!loExisting.getSerialID().equals(loBrowse.getModelInventorySerial().getSerialId())) {
+//                                    continue;
+//                                }
+//                            }
+//                        }
+//                        poJSON = new JSONObject();
+//                        poJSON.put("result", "error");
+//                        poJSON.put("message", "Selected Inventory is already exist!");
+//                        return poJSON;
+//
+//                    }
+//                }
+//            }
+//            if (getDetail(row).InventoryStockRequest().getApproved() > 1) {
+//                //clone current record record to the last
+//                Model_Inventory_Transfer_Detail loDetailClone = new paDetail.get(row - 1)
+//                paDetail.add(loDetailClone)
+//                loDetailClone.InventoryStockRequest().setQuantity(loDetailClone.InventoryStockRequest().getQuantity() - 1);
+//                loDetailClone.InventoryStockRequest().setApproved(loDetailClone.InventoryStockRequest().getApproved() - 1);
+//
+//            }
+//            getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
+//            if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+//                getDetail(row).setSerialID(loBrowse.getModelInventorySerial().getSerialId());
+//            }
+//
+//            getDetail(row).setQuantity(1.00);
+//        }
+//
+//        return poJSON;
+//
+//    }
+
+    public JSONObject searchDetailByClusterIssuance(int row, String value, boolean byCode, boolean byExact)
+            throws SQLException, GuanzonException, CloneNotSupportedException {
+
+        InventoryBrowse loBrowse = new InventoryBrowse(poGRider, logwrapr);
+        loBrowse.initTransaction();
+        if (!psIndustryCode.isEmpty()) {
+            loBrowse.setIndustry(psIndustryCode);
+        }
+        loBrowse.setCategoryFilters(psCategorCD);
+        loBrowse.setBranch(poGRider.getBranchCode());
+        //filter specic to stockid of order
+        if (getDetail(row).getStockId() != null
+                && !getDetail(row).getStockId().isEmpty()) {
+            loBrowse.setInventory(getDetail(row).getStockId());
+        }
+        poJSON = loBrowse.searchInventoryIssaunce(value, byCode, byExact);
+        System.out.println("result " + (String) poJSON.get("result"));
+        if ("success".equals((String) poJSON.get("result"))) {
+            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                Model_Inventory_Transfer_Detail loExisting = (Model_Inventory_Transfer_Detail) paDetail.get(lnExisting);
+                if (loExisting.getStockId() != null) {
+                    if (loExisting.getStockId().equals(loBrowse.getModelInventory().getStockId())) {
+                        if (loExisting.getSerialID() != null) {
+                            if (!loExisting.getSerialID().isEmpty()) {
+                                if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+                                    if (loExisting.getSerialID().equals(loBrowse.getModelInventorySerial().getSerialId())) {
+                                        poJSON = new JSONObject();
+                                        poJSON.put("result", "error");
+                                        poJSON.put("message", "Selected Inventory is already exist!");
+                                        return poJSON;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // update current row
+        getDetail(row).setStockId(loBrowse.getModelInventory().getStockId());
+        if (loBrowse.getModelInventorySerial().getSerialId() != null) {
+            getDetail(row).setSerialID(loBrowse.getModelInventorySerial().getSerialId());
+        }
+        getDetail(row).setQuantity(1.00);
+
+        return poJSON;
+    }
 
     private String getCategory() {
         String lsCategory;
@@ -1053,7 +1152,8 @@ public class InventoryStockIssuanceNeo extends Transaction {
                     poReportJasper.CloseReportUtil();
 
                 } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
-                    Logger.getLogger(InventoryRequestApproval.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(InventoryRequestApproval.class
+                            .getName()).log(Level.SEVERE, null, ex);
                     ShowMessageFX.Error("", "", ex.getMessage());
                 }
             }
