@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
@@ -76,7 +77,7 @@ public class InventoryStockClusterIssuance_MC implements GValidator {
                     poJSON.put("result", "error");
                     poJSON.put("message", "unsupported function");
             }
-        } catch (SQLException ex) {
+        } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
             Logger.getLogger(InventoryStockClusterIssuance_MC.class.getName()).log(Level.SEVERE, null, ex);
             poJSON = new JSONObject();
             poJSON.put("result", "error");
@@ -128,17 +129,17 @@ public class InventoryStockClusterIssuance_MC implements GValidator {
             poJSON.put("message", "Branch is not set.");
             return poJSON;
         }
-        if (poMaster.getSerialId()== null || poMaster.getSerialId().isEmpty()) {
+        if (poMaster.getSerialId() == null || poMaster.getSerialId().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Serial is not set.");
             return poJSON;
         }
-        if (poMaster.getDriverID()== null || poMaster.getDriverID().isEmpty()) {
+        if (poMaster.getDriverID() == null || poMaster.getDriverID().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Driver is not set.");
             return poJSON;
         }
-        if (poMaster.getEmploy01()== null || poMaster.getEmploy01().isEmpty()) {
+        if (poMaster.getEmploy01() == null || poMaster.getEmploy01().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Employee 01 is not set.");
             return poJSON;
@@ -166,7 +167,7 @@ public class InventoryStockClusterIssuance_MC implements GValidator {
         return poJSON;
     }
 
-    private JSONObject validateConfirmed() throws SQLException {
+    private JSONObject validateConfirmed() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
@@ -191,6 +192,13 @@ public class InventoryStockClusterIssuance_MC implements GValidator {
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getReferNo() != null
                     && !paDetail.get(lnCtr).getReferNo().isEmpty()) {
+
+                if (paDetail.get(lnCtr).InventoryTransfer().getMaster()
+                        .getTransactionStatus().equals(InventoryStockIssuanceStatus.OPEN)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Unprinted delivery Detected. Row =" + lnCtr);
+                    return poJSON;
+                }
                 lnDetailCount++;
 
             }
@@ -242,24 +250,52 @@ public class InventoryStockClusterIssuance_MC implements GValidator {
         return poJSON;
     }
 
-    private JSONObject validateCancelled() throws SQLException {
+    private JSONObject validateCancelled() throws SQLException, GuanzonException, CloneNotSupportedException {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
 
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }
+
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getReferNo() != null
+                    && !paDetail.get(lnCtr).getReferNo().isEmpty()) {
+
+                if (!paDetail.get(lnCtr).InventoryTransfer().getMaster()
+                        .getTransactionStatus().equals(InventoryStockIssuanceStatus.OPEN)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Cofirmed delivery Detected. Row =" + lnCtr);
+                    return poJSON;
+                }
+
+            }
+        }
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 
-    private JSONObject validateVoid() throws SQLException {
+    private JSONObject validateVoid() throws SQLException, GuanzonException, CloneNotSupportedException {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
 
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
+        }
+
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getReferNo() != null
+                    && !paDetail.get(lnCtr).getReferNo().isEmpty()) {
+
+                if (!paDetail.get(lnCtr).InventoryTransfer().getMaster()
+                        .getTransactionStatus().equals(InventoryStockIssuanceStatus.OPEN)) {
+                    poJSON.put("result", "error");
+                    poJSON.put("message", "Cofirmed delivery Detected. Row =" + lnCtr);
+                    return poJSON;
+                }
+
+            }
         }
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);

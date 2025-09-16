@@ -109,16 +109,18 @@ public class InventoryStockIssuance extends Transaction {
         //find the detail record
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             loDetail = (Model_Cluster_Delivery_Detail) paDetail.get(lnCtr);
-            if (loDetail.getEntryNo() == entryNo) {                loDetail.InventoryTransfer();
+            if (loDetail.getEntryNo() == entryNo) {
+                loDetail.InventoryTransfer();
                 loDetail.InventoryTransfer().getMaster().setBranchCode(psBranchCode);
                 loDetail.InventoryTransfer().getMaster().setCompanyID(psCompanyID);
                 loDetail.InventoryTransfer().getMaster().setCategoryId(psCategoryCD);
                 loDetail.InventoryTransfer().getMaster().setIndustryId(psIndustryCode);
-                //keep getting nextcode avoid conflict to other
-                if (loDetail.InventoryTransfer().getEditMode() == EditMode.ADDNEW) {
-                    loDetail.InventoryTransfer().getMaster().getNextCode();
-                    loDetail.setReferNo(loDetail.InventoryTransfer().getMaster().getTransactionNo());
-                }
+                loDetail.InventoryTransfer().setIndustryID(psIndustryCode);
+//                //keep getting nextcode avoid conflict to other
+//                if (loDetail.InventoryTransfer().getEditMode() == EditMode.ADDNEW) {
+////                    loDetail.InventoryTransfer().getMaster().getNextCode();
+////                    loDetail.setReferNo(loDetail.InventoryTransfer().getMaster().getTransactionNo());
+//                }
                 return loDetail;
             }
         }
@@ -127,8 +129,8 @@ public class InventoryStockIssuance extends Transaction {
         loDetailNew.newRecord();
         loDetailNew.setTransactionNo(getMaster().getTransactionNo());
         loDetailNew.setEntryNo(entryNo);
-        loDetailNew.InventoryTransfer().NewTransaction();
-        loDetailNew.setReferNo(loDetailNew.InventoryTransfer().getMaster().getTransactionNo());
+//        loDetailNew.InventoryTransfer().NewTransaction();
+//        loDetailNew.setReferNo(loDetailNew.InventoryTransfer().getMaster().getTransactionNo());
         System.out.println("Transaction no transfer = " + loDetailNew.InventoryTransfer().getMaster().getTransactionNo());
         paDetail.add(loDetailNew);
 
@@ -177,6 +179,7 @@ public class InventoryStockIssuance extends Transaction {
         } else {
             loDetail = getDetail(paDetail.size() + 1);
         }
+
         loDetail.setReferNo(loDetail.InventoryTransfer().getMaster().getTransactionNo());
         loDetail.setSourceCode(loDetail.InventoryTransfer().getSourceCode());
         loDetail.setBranchCode(loDetail.InventoryTransfer().getMaster().getBranchCode());
@@ -352,7 +355,27 @@ public class InventoryStockIssuance extends Transaction {
         poJSON = SaveTransaction();
         if (!"error".equals((String) poJSON.get("result"))) {
             poJSON.put("result", "success");
-            pnEditMode = EditMode.READY;
+            OpenTransaction((String) poMaster.getValue("sTransNox"));
+            UpdateTransaction();
+            return poJSON;
+        }
+
+        return poJSON;
+    }
+
+    public JSONObject CancelTransactionDelivery(int deliveryNo) throws SQLException, GuanzonException, CloneNotSupportedException {
+
+        System.out.println(getDetail(deliveryNo).InventoryTransfer().getMaster().getTransactionNo());
+        poJSON = getDetail(deliveryNo).InventoryTransfer().CancelTransaction();
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        getDetail(deliveryNo).setCancelled("1");
+        getDetail(deliveryNo).setCancelledDate(poGRider.getServerDate());
+        poJSON = SaveTransaction();
+        if (!"error".equals((String) poJSON.get("result"))) {
+            poJSON.put("result", "success");
+            OpenTransaction((String) poMaster.getValue("sTransNox"));
             UpdateTransaction();
             return poJSON;
         }
@@ -385,18 +408,18 @@ public class InventoryStockIssuance extends Transaction {
         }
         int lnDetailCount = 0;
         //assign values needed
-        for (int lnCtr = 1; lnCtr <= paDetail.size(); lnCtr++) {
-            Model_Cluster_Delivery_Detail loDetail = getDetail(lnCtr);
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Cluster_Delivery_Detail loDetail = (Model_Cluster_Delivery_Detail) paDetail.get(lnCtr);
             if (loDetail.getReferNo() == null || loDetail.getReferNo().isEmpty()) {
                 paDetail.remove(lnCtr - 1);
                 continue;
             }
 
-            InventoryStockIssuanceNeo loOtherDetail = getDetail(lnCtr).InventoryTransfer();
+            InventoryStockIssuanceNeo loOtherDetail = loDetail.InventoryTransfer();
             double lnItemofDelivery = 0;
 
 //            loOtherDetail.getMaster().setTransactionNo(loOtherDetail.getMaster().getNextCode());
-            loDetail.setReferNo(loOtherDetail.getMaster().getTransactionNo());
+//            loDetail.setReferNo(loOtherDetail.getMaster().getTransactionNo());
             for (int lnCtrOther = loOtherDetail.getDetailCount(); lnCtrOther >= 1; lnCtrOther--) {
                 Model_Inventory_Transfer_Detail subDetail = loOtherDetail.getDetail(lnCtrOther);
                 if (subDetail.getQuantity() <= 0) {
@@ -910,7 +933,8 @@ public class InventoryStockIssuance extends Transaction {
                         poJSON.put("message", "Same Employee Detected to Driver. Please select different Employee");
                         return poJSON;
                     }
-                } else if (getMaster().getEmploy02() != null) {
+                }
+                if (getMaster().getEmploy02() != null) {
                     if (getMaster().getEmploy02().equals(loSubClass.getClientId())) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Same Employee Detected. Please select different Employee");
@@ -967,15 +991,13 @@ public class InventoryStockIssuance extends Transaction {
                         poJSON.put("message", "Same Employee Detected to Driver. Please select different Employee");
                         return poJSON;
                     }
-                } else if (getMaster().getEmploy01() != null) {
+                }
+                if (getMaster().getEmploy01() != null) {
                     if (getMaster().getEmploy01().equals(loSubClass.getClientId())) {
                         poJSON.put("result", "error");
                         poJSON.put("message", "Same Employee Detected. Please select different Employee");
                         return poJSON;
                     }
-                } else if (getMaster().getEmploy01() == null) {
-                    getMaster().setEmploy01(loSubClass.getClientId());
-                    return poJSON;
                 }
                 getMaster().setEmploy02(loSubClass.getClientId());
 
@@ -1330,4 +1352,125 @@ public class InventoryStockIssuance extends Transaction {
 
     }
 
+    
+    public JSONObject TagDepartureTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        poJSON = OpenTransaction(getMaster().getTransactionNo());
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (InventoryStockIssuanceStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already Processed.");
+            return poJSON;
+        }
+
+        if (!InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was not confirmed.");
+            return poJSON;
+        }
+        //validator
+        poJSON = isEntryOkay(InventoryStockIssuanceStatus.CONFIRMED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+
+        String lsSQL = "UPDATE "
+                + poMaster.getTable()
+                + " SET   dDepartre = " + SQLUtil.toSQL(poGRider.getServerDate())
+                + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
+
+        Long lnResult = poGRider.executeQuery(lsSQL,
+                poMaster.getTable(),
+                poGRider.getBranchCode(), "", "");
+        if (lnResult <= 0L) {
+            poGRider.rollbackTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Error updating the transaction status.");
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction Printed successfully.");
+
+        return poJSON;
+    }
+    
+    
+    public JSONObject TagArrivalTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        poJSON = OpenTransaction(getMaster().getTransactionNo());
+        if ("error".equals((String) poJSON.get("result"))) {
+            System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+            return poJSON;
+        }
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (InventoryStockIssuanceStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already Processed.");
+            return poJSON;
+        }
+
+        if (!InventoryStockIssuanceStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was not confirmed.");
+            return poJSON;
+        }
+        //validator
+        poJSON = isEntryOkay(InventoryStockIssuanceStatus.CONFIRMED);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+
+        String lsSQL = "UPDATE "
+                + poMaster.getTable()
+                + " SET   dDepartre = " + SQLUtil.toSQL(poGRider.getServerDate())
+                + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
+
+        Long lnResult = poGRider.executeQuery(lsSQL,
+                poMaster.getTable(),
+                poGRider.getBranchCode(), "", "");
+        if (lnResult <= 0L) {
+            poGRider.rollbackTrans();
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Error updating the transaction status.");
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction Printed successfully.");
+
+        return poJSON;
+    }
 }

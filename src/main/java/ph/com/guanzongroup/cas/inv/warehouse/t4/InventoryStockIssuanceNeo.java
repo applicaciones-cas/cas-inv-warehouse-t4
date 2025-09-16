@@ -21,6 +21,7 @@ import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModels;
+import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
@@ -30,6 +31,7 @@ import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Det
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Detail_Expiration;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Inventory_Transfer_Master;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceControllers;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.InventoryBrowse;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtil;
@@ -207,6 +209,12 @@ public class InventoryStockIssuanceNeo extends Transaction {
             return poJSON;
         }
 
+        if (InventoryStockIssuanceStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already cancelled.");
+            return poJSON;
+        }
+
         return updateTransaction();
     }
 
@@ -310,6 +318,20 @@ public class InventoryStockIssuanceNeo extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Inventory_Transfer_Detail loDetail = (Model_Inventory_Transfer_Detail) paDetail.get(lnCtr);
+
+            if (loDetail.getOrderNo() != null
+                    || !loDetail.getOrderNo().isEmpty()) {
+                poJSON = new JSONObject();
+                poJSON = SaveIssuedTransaction(lnCtr);
+
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
+                }
+            }
+        }
 
         poGRider.commitTrans();
 
@@ -317,6 +339,24 @@ public class InventoryStockIssuanceNeo extends Transaction {
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction confirmed successfully.");
 
+        return poJSON;
+    }
+
+    public JSONObject SaveIssuedTransaction(int EntryNo) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        Model_Inventory_Transfer_Detail loDetail = (Model_Inventory_Transfer_Detail) paDetail.get(EntryNo);
+        Model_Inv_Stock_Request_Detail loStockDetail = loDetail.InventoryStockRequest();
+        if (loStockDetail.getEditMode() == EditMode.READY) {
+            loStockDetail.updateRecord();
+            loStockDetail.setIssued(loDetail.getQuantity());
+            poJSON = loStockDetail.saveRecord();
+
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
         return poJSON;
     }
 
@@ -362,6 +402,24 @@ public class InventoryStockIssuanceNeo extends Transaction {
             return poJSON;
         }
 
+        Model_Inventory_Transfer_Master loMaster = (Model_Inventory_Transfer_Master) this.poMaster;
+
+        if (loMaster.getOrderNo() != null
+                || !loMaster.getOrderNo().isEmpty()) {
+            poJSON = new JSONObject();
+            InventoryStockIssuance loIssuance = new DeliveryIssuanceControllers(poGRider, null).InventoryStockIssuance();
+            loIssuance.initTransaction();
+
+            loIssuance.OpenTransaction
+        
+        (loMaster.getOrderNo());
+            loIssuance.PostTransaction();
+
+            if (!"success".equals((String) poJSON.get("result"))) {
+                poGRider.rollbackTrans();
+                return poJSON;
+            }
+        }
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
