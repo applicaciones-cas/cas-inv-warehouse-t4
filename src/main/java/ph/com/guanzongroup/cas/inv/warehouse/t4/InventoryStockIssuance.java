@@ -1352,7 +1352,6 @@ public class InventoryStockIssuance extends Transaction {
 
     }
 
-    
     public JSONObject TagDepartureTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
@@ -1412,8 +1411,7 @@ public class InventoryStockIssuance extends Transaction {
 
         return poJSON;
     }
-    
-    
+
     public JSONObject TagArrivalTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
@@ -1450,7 +1448,7 @@ public class InventoryStockIssuance extends Transaction {
 
         String lsSQL = "UPDATE "
                 + poMaster.getTable()
-                + " SET   dDepartre = " + SQLUtil.toSQL(poGRider.getServerDate())
+                + " SET   dArrivalx = " + SQLUtil.toSQL(poGRider.getServerDate())
                 + " WHERE sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo());
 
         Long lnResult = poGRider.executeQuery(lsSQL,
