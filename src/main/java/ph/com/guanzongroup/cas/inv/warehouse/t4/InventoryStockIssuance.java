@@ -137,6 +137,59 @@ public class InventoryStockIssuance extends Transaction {
         return loDetailNew;
     }
 
+    public JSONObject retrieveDetail(int entryNo)
+            throws GuanzonException, CloneNotSupportedException, SQLException {
+        poJSON = new JSONObject();
+        Model_Cluster_Delivery_Detail loDetail = getDetail(entryNo);
+
+        // clone detail to transfer
+        InventoryRequestApproval loStockRequest = getRequestApproval(loDetail.InventoryTransfer().getMaster().getOrderNo());
+        if (loStockRequest != null) {
+            for (int lnCtr = 1; lnCtr <= loStockRequest.getDetailCount(); lnCtr++) {
+                if ((loStockRequest.getDetail(lnCtr).getApproved()
+                        - loStockRequest.getDetail(lnCtr).getIssued()) >= 1) {
+                    String lsStockId = loStockRequest.getDetail(lnCtr).getStockId();
+                    boolean lbExists = false;
+
+                    // 🔎 check if already exists in current transfer
+                    for (int lnRowDetail = 1; lnRowDetail <= loDetail.InventoryTransfer().getDetailCount(); lnRowDetail++) {
+                        Model_Inventory_Transfer_Detail loExistDetail = loDetail.InventoryTransfer().getDetail(lnRowDetail);
+                        if (loExistDetail.getStockId() != null && loExistDetail.getStockId().equals(lsStockId)) {
+                            lbExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!lbExists) {
+                        // 🆕 add new detail
+                        int lnNewRow = loDetail.InventoryTransfer().getDetailCount();
+
+                        Model_Inventory_Transfer_Detail loNewDetail = loDetail.InventoryTransfer().getDetail(lnNewRow);
+                        if (loNewDetail.getStockId() != null) {
+                            if (!loNewDetail.getStockId().isEmpty()) {
+
+                                lnNewRow = lnNewRow + 1;
+                            }
+                        }
+
+                        loNewDetail.setOrderNo(loStockRequest.getMaster().getTransactionNo());
+                        loNewDetail.setStockId(lsStockId);
+                        loNewDetail.setInventoryCost(((Number) loStockRequest.getDetail(lnCtr).Inventory().getCost()).doubleValue());
+                    }
+                }
+            }
+        } else {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Unable to Retrieve Detail");
+            return poJSON;
+        }
+
+        poJSON.put(
+                "result", "success");
+        // poJSON.put("message", "Detail added successfully.");
+        return poJSON;
+    }
+
     public JSONObject requestDetail(int stockRequest)
             throws GuanzonException, CloneNotSupportedException, SQLException {
         poJSON = new JSONObject();
@@ -195,7 +248,8 @@ public class InventoryStockIssuance extends Transaction {
         if (loStockRequest != null) {
             int lnDetail = 0;
             for (int lnCtr = 1; lnCtr <= loStockRequest.getDetailCount(); lnCtr++) {
-                if (loStockRequest.getDetail(lnCtr).getApproved() >= 1) {
+                if ((loStockRequest.getDetail(lnCtr).getApproved() 
+                        - loStockRequest.getDetail(lnCtr).getIssued()) >= 1) {
                     lnDetail++;
                     loDetail.InventoryTransfer().getDetail(lnDetail).setOrderNo(loStockRequest.getMaster().getTransactionNo());
                     loDetail.InventoryTransfer().getDetail(lnDetail).setStockId(loStockRequest.getDetail(lnCtr).getStockId());
@@ -256,7 +310,8 @@ public class InventoryStockIssuance extends Transaction {
 
         if (loStockRequest != null) {
             for (int lnCtr = 1; lnCtr <= loStockRequest.getDetailCount(); lnCtr++) {
-                if (loStockRequest.getDetail(lnCtr).getApproved() >= 1) {
+                if ((loStockRequest.getDetail(lnCtr).getApproved()
+                        - loStockRequest.getDetail(lnCtr).getIssued()) >= 1) {
                     loDetail.InventoryTransfer().getDetail(loDetail.InventoryTransfer().getDetailCount()).setOrderNo(loStockRequest.getMaster().getTransactionNo());
                     loDetail.InventoryTransfer().getDetail(loDetail.InventoryTransfer().getDetailCount()).setStockId(loStockRequest.getDetail(lnCtr).getStockId());
                     loDetail.InventoryTransfer().getDetail(loDetail.InventoryTransfer().getDetailCount()).setInventoryCost(((Number) loStockRequest.getDetail(lnCtr).Inventory().getCost()).doubleValue());
@@ -1384,7 +1439,7 @@ public class InventoryStockIssuance extends Transaction {
             return poJSON;
         }
 
-        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+        poGRider.beginTrans("UPDATE STATUS", "Process Transaction departure Tag", SOURCE_CODE, getMaster().getTransactionNo());
 
         String lsSQL = "UPDATE "
                 + poMaster.getTable()
@@ -1407,7 +1462,7 @@ public class InventoryStockIssuance extends Transaction {
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
-        poJSON.put("message", "Transaction Printed successfully.");
+        poJSON.put("message", "Transaction tag successfully.");
 
         return poJSON;
     }
@@ -1444,7 +1499,7 @@ public class InventoryStockIssuance extends Transaction {
             return poJSON;
         }
 
-        poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
+        poGRider.beginTrans("UPDATE STATUS", "Process Transaction arrival Tag", SOURCE_CODE, getMaster().getTransactionNo());
 
         String lsSQL = "UPDATE "
                 + poMaster.getTable()
@@ -1467,7 +1522,7 @@ public class InventoryStockIssuance extends Transaction {
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
-        poJSON.put("message", "Transaction Printed successfully.");
+        poJSON.put("message", "Transaction tag successfully.");
 
         return poJSON;
     }

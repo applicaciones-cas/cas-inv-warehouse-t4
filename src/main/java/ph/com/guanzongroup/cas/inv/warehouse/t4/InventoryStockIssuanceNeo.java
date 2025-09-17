@@ -214,6 +214,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
             poJSON.put("message", "Transaction was already cancelled.");
             return poJSON;
         }
+        
 
         return updateTransaction();
     }
@@ -410,10 +411,8 @@ public class InventoryStockIssuanceNeo extends Transaction {
             InventoryStockIssuance loIssuance = new DeliveryIssuanceControllers(poGRider, null).InventoryStockIssuance();
             loIssuance.initTransaction();
 
-            loIssuance.OpenTransaction
-        
-        (loMaster.getOrderNo());
-            loIssuance.PostTransaction();
+            loIssuance.OpenTransaction(loMaster.getOrderNo());
+            poJSON = loIssuance.PostTransaction();
 
             if (!"success".equals((String) poJSON.get("result"))) {
                 poGRider.rollbackTrans();
