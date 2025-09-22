@@ -100,12 +100,12 @@ public class DeliverySchedule_Vehicle implements GValidator {
             isRequiredApproval = true;
         }
 
-        //change schedule date 
-        if (poMaster.getScheduleDate().after((Date) poGRider.getServerDate())
-                && poMaster.getScheduleDate().before((Date) poGRider.getServerDate())) {
-            poJSON.put("message", "Change of schedule date are not allowed.! Approval is Required");
-            isRequiredApproval = true;
-        }
+//        //change schedule date 
+//        if (poMaster.getScheduleDate().after((Date) poGRider.getServerDate())
+//                && poMaster.getScheduleDate().before((Date) poGRider.getServerDate())) {
+//            poJSON.put("message", "Change of schedule date are not allowed.! Approval is Required");
+//            isRequiredApproval = true;
+//        }
 
 //        if (poMaster.getIndustryId() == null) {
 //            poJSON.put("result", "error");
