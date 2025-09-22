@@ -289,7 +289,7 @@ public class InventoryStockIssuance_Appliance implements GValidator {
             isRequiredApproval = true;
         }
         poJSON.put("result", "success");
-        poJSON.put("isRequiredApproval", isRequiredApproval);
+//        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
     

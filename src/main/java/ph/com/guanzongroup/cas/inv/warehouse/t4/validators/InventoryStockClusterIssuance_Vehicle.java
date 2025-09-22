@@ -280,9 +280,9 @@ public class InventoryStockClusterIssuance_Vehicle implements GValidator {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
-        }
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            isRequiredApproval = true;
+//        }
 
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getReferNo() != null
@@ -298,7 +298,7 @@ public class InventoryStockClusterIssuance_Vehicle implements GValidator {
             }
         }
         poJSON.put("result", "success");
-        poJSON.put("isRequiredApproval", isRequiredApproval);
+//        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 

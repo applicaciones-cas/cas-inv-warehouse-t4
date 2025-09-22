@@ -276,13 +276,13 @@ public class InventoryStockClusterIssuance_General implements GValidator {
         return poJSON;
     }
 
-    private JSONObject validateVoid() throws SQLException, GuanzonException, CloneNotSupportedException {
+   private JSONObject validateVoid() throws SQLException, GuanzonException, CloneNotSupportedException {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
 
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
-        }
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            isRequiredApproval = true;
+//        }
 
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getReferNo() != null
@@ -298,8 +298,7 @@ public class InventoryStockClusterIssuance_General implements GValidator {
             }
         }
         poJSON.put("result", "success");
-        poJSON.put("isRequiredApproval", isRequiredApproval);
+//        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
-
 }

@@ -82,7 +82,8 @@ public class DeliverySchedule_Vehicle implements GValidator {
 
         return poJSON;
     }
- private JSONObject validateNew() throws SQLException {
+
+    private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
@@ -227,14 +228,14 @@ public class DeliverySchedule_Vehicle implements GValidator {
     }
 
     private JSONObject validateVoid() throws SQLException {
-        boolean isRequiredApproval = false;
+//        boolean isRequiredApproval = false;
         poJSON = new JSONObject();
-
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
-        }
+//
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            isRequiredApproval = true;
+//        }
         poJSON.put("result", "success");
-        poJSON.put("isRequiredApproval", isRequiredApproval);
+//        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 

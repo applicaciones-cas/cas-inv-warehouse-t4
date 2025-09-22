@@ -25,6 +25,7 @@ import org.guanzon.cas.inv.warehouse.model.Model_Inv_Stock_Request_Detail;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
+import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryIssuanceType;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuancePrint;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuanceStatus;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.model.Model_Cluster_Delivery_Detail;
@@ -214,7 +215,6 @@ public class InventoryStockIssuanceNeo extends Transaction {
             poJSON.put("message", "Transaction was already cancelled.");
             return poJSON;
         }
-        
 
         return updateTransaction();
     }
@@ -322,14 +322,15 @@ public class InventoryStockIssuanceNeo extends Transaction {
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             Model_Inventory_Transfer_Detail loDetail = (Model_Inventory_Transfer_Detail) paDetail.get(lnCtr);
 
-            if (loDetail.getOrderNo() != null
-                    || !loDetail.getOrderNo().isEmpty()) {
-                poJSON = new JSONObject();
-                poJSON = SaveIssuedTransaction(lnCtr);
+            if (loDetail.getOrderNo() != null) {
+                if (!loDetail.getOrderNo().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON = SaveIssuedTransaction(lnCtr);
 
-                if (!"success".equals((String) poJSON.get("result"))) {
-                    poGRider.rollbackTrans();
-                    return poJSON;
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
                 }
             }
         }
@@ -405,18 +406,19 @@ public class InventoryStockIssuanceNeo extends Transaction {
 
         Model_Inventory_Transfer_Master loMaster = (Model_Inventory_Transfer_Master) this.poMaster;
 
-        if (loMaster.getOrderNo() != null
-                || !loMaster.getOrderNo().isEmpty()) {
-            poJSON = new JSONObject();
-            InventoryStockIssuance loIssuance = new DeliveryIssuanceControllers(poGRider, null).InventoryStockIssuance();
-            loIssuance.initTransaction();
+        if (loMaster.getOrderNo() != null) {
+            if (!loMaster.getOrderNo().isEmpty()) {
+                poJSON = new JSONObject();
+                InventoryStockIssuance loIssuance = new DeliveryIssuanceControllers(poGRider, null).InventoryStockIssuance();
+                loIssuance.initTransaction();
 
-            loIssuance.OpenTransaction(loMaster.getOrderNo());
-            poJSON = loIssuance.PostTransaction();
+                loIssuance.OpenTransaction(loMaster.getOrderNo());
+                poJSON = loIssuance.PostTransaction();
 
-            if (!"success".equals((String) poJSON.get("result"))) {
-                poGRider.rollbackTrans();
-                return poJSON;
+                if (!"success".equals((String) poJSON.get("result"))) {
+                    poGRider.rollbackTrans();
+                    return poJSON;
+                }
             }
         }
         poGRider.commitTrans();
@@ -540,6 +542,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
             String lsSQL = SQL_BROWSE;
 
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.cDelivrTp != " + SQLUtil.toSQL(DeliveryIssuanceType.DELIVERY));
 
             String lsCondition = "";
             if (psTranStat != null) {
@@ -621,7 +624,7 @@ public class InventoryStockIssuanceNeo extends Transaction {
                 poJSON = openTransaction((String) poJSON.get("sTransNox"));
 
                 if (!"error".equals((String) poJSON.get("result"))) {
-                    return UpdateTransaction();
+                    return updateTransaction();
                 }
                 return poJSON;
 //            } else if ("error".equals((String) poJSON.get("result"))) {
@@ -1266,8 +1269,8 @@ public class InventoryStockIssuanceNeo extends Transaction {
         //        poReportJasper.setJasperPrint(report0Print);
         poReportJasper.isAlwaysTop(false);
         poReportJasper.isWithUI(true);
-        poReportJasper.isWithExport(true);
-        poReportJasper.isWithExportPDF(true);
+        poReportJasper.isWithExport(false);
+        poReportJasper.isWithExportPDF(false);
         poReportJasper.willExport(true);
         return poReportJasper.generateReport();
 
