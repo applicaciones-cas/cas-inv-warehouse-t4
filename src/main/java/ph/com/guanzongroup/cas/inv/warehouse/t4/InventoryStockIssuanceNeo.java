@@ -1242,31 +1242,22 @@ public class InventoryStockIssuanceNeo extends Transaction {
         //add Parameter
         poReportJasper.addParameter(
                 "BranchName", poGRider.getBranchName());
-        poReportJasper.addParameter(
-                "Address", poGRider.getAddress());
-        poReportJasper.addParameter(
-                "CompanyName", poGRider.getClientName());
-        poReportJasper.addParameter(
-                "TransactionNo", getMaster().getTransactionNo());
-        poReportJasper.addParameter(
-                "TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
-        poReportJasper.addParameter(
-                "Remarks", getMaster().getRemarks());
-        poReportJasper.addParameter(
-                "Destination", getMaster().BranchDestination().getBranchName());
-        poReportJasper.addParameter(
-                "Trucking", getMaster().TruckingCompany().getCompanyName());
-        poReportJasper.addParameter(
-                "DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
+        poReportJasper.addParameter("Address", poGRider.getAddress());
+        poReportJasper.addParameter("CompanyName", poGRider.getClientName());
+        poReportJasper.addParameter("TransactionNo", getMaster().getTransactionNo());
+        poReportJasper.addParameter("TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
+        poReportJasper.addParameter("Remarks", getMaster().getRemarks());
+        poReportJasper.addParameter("Destination", getMaster().BranchDestination().getBranchName());
+        poReportJasper.addParameter("Trucking", getMaster().TruckingCompany().getCompanyName());
+        poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
         if (getMaster()
                 .isPrintedStatus()) {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\reprint.png");
         } else {
-            poReportJasper.addParameter("watermarkImagePath", "");
+            poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\blank.png");
         }
 
-        poReportJasper.setReportName(
-                "Inventory Issuance");
+        poReportJasper.setReportName("Inventory Issuance");
         poReportJasper.setJasperPath(InventoryStockIssuancePrint.getJasperReport(psIndustryCode));
 
         //process by ResultSet
@@ -1286,16 +1277,11 @@ public class InventoryStockIssuanceNeo extends Transaction {
         //                    poParamater,
         //                    yourDATA);
         //        poReportJasper.setJasperPrint(report0Print);
-        poReportJasper.isAlwaysTop(
-                false);
-        poReportJasper.isWithUI(
-                true);
-        poReportJasper.isWithExport(
-                false);
-        poReportJasper.isWithExportPDF(
-                false);
-        poReportJasper.willExport(
-                true);
+        poReportJasper.isAlwaysTop(false);
+        poReportJasper.isWithUI(true);
+        poReportJasper.isWithExport(false);
+        poReportJasper.isWithExportPDF(false);
+        poReportJasper.willExport(true);
         return poReportJasper.generateReport();
 
     }
