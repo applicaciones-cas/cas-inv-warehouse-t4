@@ -240,6 +240,12 @@ public class InventoryBrowse {
     }
 
     //Set Filter Purpose
+    public JSONObject setInventory(String stockIDFilter) throws SQLException, GuanzonException {
+        this.poJSON = new JSONObject();
+        return poInventory.openRecord(stockIDFilter);
+    }
+
+    //Set Filter Purpose
     public JSONObject setSupplier(String supplierFilter) throws SQLException, GuanzonException {
         this.poJSON = new JSONObject();
         return poSupplierCompany.openRecord(supplierFilter);
@@ -1024,6 +1030,7 @@ public class InventoryBrowse {
             //supplier
             {"ba.sSupplier", this.getModelSupplierMaster() != null ? this.getModelSupplierMaster().getClientId() : null},
             // inventory
+            {"a.sStockIDx", this.getModelInventory() != null ? this.getModelInventory().getStockId(): null},
             {"a.sIndstCdx", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
             {"a.sCategCd1", this.getModelCategory() != null ? this.getModelCategory().getCategoryId() : null},
             {"a.sCategCd1", this.getModelCategory2() != null ? this.getModelCategory2().getCategoryId() : null},
@@ -1084,6 +1091,8 @@ public class InventoryBrowse {
             //supplier
             {"ba.sSupplier", this.getModelSupplierMaster() != null ? this.getModelSupplierMaster().getClientId() : null},
             // inventory
+            
+            {"a.sStockIDx", this.getModelInventory() != null ? this.getModelInventory().getStockId(): null},
             {"b.sIndstCdx", this.getModelIndustry() != null ? this.getModelIndustry().getIndustryId() : null},
             {"b.sCategCd1", this.getModelCategory() != null ? this.getModelCategory().getCategoryId() : null},
             {"b.sCategCd1", this.getModelCategory2() != null ? this.getModelCategory2().getCategoryId() : null},

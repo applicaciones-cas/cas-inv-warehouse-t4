@@ -8,6 +8,7 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.parameter.model.Model_Branch;
@@ -53,6 +54,7 @@ public class Model_Inventory_Transfer_Master extends Model {
             poEntity.updateNull("sOrderNox");
             poEntity.updateString("cStockNew", "1");
             poEntity.updateString("cDelivrTp", "0");
+            poEntity.updateString("cPrintedx", "0");
             poEntity.updateObject("dModified", poGRider.getServerDate());
             poEntity.updateString("cTranStat", DeliveryScheduleStatus.OPEN);
 
@@ -279,6 +281,19 @@ public class Model_Inventory_Transfer_Master extends Model {
 
     public String getDeliveryType() {
         return (String) getValue("cDelivrTp");
+    }
+
+    //cPrintedx
+    public JSONObject setPrintStatus(String printStatus) {
+        return setValue("cPrintedx", printStatus);
+    }
+
+    public String getPrintStatus() {
+        return (String) getValue("cPrintedx");
+    }
+    
+     public boolean isPrintedStatus() {
+        return RecordStatus.ACTIVE.equals(getValue("cPrintedx"));
     }
 
     //cTranStat

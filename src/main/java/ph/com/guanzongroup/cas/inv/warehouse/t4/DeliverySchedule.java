@@ -599,21 +599,21 @@ public class DeliverySchedule extends Transaction {
 
         System.out.println("result " + (String) poJSON.get("result"));
         if ("success".equals((String) poJSON.get("result"))) {
-            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
-                Model_Delivery_Schedule_Detail loExisting = ((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting));
-                if (loExisting.getClusterID() != null) {
-                    if (loExisting.getClusterID().equals(loSubClass.getModel().getClusterID())
-                            && loSubClass.getModel().getClusterID() != null
-                            && !loSubClass.getModel().getClusterID().isEmpty()) {
-                        poJSON = new JSONObject();
-                        poJSON.put("result", "error");
-                        poJSON.put("message", "Selected Cluster ID is already exist!");
-                        return poJSON;
-
-                    }
-                }
-
-            }
+//            for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+//                Model_Delivery_Schedule_Detail loExisting = ((Model_Delivery_Schedule_Detail) paDetail.get(lnExisting));
+//                if (loExisting.getClusterID() != null) {
+//                    if (loExisting.getClusterID().equals(loSubClass.getModel().getClusterID())
+//                            && loSubClass.getModel().getClusterID() != null
+//                            && !loSubClass.getModel().getClusterID().isEmpty()) {
+//                        poJSON = new JSONObject();
+//                        poJSON.put("result", "error");
+//                        poJSON.put("message", "Selected Cluster ID is already exist!");
+//                        return poJSON;
+//
+//                    }
+//                }
+//
+//            }
             getDetail(row).setClusterID(loSubClass.getModel().getClusterID());
         }
         return poJSON;

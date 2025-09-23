@@ -85,7 +85,8 @@ public class DeliverySchedule_MC implements GValidator {
 
         return poJSON;
     }
- private JSONObject validateNew() throws SQLException {
+
+    private JSONObject validateNew() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
@@ -102,12 +103,12 @@ public class DeliverySchedule_MC implements GValidator {
             isRequiredApproval = true;
         }
 
-        //change schedule date 
-        if (poMaster.getScheduleDate().after((Date) poGRider.getServerDate())
-                && poMaster.getScheduleDate().before((Date) poGRider.getServerDate())) {
-            poJSON.put("message", "Change of schedule date are not allowed.! Approval is Required");
-            isRequiredApproval = true;
-        }
+//        //change schedule date 
+//        if (poMaster.getScheduleDate().after((Date) poGRider.getServerDate())
+//                && poMaster.getScheduleDate().before((Date) poGRider.getServerDate())) {
+//            poJSON.put("message", "Change of schedule date are not allowed.! Approval is Required");
+//            isRequiredApproval = true;
+//        }
 
 //        if (poMaster.getIndustryId() == null) {
 //            poJSON.put("result", "error");
@@ -230,14 +231,14 @@ public class DeliverySchedule_MC implements GValidator {
     }
 
     private JSONObject validateVoid() throws SQLException {
-        boolean isRequiredApproval = false;
+//        boolean isRequiredApproval = false;
         poJSON = new JSONObject();
-
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
-        }
+//
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            isRequiredApproval = true;
+//        }
         poJSON.put("result", "success");
-        poJSON.put("isRequiredApproval", isRequiredApproval);
+//        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 

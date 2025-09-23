@@ -114,7 +114,7 @@ public class InventoryStockIssuance_LP implements GValidator {
             return poJSON;
         }
         if (poMaster.getCategoryId()
-                == null || poMaster.getCategoryId().isEmpty()) { 
+                == null || poMaster.getCategoryId().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Category is not set.");
             return poJSON;
@@ -130,11 +130,12 @@ public class InventoryStockIssuance_LP implements GValidator {
             poJSON.put("message", "Destination is not set.");
             return poJSON;
         }
-
-        if (poMaster.getTruckId() == null || poMaster.getTruckId().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Trucking is not set.");
-            return poJSON;
+        if (poMaster.getDeliveryType() != null && poMaster.getDeliveryType().equals("2")) {
+            if (poMaster.getTruckId() == null || poMaster.getTruckId().isEmpty()) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "Trucking is not set.");
+                return poJSON;
+            }
         }
 
         int lnDetailCount = 0;
@@ -283,12 +284,12 @@ public class InventoryStockIssuance_LP implements GValidator {
     private JSONObject validateVoid() throws SQLException {
         boolean isRequiredApproval = false;
         poJSON = new JSONObject();
-
-        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
-            isRequiredApproval = true;
-        }
+        
+//        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+//            isRequiredApproval = true;
+//        }
         poJSON.put("result", "success");
-        poJSON.put("isRequiredApproval", isRequiredApproval);
+//        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
 
