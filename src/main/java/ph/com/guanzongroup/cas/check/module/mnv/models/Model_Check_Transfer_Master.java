@@ -104,15 +104,14 @@ public class Model_Check_Transfer_Master extends Model {
         return (String) getValue("sIndstCdx");
     }
 
-    //sBranchCd
-    public JSONObject setBranchCode(String branchCode) {
-        return setValue("sBranchCd", branchCode);
-    }
-
-    public String getBranchCode() {
-        return (String) getValue("sBranchCd");
-    }
-
+//    //sBranchCd
+//    public JSONObject setBranchCode(String branchCode) {
+//        return setValue("sBranchCd", branchCode);
+//    }
+//
+//    public String getBranchCode() {
+//        return (String) getValue("sBranchCd");
+//    }
     //dTransact
     public JSONObject setTransactionDate(Date transactionDate) {
         return setValue("dTransact", transactionDate);
@@ -129,6 +128,15 @@ public class Model_Check_Transfer_Master extends Model {
 
     public String getDestination() {
         return (String) getValue("sDestinat");
+    }
+
+    //sDeptIDxx
+    public JSONObject setDepartment(String destination) {
+        return setValue("sDeptIDxx", destination);
+    }
+
+    public String getDepartment() {
+        return (String) getValue("sDeptIDxx");
     }
 
     //sRemarksx
@@ -273,12 +281,12 @@ public class Model_Check_Transfer_Master extends Model {
     }
 
     public Model_Branch Branch() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sBranchCd"))) {
+        if (!"".equals(getValue("sTransNox"))) {
             if (this.poBranch.getEditMode() == 1 && this.poBranch
-                    .getBranchCode().equals(getValue("sBranchCd"))) {
+                    .getBranchCode().equals(getValue("sTransNox").toString().substring(0, 4))) {
                 return this.poBranch;
             }
-            this.poJSON = this.poBranch.openRecord((String) getValue("sBranchCd"));
+            this.poJSON = this.poBranch.openRecord(getValue("sTransNox").toString().substring(0, 4));
             if ("success".equals(this.poJSON.get("result"))) {
                 return this.poBranch;
             }

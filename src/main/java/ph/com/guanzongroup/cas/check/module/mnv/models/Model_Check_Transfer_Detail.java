@@ -7,6 +7,7 @@ import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.inv.model.Model_Inv_Serial;
 import org.guanzon.cas.inv.model.Model_Inventory;
 import org.guanzon.cas.inv.services.InvModels;
@@ -43,6 +44,7 @@ public class Model_Check_Transfer_Detail extends Model {
             poEntity.updateObject("nEntryNox", 1);
             poEntity.updateNull("sSourceNo");
             poEntity.updateNull("sSourceCd");
+            poEntity.updateString("cRecieved", "0");
             ID = poEntity.getMetaData().getColumnLabel(1);
             ID2 = poEntity.getMetaData().getColumnLabel(2);
 
@@ -60,6 +62,7 @@ public class Model_Check_Transfer_Detail extends Model {
     //nEntryNox*
     //sSourceCd*
     //sSourceNo*
+    //cReceived*
 
     //sTransNox
     public JSONObject setTransactionNo(String transactionNo) {
@@ -97,6 +100,23 @@ public class Model_Check_Transfer_Detail extends Model {
         return (String) getValue("sSourceNo");
     }
 
+    //cReceived
+    public JSONObject setReceived(String received) {
+        return setValue("cRecieved", received);
+    }
+
+    public String getReceived() {
+        return (String) getValue("cRecieved");
+    }
+
+    public boolean isReceived() {
+        return RecordStatus.ACTIVE.equals(getValue("cRecieved"));
+    }
+
+    public JSONObject setReceived(boolean received) {
+        return setValue("cRecieved", received == true ? "1" : "0");
+    }
+
     //dModified
     public JSONObject setModifiedDate(Date modifiedDate) {
         return setValue("dModified", modifiedDate);
@@ -127,7 +147,7 @@ public class Model_Check_Transfer_Detail extends Model {
         poCheckPayment.initialize();
         return this.poCheckPayment;
     }
-    
+
 //    public Model_Check_Receive CheckPayment() throws SQLException, GuanzonException {
 //        if (!"".equals(getValue("sSourceNo"))) {
 //            if (this.poCheckReceive.getEditMode() == 1 && this.poCheckReceive
@@ -144,5 +164,4 @@ public class Model_Check_Transfer_Detail extends Model {
 //        poCheckReceive.initialize();
 //        return this.poCheckReceive;
 //    }
-
 }

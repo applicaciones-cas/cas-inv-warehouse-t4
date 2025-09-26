@@ -1,11 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package ph.com.guanzongroup.cas.check.module.mnv.validator;
 
-import ph.com.guanzongroup.cas.inv.warehouse.t4.validators.*;
 import org.guanzon.appdriver.iface.GValidator;
 
 public class CheckValidatorFactory {

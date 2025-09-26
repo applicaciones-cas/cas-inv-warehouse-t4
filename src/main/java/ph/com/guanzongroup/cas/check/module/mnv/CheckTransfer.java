@@ -1,6 +1,5 @@
 package ph.com.guanzongroup.cas.check.module.mnv;
 
-import ph.com.guanzongroup.cas.inv.warehouse.t4.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,6 +25,7 @@ import org.guanzon.cas.parameter.Banks;
 import org.guanzon.cas.parameter.Department;
 import org.guanzon.cas.parameter.model.Model_Banks;
 import org.guanzon.cas.parameter.model.Model_Branch;
+import org.guanzon.cas.parameter.model.Model_Department;
 import org.guanzon.cas.parameter.services.ParamControllers;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
@@ -37,17 +37,12 @@ import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Transfer_Deta
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Transfer_Master;
 import ph.com.guanzongroup.cas.check.module.mnv.services.CheckModels;
 import ph.com.guanzongroup.cas.check.module.mnv.validator.CheckValidatorFactory;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.DeliveryIssuanceType;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.constant.InventoryStockIssuancePrint;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.model.services.DeliveryIssuanceModels;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtil;
 import ph.com.guanzongroup.cas.inv.warehouse.t4.report.ReportUtilListener;
 
 public class CheckTransfer extends Transaction {
 
     private String psIndustryCode = "";
-    private String psCompanyID = "";
-    private String psCategorCD = "";
     private String psApprovalUser = "";
     private List<Model> paMaster;
     private List<Model> paCheckList;
@@ -55,14 +50,6 @@ public class CheckTransfer extends Transaction {
 
     public void setIndustryID(String industryId) {
         psIndustryCode = industryId;
-    }
-
-    public void setCompanyID(String companyId) {
-        psCompanyID = companyId;
-    }
-
-    public void setCategoryID(String categoryId) {
-        psCategorCD = categoryId;
     }
 
     public Model_Check_Transfer_Master getMaster() {
@@ -128,8 +115,8 @@ public class CheckTransfer extends Transaction {
     public JSONObject initTransaction() throws GuanzonException, SQLException {
         SOURCE_CODE = "Dlvr";
 
-        poMaster = new DeliveryIssuanceModels(poGRider).InventoryTransferMaster();
-        poDetail = new DeliveryIssuanceModels(poGRider).InventoryTransferDetail();
+        poMaster = new CheckModels(poGRider).CheckTransferMaster();
+        poDetail = new CheckModels(poGRider).CheckTransferDeetail();
         paMaster = new ArrayList<Model>();
         paDetail = new ArrayList<Model>();
         paCheckList = new ArrayList<Model>();
@@ -144,16 +131,13 @@ public class CheckTransfer extends Transaction {
         SQL_BROWSE = "SELECT"
                 + " a.sTransNox"
                 + ", a.dTransact"
-                + ", d.sBranchNm xBranchNm"
-                + ", e.sBranchNm xDestinat"
-                + ", c.sCompnyNm sCompnyNm"
-                + ", a.sBranchCd"
+                + ", b.sBranchNm xBranchNm"
+                + ", c.sBranchNm xDestinat"
+//                + ", a.sBranchCd"
                 + ", a.sDestinat"
-                + " FROM Inv_Transfer_Master a "
-                + "     LEFT JOIN AP_Client_Master b ON a.sTruckIDx = b.sClientID"
-                + "     LEFT JOIN Client_Master c ON b.sClientID = c.sClientID"
-                + "     LEFT JOIN Branch d ON a.sBranchCd = d.sBranchCd"
-                + "     LEFT JOIN Branch e ON a.sDestinat = e.sBranchCd";
+                + " FROM Check_Transfer_Master a "
+                + "     LEFT JOIN Branch b ON LEFT(a.sTransNox,4) = b.sBranchCd"
+                + "     LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd";
     }
 
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
@@ -168,7 +152,7 @@ public class CheckTransfer extends Transaction {
         }
 
         getMaster().setIndustryId(psIndustryCode);
-        getMaster().setBranchCode(poGRider.getBranchCode());
+//        getMaster().setBranchCode(poGRider.getBranchCode());
         return poJSON;
     }
 
@@ -206,13 +190,16 @@ public class CheckTransfer extends Transaction {
         //assign values needed
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             Model_Check_Transfer_Detail loDetail = (Model_Check_Transfer_Detail) paDetail.get(lnCtr);
-            if (!loDetail.getSourceNo().isEmpty()) {
-
+            if (loDetail == null){ 
+                paDetail.remove(lnCtr);
+            } else {
+                if (loDetail.getSourceNo().isEmpty()){ 
+                paDetail.remove(lnCtr);
+                continue;
+                }
                 lnDetailCount++;
                 loDetail.setTransactionNo(getMaster().getTransactionNo());
                 loDetail.setEntryNo(lnDetailCount);
-            } else {
-                paDetail.remove(lnCtr);
 
             }
         }
@@ -534,8 +521,7 @@ public class CheckTransfer extends Transaction {
         try {
             String lsSQL = SQL_BROWSE;
 
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.sBranchCd = " + SQLUtil.toSQL(poGRider.getBranchCode()));
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.cDelivrTp != " + SQLUtil.toSQL(DeliveryIssuanceType.DELIVERY));
+            lsSQL = MiscUtil.addCondition(lsSQL, "LEFT(a.sTransNox,4) = " + SQLUtil.toSQL(poGRider.getBranchCode()));
 
             String lsCondition = "";
             if (psTranStat != null) {
@@ -549,9 +535,6 @@ public class CheckTransfer extends Transaction {
                 }
                 lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
             }
-            if (!psCategorCD.isEmpty()) {
-                lsSQL = MiscUtil.addCondition(lsSQL, " a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
-            }
 
             System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
@@ -559,7 +542,7 @@ public class CheckTransfer extends Transaction {
                     value,
                     "Transaction No»Destination»Date",
                     "sTransNox»xDestinat»dTransact",
-                    "a.sTransNox»e.sBranchNm»a.dTransact",
+                    "a.sTransNox»c.sBranchNm»a.dTransact",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
@@ -601,16 +584,13 @@ public class CheckTransfer extends Transaction {
             }
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode()));
 
-            if (!psCategorCD.isEmpty()) {
-                lsSQL = MiscUtil.addCondition(lsSQL, " a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
-            }
             System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
                     "Transaction No»Branch Name»Date",
                     "sTransNox»xBranchNm»dTransact",
-                    "a.sTransNox»d.sBranchNm»a.dTransact",
+                    "a.sTransNox»b.sBranchNm»a.dTransact",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
@@ -648,7 +628,7 @@ public class CheckTransfer extends Transaction {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
         }
 
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.cRelease = " + SQLUtil.toSQL(CheckTransferStatus.OPEN));
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckTransferStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckTransferStatus.CANCELLED));
 
@@ -666,6 +646,20 @@ public class CheckTransfer extends Transaction {
             System.out.println("result " + (String) poJSON.get("result"));
 
             if ("success".equals((String) poJSON.get("result"))) {
+                for (int lnExisting = 0; lnExisting <= paDetail.size() - 1; lnExisting++) {
+                    Model_Check_Transfer_Detail loExisting = (Model_Check_Transfer_Detail) paDetail.get(lnExisting);
+                    if (loExisting.getSourceNo() != null) {
+                        if (loExisting.getSourceNo().equals(loBrowse.getTransactionNo())) {
+                            poJSON = new JSONObject();
+                            poJSON.put("result", "error");
+                            poJSON.put("message", "Selected Check is already exist!");
+                            return poJSON;
+                        }
+                    }
+                }
+
+                this.poJSON = new JSONObject();
+                this.poJSON.put("result", "success");
                 getDetail(row).setSourceNo(loBrowse.getTransactionNo());
                 return poJSON;
             }
@@ -711,15 +705,26 @@ public class CheckTransfer extends Transaction {
     }
 
     public JSONObject searchTransactionDepartment(String value, boolean byCode) throws SQLException, GuanzonException {
-        Department loBrowse = new ParamControllers(poGRider, null).Department();
-        loBrowse.setRecordStatus(RecordStatus.ACTIVE);
-        poJSON = loBrowse.searchRecord(value, byCode);
+        Model_Department loBrowse = new ParamModels(poGRider).Department();
+
+        String lsSQL = "SELECT sDeptIDxx, sDeptName FROM Department ";
+        lsSQL = MiscUtil.addCondition(lsSQL, "cRecdStat = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
+
+        poJSON = ShowDialogFX.Search(poGRider,
+                lsSQL,
+                value,
+                "ID»Department Name",
+                "sDeptIDxx»sDeptName",
+                "sDeptIDxx»sDeptName",
+                byCode ? 0 : 1);
 
         if (poJSON != null) {
+
+            poJSON = loBrowse.openRecord((String) this.poJSON.get("sDeptIDxx"));
             System.out.println("result " + (String) poJSON.get("result"));
 
             if ("success".equals((String) poJSON.get("result"))) {
-                getMaster().setDestination(loBrowse.getModel().getDepartmentId());
+                getMaster().setDepartment(loBrowse.getDepartmentId());
                 return poJSON;
             }
 
@@ -752,6 +757,11 @@ public class CheckTransfer extends Transaction {
 
     }
 
+    public void ClearFilterBanks() throws SQLException, GuanzonException {
+
+        poBank.initialize();
+    }
+
     public Model_Banks getBanks() throws SQLException, GuanzonException {
         if (poBank != null) {
             if (!"".equals(poBank.getBankID())) {
@@ -780,8 +790,12 @@ public class CheckTransfer extends Transaction {
         if (!psIndustryCode.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
         }
-
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.cRelease = " + SQLUtil.toSQL(CheckTransferStatus.OPEN));
+        if (poBank.getBankID() != null) {
+            if (!poBank.getBankID().isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, " a.sBankIDxx = " + SQLUtil.toSQL(poBank.getBankID()));
+            }
+        }
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckTransferStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckTransferStatus.CANCELLED));
         if (!fsDateFrom.isEmpty()) {
@@ -853,9 +867,6 @@ public class CheckTransfer extends Transaction {
 
         if (!psIndustryCode.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
-        }
-        if (!psCategorCD.isEmpty()) {
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
         }
 
         lsSQL = MiscUtil.addCondition(lsSQL, "a.sDestinat = " + SQLUtil.toSQL(poGRider.getBranchCode()));
@@ -973,11 +984,6 @@ public class CheckTransfer extends Transaction {
 
         ReportUtil poReportJasper = new ReportUtil(poGRider);
 
-        if (psCategorCD == null && psCategorCD.isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Category is Required for this Transaction");
-            return poJSON;
-        }
         if (getMaster().getTransactionNo() == null && getMaster().getTransactionNo().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "No record is Selected");
@@ -1022,8 +1028,6 @@ public class CheckTransfer extends Transaction {
                     poReportJasper.CloseReportUtil();
 
                 } catch (SQLException | GuanzonException | CloneNotSupportedException ex) {
-                    Logger.getLogger(InventoryRequestApproval.class
-                            .getName()).log(Level.SEVERE, null, ex);
                     ShowMessageFX.Error("", "", ex.getMessage());
                 }
             }
@@ -1067,10 +1071,10 @@ public class CheckTransfer extends Transaction {
         }
 
         poReportJasper.setReportName("Inventory Issuance");
-        poReportJasper.setJasperPath(InventoryStockIssuancePrint.getJasperReport(psIndustryCode));
+        poReportJasper.setJasperPath(CheckTransferRecords.getJasperReport(psIndustryCode));
 
         //process by ResultSet
-        String lsSQL = InventoryStockIssuancePrint.PrintRecordQuery();
+        String lsSQL = CheckTransferRecords.PrintRecordQuery();
         lsSQL = MiscUtil.addCondition(lsSQL, "InventoryTransferMaster.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
 
         poReportJasper.setSQLReport(lsSQL);

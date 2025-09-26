@@ -114,11 +114,11 @@ public class CheckTransfer_Car implements GValidator {
             poJSON.put("message", "Company is not set.");
             return poJSON;
         }
-        if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Branch is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Branch is not set.");
+//            return poJSON;
+//        }
 
         if (poMaster.getDestination() == null || poMaster.getDestination().isEmpty()) {
             poJSON.put("result", "error");
