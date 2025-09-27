@@ -13,9 +13,9 @@ import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 
 /**
  *
- * @author maynevval 08-09-2025
+ * @author maynevval 09-27-2025
  */
-public class Model_Check_Transfer_Detail extends Model {
+public class Model_Check_Deposit_Detail extends Model {
 
     private Model_Check_Payments poCheckPayment;
 //    private Model_Check_Receive poCheckReceive;
@@ -38,7 +38,6 @@ public class Model_Check_Transfer_Detail extends Model {
             poEntity.updateObject("nEntryNox", 1);
             poEntity.updateNull("sSourceNo");
             poEntity.updateNull("sSourceCd");
-            poEntity.updateString("cRecieved", "0");
             ID = poEntity.getMetaData().getColumnLabel(1);
             ID2 = poEntity.getMetaData().getColumnLabel(2);
 
@@ -56,7 +55,7 @@ public class Model_Check_Transfer_Detail extends Model {
     //nEntryNox*
     //sSourceCd*
     //sSourceNo*
-    //cReceived*
+    //sRemarksx*
 
     //sTransNox
     public JSONObject setTransactionNo(String transactionNo) {
@@ -101,23 +100,6 @@ public class Model_Check_Transfer_Detail extends Model {
 
     public String getRemarks() {
         return (String) getValue("sRemarksx");
-    }
-
-    //cReceived
-    public JSONObject setReceived(String received) {
-        return setValue("cRecieved", received);
-    }
-
-    public String getReceived() {
-        return (String) getValue("cRecieved");
-    }
-
-    public boolean isReceived() {
-        return RecordStatus.ACTIVE.equals(getValue("cRecieved"));
-    }
-
-    public JSONObject setReceived(boolean received) {
-        return setValue("cRecieved", received == true ? "1" : "0");
     }
 
     //dModified

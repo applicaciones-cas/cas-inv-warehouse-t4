@@ -2,7 +2,7 @@ package ph.com.guanzongroup.cas.check.module.mnv.validator;
 
 import org.guanzon.appdriver.iface.GValidator;
 
-public class CheckValidatorFactory {
+public class CheckTransferValidatorFactory {
 
     public static GValidator make(String industryId) {
         switch (industryId) {
