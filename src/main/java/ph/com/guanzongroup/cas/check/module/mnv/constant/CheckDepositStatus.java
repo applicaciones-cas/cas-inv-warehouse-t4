@@ -3,7 +3,7 @@ package ph.com.guanzongroup.cas.check.module.mnv.constant;
 import java.util.Arrays;
 import java.util.List;
 
-public class CheckTransferStatus {
+public class CheckDepositStatus {
 
     public static final String OPEN = "0";
     public static final String CONFIRMED = "1";

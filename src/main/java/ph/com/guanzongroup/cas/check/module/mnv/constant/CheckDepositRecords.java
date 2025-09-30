@@ -8,15 +8,15 @@ import org.guanzon.appdriver.base.SQLUtil;
  *
  * @author Maynard
  */
-public class CheckTransferRecords {
+public class CheckDepositRecords {
 
-    public static final String MOBILE_PHONE_REPORT = "CheckTransferMP";
-    public static final String MOTORCYCLE_REPORT = "CheckTransferMC";
-    public static final String CAR_REPORT = "CheckTransferCar";
-    public static final String HOSPITALITY_REPORT = "CheckTransferMonarch";
-    public static final String LOS_PEDRITOS_REPORT = "CheckTransferLP";
-    public static final String GENERAL_REPORT = "CheckTransfer";
-    public static final String APPLIANCE_REPORT = "CheckTransferAppliance";
+    public static final String MOBILE_PHONE_REPORT = "CheckDepositMP";
+    public static final String MOTORCYCLE_REPORT = "CheckDepositMC";
+    public static final String CAR_REPORT = "CheckDepositCar";
+    public static final String HOSPITALITY_REPORT = "CheckDepositMonarch";
+    public static final String LOS_PEDRITOS_REPORT = "CheckDepositLP";
+    public static final String GENERAL_REPORT = "CheckDeposit";
+    public static final String APPLIANCE_REPORT = "CheckDepositAppliance";
 
     public static final String CheckPaymentRecord() {
         String lsSQL = "SELECT"

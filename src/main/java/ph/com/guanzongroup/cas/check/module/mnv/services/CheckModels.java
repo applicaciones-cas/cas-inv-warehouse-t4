@@ -1,14 +1,10 @@
 package ph.com.guanzongroup.cas.check.module.mnv.services;
 
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.services.*;
 import org.guanzon.appdriver.base.GRiderCAS;
+import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Deposit_Detail;
+import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Deposit_Master;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Transfer_Detail;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Transfer_Master;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Area;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Cluster_Delivery;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Branch_Others;
-import ph.com.guanzongroup.cas.inv.warehouse.t4.parameter.model.Model_Inventory_Supplier;
 
 /**
  *
@@ -18,6 +14,9 @@ public class CheckModels {
 
     private Model_Check_Transfer_Master poCheckTransferMaster;
     private Model_Check_Transfer_Detail poCheckTransferDetail;
+
+    private Model_Check_Deposit_Master poCheckDepositMaster;
+    private Model_Check_Deposit_Detail poCheckDepositDetail;
 
     private final GRiderCAS poGRider;
 
@@ -40,7 +39,7 @@ public class CheckModels {
         return this.poCheckTransferMaster;
     }
 
-    public Model_Check_Transfer_Detail CheckTransferDeetail() {
+    public Model_Check_Transfer_Detail CheckTransferDetail() {
         if (this.poGRider == null) {
             System.err.println("CheckModels.CheckTransferDeetail: Application driver is not set.");
             return null;
@@ -53,5 +52,35 @@ public class CheckModels {
             this.poCheckTransferDetail.initialize();
         }
         return this.poCheckTransferDetail;
+    }
+
+    public Model_Check_Deposit_Master CheckDepositMaster() {
+        if (this.poGRider == null) {
+            System.err.println("CheckModels.CheckDepositMaster: Application driver is not set.");
+            return null;
+        }
+        if (this.poCheckDepositMaster == null) {
+            this.poCheckDepositMaster = new Model_Check_Deposit_Master();
+            this.poCheckDepositMaster.setApplicationDriver(this.poGRider);
+            this.poCheckDepositMaster.setXML("Model_Check_Deposit_Master");
+            this.poCheckDepositMaster.setTableName("Check_Deposit_Master");
+            this.poCheckDepositMaster.initialize();
+        }
+        return this.poCheckDepositMaster;
+    }
+
+    public Model_Check_Deposit_Detail CheckDepositDetail() {
+        if (this.poGRider == null) {
+            System.err.println("CheckModels.CheckDepositDetail: Application driver is not set.");
+            return null;
+        }
+        if (this.poCheckDepositDetail == null) {
+            this.poCheckDepositDetail = new Model_Check_Deposit_Detail();
+            this.poCheckDepositDetail.setApplicationDriver(this.poGRider);
+            this.poCheckDepositDetail.setXML("Model_Check_Deposit_Detail");
+            this.poCheckDepositDetail.setTableName("Check_Deposit_Detail");
+            this.poCheckDepositDetail.initialize();
+        }
+        return this.poCheckDepositDetail;
     }
 }
