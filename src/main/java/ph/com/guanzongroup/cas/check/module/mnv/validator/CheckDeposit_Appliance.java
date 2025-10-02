@@ -174,6 +174,7 @@ public class CheckDeposit_Appliance implements GValidator {
             return poJSON;
         }
 
+        isRequiredApproval = poMaster.isPrintedStatus();
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 
