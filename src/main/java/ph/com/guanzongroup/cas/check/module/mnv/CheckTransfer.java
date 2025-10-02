@@ -22,7 +22,6 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.guanzon.cas.parameter.Banks;
-import org.guanzon.cas.parameter.Department;
 import org.guanzon.cas.parameter.model.Model_Banks;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Department;
@@ -908,12 +907,6 @@ public class CheckTransfer extends Transaction {
             poJSON.put("message", "Transaction was already Processed.");
             return poJSON;
         }
-//
-//        if (CheckTransferStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
-//            poJSON.put("result", "error");
-//            poJSON.put("message", "Transaction was already confirmed.");
-//            return poJSON;
-//        }
 
         if (CheckTransferStatus.CANCELLED.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
@@ -1010,7 +1003,7 @@ public class CheckTransfer extends Transaction {
         poReportJasper.addParameter("TransactionDate", SQLUtil.dateFormat(getMaster().getTransactionDate(), SQLUtil.FORMAT_LONG_DATE));
         poReportJasper.addParameter("Remarks", getMaster().getRemarks());
         poReportJasper.addParameter("Destination", getMaster().BranchDestination().getBranchName());
-//        poReportJasper.addParameter("Trucking", getMaster().TruckingCompany().getCompanyName());
+        poReportJasper.addParameter("Department", getMaster().Department().getDescription());
         poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
         if (getMaster()
                 .isPrintedStatus()) {
@@ -1019,12 +1012,12 @@ public class CheckTransfer extends Transaction {
             poReportJasper.addParameter("watermarkImagePath", poGRider.getReportPath() + "images\\blank.png");
         }
 
-        poReportJasper.setReportName("Inventory Issuance");
+        poReportJasper.setReportName("Check Transfer");
         poReportJasper.setJasperPath(CheckTransferRecords.getJasperReport(psIndustryCode));
 
         //process by ResultSet
         String lsSQL = CheckTransferRecords.PrintRecordQuery();
-        lsSQL = MiscUtil.addCondition(lsSQL, "InventoryTransferMaster.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
+        lsSQL = MiscUtil.addCondition(lsSQL, "Check_Transfer_Master.sTransNox = " + SQLUtil.toSQL(getMaster().getTransactionNo()));
 
         poReportJasper.setSQLReport(lsSQL);
 

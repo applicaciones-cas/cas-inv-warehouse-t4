@@ -158,6 +158,8 @@ public class CheckDeposit_MC implements GValidator {
             return poJSON;
         }
 
+        isRequiredApproval = poMaster.isPrintedStatus();
+        
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
