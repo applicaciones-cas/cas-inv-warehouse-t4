@@ -10,13 +10,12 @@ import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
-import org.guanzon.appdriver.base.SQLUtil;
 import org.guanzon.appdriver.constant.EditMode;
+import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.client.services.ClientModels;
 import org.guanzon.cas.parameter.model.Model_Banks;
 import org.guanzon.cas.parameter.model.Model_Branch;
-import org.guanzon.cas.parameter.model.Model_Department;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
@@ -82,7 +81,7 @@ public class Model_Check_Release_Master extends Model{
             //add model here
             pnEditMode = EditMode.UNKNOWN;
             
-        }catch(Exception e){
+        }catch(SQLException e){
             logwrapr.severe(e.getMessage());
             System.exit(1);
         }
@@ -149,6 +148,10 @@ public class Model_Check_Release_Master extends Model{
 
     public String getPrintStatus() {
         return (String) getValue("cPrintedx");
+    }
+    
+    public boolean isPrintedStatus() {
+        return RecordStatus.ACTIVE.equals(getValue("cPrintedx"));
     }
     
     //cTranStat
@@ -252,46 +255,6 @@ public class Model_Check_Release_Master extends Model{
         }
     }
 
-    public Model_Banks Banks() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sBankIDxx"))) {
-            if (poBanks.getEditMode() == EditMode.READY
-                    && poBanks.getBankID().equals((String) getValue("sBankIDxx"))) {
-                return poBanks;
-            } else {
-                poJSON = poBanks.openRecord((String) getValue("sBankIDxx"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poBanks;
-                } else {
-                    poBanks.initialize();
-                    return poBanks;
-                }
-            }
-        } else {
-            poBanks.initialize();
-            return poBanks;
-        }
-    }
-
-    public Model_Bank_Account_Master Bank_Account_Master() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sBnkActID"))) {
-            if (poBankAccountMaster.getEditMode() == EditMode.READY
-                    && poBankAccountMaster.getBankAccountId().equals((String) getValue("sBnkActID"))) {
-                return poBankAccountMaster;
-            } else {
-                poJSON = poBankAccountMaster.openRecord((String) getValue("sBnkActID"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poBankAccountMaster;
-                } else {
-                    poBankAccountMaster.initialize();
-                    return poBankAccountMaster;
-                }
-            }
-        } else {
-            poBankAccountMaster.initialize();
-            return poBankAccountMaster;
-        }
-    }
-
     public Model_Industry Industry() throws SQLException, GuanzonException {
         if (!"".equals((String) getValue("sIndstCdx"))) {
             if (poIndustry.getEditMode() == EditMode.READY
@@ -311,22 +274,5 @@ public class Model_Check_Release_Master extends Model{
             poIndustry.initialize();
             return poIndustry;
         }
-    }
-    
-    public Model_Check_Payments CheckPayment() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sSourceNo"))) {
-            if (this.poCheckPayment.getEditMode() == 1 && this.poCheckPayment
-                    .getTransactionNo().equals(getValue("sSourceNo"))) {
-                return this.poCheckPayment;
-            }
-            this.poJSON = this.poCheckPayment.openRecord((String) getValue("sSourceNo"));
-            if ("success".equals(this.poJSON.get("result"))) {
-                return this.poCheckPayment;
-            }
-            this.poCheckPayment.initialize();
-            return this.poCheckPayment;
-        }
-        poCheckPayment.initialize();
-        return this.poCheckPayment;
     }
 }

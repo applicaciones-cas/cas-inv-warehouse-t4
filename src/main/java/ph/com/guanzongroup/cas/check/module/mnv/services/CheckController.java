@@ -3,6 +3,7 @@ package ph.com.guanzongroup.cas.check.module.mnv.services;
 import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.base.LogWrapper;
 import ph.com.guanzongroup.cas.check.module.mnv.CheckDeposit;
+import ph.com.guanzongroup.cas.check.module.mnv.CheckRelease;
 import ph.com.guanzongroup.cas.check.module.mnv.CheckTransfer;
 
 public class CheckController {
@@ -12,6 +13,7 @@ public class CheckController {
 
     private CheckTransfer poCheckTransfer;
     private CheckDeposit poCheckDeposit;
+    private CheckRelease poCheckRelease;
 
     public CheckController(GRiderCAS applicationDriver, LogWrapper logWrapper) {
         poGRider = applicationDriver;
@@ -54,6 +56,26 @@ public class CheckController {
         poCheckDeposit.setWithParent(false);
         poCheckDeposit.setLogWrapper(poLogWrapper);
         return poCheckDeposit;
+    }
+    
+    public CheckRelease CheckRelease(){
+        
+        if (poGRider == null) {
+            poLogWrapper.severe("CheckController.CheckDeposit: Application driver is not set.");
+            return null;
+        }
+
+        if (poCheckRelease != null) {
+            return poCheckRelease;
+        }
+
+        poCheckRelease = new CheckRelease();
+        poCheckRelease.setApplicationDriver(poGRider);
+        poCheckRelease.setBranchCode(poGRider.getBranchCode());
+        poCheckRelease.setVerifyEntryNo(true);
+        poCheckRelease.setWithParent(false);
+        poCheckRelease.setLogWrapper(poLogWrapper);
+        return poCheckRelease;
     }
 
     @Override
