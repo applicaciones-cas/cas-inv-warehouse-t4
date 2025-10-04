@@ -15,7 +15,7 @@ public class CheckReleaseRecords {
         return "SELECT "
                 + "sTransNox, "
                 + "dTransact, "
-                + "nTranTotl "
+                + "sReceived "
                 + "FROM Check_Release_Master";
     }
     

@@ -22,7 +22,6 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Check_Payments;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
-import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckDepositStatus;
 import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseRecords;
 import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Release_Master;
@@ -63,14 +62,16 @@ public class CheckRelease extends Transaction{
         SOURCE_CODE = "Dlvr";
         
         poMaster = new CheckModels(poGRider).CheckReleaseMaster();
+        poDetail = new CheckModels(poGRider).CheckReleaseDetail();
         paMaster = new ArrayList<Model>();
         paCheckList = new ArrayList<Model>();
         
         return super.initialize();
     }
     
+    
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
-        return openTransaction(transactionNo);
+        return poMaster.openRecord(transactionNo);
     }
 
     public JSONObject NewTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
@@ -106,10 +107,10 @@ public class CheckRelease extends Transaction{
         try{
             String lsSQL = CheckReleaseRecords.CheckReleaseMaster();
             if (!psIndustryCode.isEmpty()) {
-                lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+                lsSQL = MiscUtil.addCondition(lsSQL, "sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
             }
             
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
+            lsSQL = MiscUtil.addCondition(lsSQL, "cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
             
             poJSON = new JSONObject();
             poJSON = ShowDialogFX.Search(poGRider, 
@@ -121,7 +122,7 @@ public class CheckRelease extends Transaction{
                     byExact ? (byCode ? 0 : 1) : 2);
             
             if (poJSON != null) {
-                return openTransaction((String) poJSON.get("sTransNox"));
+                return poMaster.openRecord((String) poJSON.get("sTransNox"));
             } else {
                 poJSON = new JSONObject();
                 poJSON.put("result", "error");
@@ -130,8 +131,8 @@ public class CheckRelease extends Transaction{
 
             }
             
-        }catch(CloneNotSupportedException | SQLException | GuanzonException ex){
-            Logger.getLogger(CheckDeposit.class
+        }catch(SQLException | GuanzonException ex){
+            Logger.getLogger(CheckRelease.class
                     .getName()).log(Level.SEVERE, null, ex);
             poJSON = new JSONObject();
             poJSON.put("result", "error");
@@ -143,36 +144,28 @@ public class CheckRelease extends Transaction{
     public JSONObject SearchCheckTransaction(String fsValue, boolean byExact, boolean byCode){
         
         try{
-            
-            if (GetMaster().getIndustryId() == null
-                || GetMaster().getIndustryId().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No cluster is set.");
-            return poJSON;
-            }
-            paCheckList.clear();
-            initSQL();
+
             String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
 
             if (!psIndustryCode.isEmpty()) {
                 lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
             }
 
-            lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckDepositStatus.OPEN));
+            lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
             lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckDepositStatus.CANCELLED));
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
             
             poJSON = new JSONObject();
             poJSON = ShowDialogFX.Search(poGRider, 
                     lsSQL, 
                     fsValue, 
                     "Transaction No»Transaction Date»Check No»Check Amt", 
-                    "sTransNox»dTransact»sCheckNox»nAmountxx", 
-                    "sPayeeIDx»sCheckNox", 
+                    "a.sTransNox»a.dTransact»a.sCheckNox»a.nAmountxx", 
+                    "a.sPayeeIDx»a.sCheckNox", 
                     byExact ? (byCode ? 0 : 1) : 2);
             
             if (poJSON != null) {
-                return openTransaction((String) poJSON.get("sTransNox"));
+                return poMaster.openRecord((String) poJSON.get("sTransNox"));
             } else {
                 poJSON = new JSONObject();
                 poJSON.put("result", "error");
@@ -181,8 +174,8 @@ public class CheckRelease extends Transaction{
 
             }
         
-        }catch(CloneNotSupportedException | SQLException | GuanzonException ex){
-            Logger.getLogger(CheckDeposit.class
+        }catch(SQLException | GuanzonException ex){
+            Logger.getLogger(CheckRelease.class
                     .getName()).log(Level.SEVERE, null, ex);
             poJSON = new JSONObject();
             poJSON.put("result", "error");
@@ -213,9 +206,9 @@ public class CheckRelease extends Transaction{
         }
         
         lsSQL = MiscUtil.addCondition(lsSQL, "d.sTransNox = " + SQLUtil.toSQL(fsTransNox));
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckDepositStatus.OPEN));
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckDepositStatus.CANCELLED));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
         
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         System.out.println("Load Transaction list query is " + lsSQL);
@@ -274,9 +267,9 @@ public class CheckRelease extends Transaction{
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
         }
     
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckDepositStatus.OPEN));
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckDepositStatus.CANCELLED));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
                 
         if (!fsDateFrom.isEmpty() && !fsDateThru.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, " a.dTransact BETWEEN " + SQLUtil.toSQL(fsDateFrom) + "AND "

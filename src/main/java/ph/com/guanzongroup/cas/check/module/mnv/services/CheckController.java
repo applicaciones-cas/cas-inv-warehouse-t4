@@ -75,6 +75,7 @@ public class CheckController {
         poCheckRelease.setVerifyEntryNo(true);
         poCheckRelease.setWithParent(false);
         poCheckRelease.setLogWrapper(poLogWrapper);
+        
         return poCheckRelease;
     }
 
