@@ -156,7 +156,15 @@ public class CheckTransfer extends Transaction {
     }
 
     public JSONObject SaveTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
-        return saveTransaction();
+        poJSON = saveTransaction();
+
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+        openTransaction(getMaster().getTransactionNo());
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction saved Successfully.");
+        return poJSON;
     }
 
     public JSONObject UpdateTransaction() {
@@ -207,6 +215,9 @@ public class CheckTransfer extends Transaction {
 
         getMaster().setEntryNo(lnDetailCount);
         getMaster().setTransactionTotal(lnTotalAmount);
+        if (getMaster().getTransactionStatus().equals(CheckTransferStatus.RETURN)) {
+            getMaster().setTransactionStatus(CheckTransferStatus.OPEN);
+        }
         pdModified = poGRider.getServerDate();
 
         poJSON.put("result", "success");
@@ -282,28 +293,56 @@ public class CheckTransfer extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
-        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
-            Model_Check_Transfer_Detail loDetail = (Model_Check_Transfer_Detail) paDetail.get(lnCtr);
-
-            if (loDetail.getSourceNo() != null) {
-                if (!loDetail.getSourceNo().isEmpty()) {
-                    poJSON = new JSONObject();
-                    poJSON = SaveCheckPaymentTransaction(lnCtr);
-
-                    if (!"success".equals((String) poJSON.get("result"))) {
-                        poGRider.rollbackTrans();
-                        return poJSON;
-                    }
-                }
-            }
-        }
 
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction confirmed successfully.");
 
+        return poJSON;
+    }
+
+    public JSONObject ReturnTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (CheckTransferStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(CheckTransferStatus.RETURN);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "",
+                CheckTransferStatus.RETURN,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
+        openTransaction(getMaster().getTransactionNo());
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction returned successfully.");
         return poJSON;
     }
 
@@ -315,6 +354,8 @@ public class CheckTransfer extends Transaction {
             loCheckPayment.updateRecord();
             loCheckPayment.setBranchCode(getMaster().getDestination());
             loCheckPayment.setLocation("4");
+            loCheckPayment.setModifiedDate(poGRider.getServerDate());
+            loCheckPayment.setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
             poJSON = loCheckPayment.saveRecord();
 
             if (!"success".equals((String) poJSON.get("result"))) {
@@ -405,6 +446,7 @@ public class CheckTransfer extends Transaction {
 
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction posted successfully.");
@@ -459,6 +501,7 @@ public class CheckTransfer extends Transaction {
 
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction cancelled successfully.");
@@ -632,7 +675,7 @@ public class CheckTransfer extends Transaction {
 
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckTransferStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckTransferStatus.CANCELLED));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat = " + SQLUtil.toSQL(CheckTransferStatus.CONFIRMED));
 
         poJSON = new JSONObject();
         poJSON = ShowDialogFX.Search(poGRider,
@@ -695,6 +738,9 @@ public class CheckTransfer extends Transaction {
 
             if ("success".equals((String) poJSON.get("result"))) {
                 getMaster().setDestination(loBrowse.getBranchCode());
+                getMaster().setDepartment("");
+                this.poJSON = new JSONObject();
+                this.poJSON.put("result", "success");
                 return poJSON;
             }
 
@@ -799,7 +845,7 @@ public class CheckTransfer extends Transaction {
         }
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckTransferStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckTransferStatus.CANCELLED));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat = " + SQLUtil.toSQL(CheckTransferStatus.CONFIRMED));
         if (!fsDateFrom.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, " a.dTransact BETWEEN " + SQLUtil.toSQL(fsDateFrom) + "AND "
                     + SQLUtil.toSQL(fsDateThru));
@@ -833,6 +879,61 @@ public class CheckTransfer extends Transaction {
 
                 // Mark this transaction as processed
                 processedTrans.add(transNo);
+            } else {
+                return poJSON;
+            }
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject loadTransactionListConfirmation(String value, String column)
+            throws SQLException, GuanzonException, CloneNotSupportedException {
+
+        paMaster.clear();
+        initSQL();
+        String lsSQL = SQL_BROWSE;
+
+        if (value != null && !value.isEmpty()) {
+            //sTransNox/dTransact/dSchedule
+            lsSQL = MiscUtil.addCondition(lsSQL, column + " LIKE " + SQLUtil.toSQL(value + "%"));
+        }
+        String lsCondition = "";
+        if (psTranStat != null) {
+            if (this.psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                    lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                }
+                lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+            } else {
+                lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+            }
+            lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+        }
+
+        if (!psIndustryCode.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+        }
+
+        lsSQL = MiscUtil.addCondition(lsSQL, "LEFT(a.sTransNox,4) =" + SQLUtil.toSQL(poGRider.getBranchCode()));
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        System.out.println("Load Transaction list query is " + lsSQL);
+
+        if (MiscUtil.RecordCount(loRS)
+                <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
+        }
+
+        while (loRS.next()) {
+            Model_Check_Transfer_Master loInventoryIssuance = new CheckModels(poGRider).CheckTransferMaster();
+            poJSON = loInventoryIssuance.openRecord(loRS.getString("sTransNox"));
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                paMaster.add((Model) loInventoryIssuance);
             } else {
                 return poJSON;
             }

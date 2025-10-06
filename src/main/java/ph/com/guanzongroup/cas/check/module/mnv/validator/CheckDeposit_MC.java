@@ -159,7 +159,7 @@ public class CheckDeposit_MC implements GValidator {
         }
 
         isRequiredApproval = poMaster.isPrintedStatus();
-        
+
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
@@ -234,4 +234,41 @@ public class CheckDeposit_MC implements GValidator {
         return poJSON;
     }
 
+    private JSONObject validateReturn() throws SQLException {
+        poJSON = new JSONObject();
+        boolean isRequiredApproval = false;
+
+        if (poMaster.getTransactionDate() == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        if (poMaster.getIndustryId() == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+
+        int lnDetailCount = 0;
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getSourceNo() != null
+                    && !paDetail.get(lnCtr).getSourceNo().isEmpty()) {
+
+                lnDetailCount++;
+
+            }
+        }
+
+        if (lnDetailCount <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Detail is not set.");
+            return poJSON;
+        }
+
+        poJSON.put("result", "success");
+        poJSON.put("isRequiredApproval", isRequiredApproval);
+
+        return poJSON;
+    }
 }

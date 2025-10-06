@@ -10,11 +10,13 @@ public class CheckTransferStatus {
     public static final String POSTED = "2";
     public static final String CANCELLED = "3";
     public static final String VOID = "4";
+    public static final String RETURN = "7";
     public static final List<String> STATUS = Arrays.asList(
             "OPEN",
             "CONFIRMED",
-            "POSTED", 
-            "CANCELLED", 
-            "VOID"
+            "POSTED",
+            "CANCELLED",
+            "VOID", "", "",
+             "RETURN"
     );
 }
