@@ -53,7 +53,8 @@ public class CheckReleaseRecords {
                 + " FROM Check_Payments a"
                 + "  LEFT JOIN Banks b ON a.sBankIDxx = b.sBankIDxx"
                 + "  LEFT JOIN Bank_Account_Master c ON a.sBnkActID = c.sBnkActID"
-                + "  LEFT JOIN Check_Release_Detail d ON a.sTransNox = d.sSourceNo";
+                + "  LEFT JOIN Check_Release_Detail d ON a.sTransNox = d.sSourceNo"
+                + "  LEFT JOIN Payee e ON a.sPayeeIDx = e.sPayeeIDx";
 
         return lsSQL;
         

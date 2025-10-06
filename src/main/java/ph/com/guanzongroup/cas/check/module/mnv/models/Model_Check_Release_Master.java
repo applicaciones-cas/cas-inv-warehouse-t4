@@ -12,15 +12,9 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.RecordStatus;
-import org.guanzon.cas.client.model.Model_Client_Master;
-import org.guanzon.cas.client.services.ClientModels;
-import org.guanzon.cas.parameter.model.Model_Banks;
-import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.cashflow.model.Model_Bank_Account_Master;
-import ph.com.guanzongroup.cas.cashflow.model.Model_Check_Payments;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
@@ -31,13 +25,8 @@ import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
  */
 public class Model_Check_Release_Master extends Model{
     
-    Model_Industry poIndustry;
-    Model_Branch poBranch;
-    Model_Client_Master poSupplier;
-    Model_Payee poPayee;
-    Model_Bank_Account_Master poBankAccountMaster;
-    Model_Banks poBanks;
-    Model_Check_Payments poCheckPayment;
+    private Model_Industry poIndustry;
+    private Model_Payee poPayee;
 
     @Override
     public void initialize() {
@@ -59,17 +48,10 @@ public class Model_Check_Release_Master extends Model{
             MiscUtil.initRowSet(poEntity);
             
             ParamModels model = new ParamModels(poGRider);
-            poBranch = model.Branch();
-            poBanks = model.Banks();
             poIndustry = model.Industry();
             
             CashflowModels cashFlow = new CashflowModels(poGRider);
             poPayee = cashFlow.Payee();
-            poBankAccountMaster = cashFlow.Bank_Account_Master();
-            poCheckPayment = cashFlow.CheckPayments();
-            
-            ClientModels clientModel = new ClientModels(poGRider);
-            poSupplier = clientModel.ClientMaster();
             
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -193,66 +175,6 @@ public class Model_Check_Release_Master extends Model{
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
-    }
-    
-    public Model_Payee Payee() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sPayeeIDx"))) {
-            if (poPayee.getEditMode() == EditMode.READY
-                    && poPayee.getPayeeID().equals((String) getValue("sPayeeIDx"))) {
-                return poPayee;
-            } else {
-                poJSON = poPayee.openRecord((String) getValue("sPayeeIDx"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poPayee;
-                } else {
-                    poPayee.initialize();
-                    return poPayee;
-                }
-            }
-        } else {
-            poPayee.initialize();
-            return poPayee;
-        }
-    }
-
-    public Model_Client_Master Supplier() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sSupplier"))) {
-            if (poSupplier.getEditMode() == EditMode.READY
-                    && poSupplier.getClientId().equals((String) getValue("sSupplier"))) {
-                return poSupplier;
-            } else {
-                poJSON = poSupplier.openRecord((String) getValue("sSupplier"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poSupplier;
-                } else {
-                    poSupplier.initialize();
-                    return poSupplier;
-                }
-            }
-        } else {
-            poSupplier.initialize();
-            return poSupplier;
-        }
-    }
-
-    public Model_Branch Branch() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sBranchCd"))) {
-            if (poBranch.getEditMode() == EditMode.READY
-                    && poBranch.getBranchCode().equals((String) getValue("sBranchCd"))) {
-                return poBranch;
-            } else {
-                poJSON = poBranch.openRecord((String) getValue("sBranchCd"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poBranch;
-                } else {
-                    poBranch.initialize();
-                    return poBranch;
-                }
-            }
-        } else {
-            poBranch.initialize();
-            return poBranch;
-        }
     }
 
     public Model_Industry Industry() throws SQLException, GuanzonException {

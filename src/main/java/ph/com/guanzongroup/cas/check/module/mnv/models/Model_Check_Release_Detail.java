@@ -14,7 +14,6 @@ import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Check_Payments;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
-import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
 
 /**
  *
@@ -22,8 +21,8 @@ import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
  */
 public class Model_Check_Release_Detail extends Model{
     
-    Model_Payee poPayee;
-    Model_Check_Payments poCheckPayment;
+    private Model_Payee poPayee;
+    private Model_Check_Payments poCheckPayment;
 
     @Override
     public void initialize() {
@@ -106,26 +105,6 @@ public class Model_Check_Release_Detail extends Model{
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
-    }
-    
-    public Model_Payee Payee() throws GuanzonException, SQLException {
-        if (!"".equals((String) getValue("sPayeeIDx"))) {
-            if (poPayee.getEditMode() == EditMode.READY
-                    && poPayee.getPayeeID().equals((String) getValue("sPayeeIDx"))) {
-                return poPayee;
-            } else {
-                poJSON = poPayee.openRecord((String) getValue("sPayeeIDx"));
-                if ("success".equals((String) poJSON.get("result"))) {
-                    return poPayee;
-                } else {
-                    poPayee.initialize();
-                    return poPayee;
-                }
-            }
-        } else {
-            poPayee.initialize();
-            return poPayee;
-        }
     }
     
 }
