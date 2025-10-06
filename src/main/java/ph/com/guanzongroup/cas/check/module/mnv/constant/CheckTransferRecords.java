@@ -70,7 +70,7 @@ public class CheckTransferRecords {
                 + "  Check_Payments.sCheckNox,"
                 + "  Check_Payments.sRemarksx,"
                 + "  Check_Payments.nAmountxx"
-                + "FROM"
+                + " FROM"
                 + "  Check_Transfer_Master `Check_Transfer_Master`"
                 + "  LEFT JOIN Check_Transfer_Detail `Check_Transfer_Detail`"
                 + "    ON Check_Transfer_Master.`sTransNox` = Check_Transfer_Detail.`sTransNox`"

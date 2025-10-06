@@ -172,7 +172,10 @@ public class CheckDeposit extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        OpenTransaction(getMaster().getTransactionNo());
+        openTransaction(getMaster().getTransactionNo());
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction saved successfully.");
         return poJSON;
     }
 
@@ -224,6 +227,9 @@ public class CheckDeposit extends Transaction {
 
         getMaster().setEntryNo(lnDetailCount);
         getMaster().setTransactionTotalDeposit(lnTotalAmount);
+        if (getMaster().getTransactionStatus().equals(CheckDepositStatus.RETURN)) {
+            getMaster().setTransactionStatus(CheckDepositStatus.OPEN);
+        }
         pdModified = poGRider.getServerDate();
 
         poJSON.put("result", "success");
@@ -317,10 +323,52 @@ public class CheckDeposit extends Transaction {
 
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction confirmed successfully.");
+        return poJSON;
+    }
+
+    public JSONObject ReturnTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+        poJSON = new JSONObject();
+
+        if (getEditMode() != EditMode.READY) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No transacton was loaded.");
+            return poJSON;
+        }
+
+        if (CheckDepositStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already confirmed.");
+            return poJSON;
+        }
+
+        //validator
+        poJSON = isEntryOkay(CheckDepositStatus.RETURN);
+        if ("error".equals((String) poJSON.get("result"))) {
+            return poJSON;
+        }
+
+        poGRider.beginTrans("UPDATE STATUS", "", SOURCE_CODE, getMaster().getTransactionNo());
+
+        poJSON = statusChange(poMaster.getTable(),
+                (String) poMaster.getValue("sTransNox"),
+                "",
+                CheckDepositStatus.RETURN,
+                false, true);
+        if ("error".equals((String) poJSON.get("result"))) {
+            poGRider.rollbackTrans();
+            return poJSON;
+        }
+
+        poGRider.commitTrans();
+
         openTransaction(getMaster().getTransactionNo());
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        poJSON.put("message", "Transaction returned successfully.");
         return poJSON;
     }
 
@@ -404,11 +452,11 @@ public class CheckDeposit extends Transaction {
 //        }
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction posted successfully.");
 
-        openTransaction(getMaster().getTransactionNo());
         return poJSON;
     }
 
@@ -512,11 +560,11 @@ public class CheckDeposit extends Transaction {
 
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction voided successfully.");
 
-        openTransaction(getMaster().getTransactionNo());
         return poJSON;
     }
 
@@ -814,7 +862,7 @@ public class CheckDeposit extends Transaction {
         }
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckDepositStatus.OPEN));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckDepositStatus.CANCELLED));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat = " + SQLUtil.toSQL(CheckDepositStatus.CONFIRMED));
         if (!fsDateFrom.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, " a.dTransact BETWEEN " + SQLUtil.toSQL(fsDateFrom) + "AND "
                     + SQLUtil.toSQL(fsDateThru));
@@ -848,6 +896,61 @@ public class CheckDeposit extends Transaction {
 
                 // Mark this transaction as processed
                 processedTrans.add(transNo);
+            } else {
+                return poJSON;
+            }
+        }
+
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
+    public JSONObject loadTransactionListConfirmation(String value, String column)
+            throws SQLException, GuanzonException, CloneNotSupportedException {
+
+        paMaster.clear();
+        initSQL();
+        String lsSQL = SQL_BROWSE;
+
+        if (value != null && !value.isEmpty()) {
+            //sTransNox/dTransact/dSchedule
+            lsSQL = MiscUtil.addCondition(lsSQL, column + " LIKE " + SQLUtil.toSQL(value + "%"));
+        }
+        String lsCondition = "";
+        if (psTranStat != null) {
+            if (this.psTranStat.length() > 1) {
+                for (int lnCtr = 0; lnCtr <= this.psTranStat.length() - 1; lnCtr++) {
+                    lsCondition = lsCondition + ", " + SQLUtil.toSQL(Character.toString(this.psTranStat.charAt(lnCtr)));
+                }
+                lsCondition = "a.cTranStat IN (" + lsCondition.substring(2) + ")";
+            } else {
+                lsCondition = "a.cTranStat = " + SQLUtil.toSQL(this.psTranStat);
+            }
+            lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
+        }
+
+        if (!psIndustryCode.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+        }
+
+        lsSQL = MiscUtil.addCondition(lsSQL, "LEFT(a.sTransNox,4) =" + SQLUtil.toSQL(poGRider.getBranchCode()));
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        System.out.println("Load Transaction list query is " + lsSQL);
+
+        if (MiscUtil.RecordCount(loRS)
+                <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
+        }
+
+        while (loRS.next()) {
+            Model_Check_Deposit_Master loInventoryIssuance = new CheckModels(poGRider).CheckDepositMaster();
+            poJSON = loInventoryIssuance.openRecord(loRS.getString("sTransNox"));
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                paMaster.add((Model) loInventoryIssuance);
             } else {
                 return poJSON;
             }
@@ -1076,7 +1179,6 @@ public class CheckDeposit extends Transaction {
             return poJSON;
         }
     }
-
 
     private Node createDepositNode(double widthPts,
             double heightPts)

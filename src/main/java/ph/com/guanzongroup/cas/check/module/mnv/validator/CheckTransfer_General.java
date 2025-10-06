@@ -72,6 +72,8 @@ public class CheckTransfer_General implements GValidator {
                     return validateCancelled();
                 case CheckTransferStatus.VOID:
                     return validateVoid();
+                case CheckTransferStatus.RETURN:
+                    return validateReturn();
                 default:
                     poJSON = new JSONObject();
                     poJSON.put("result", "error");
@@ -251,4 +253,41 @@ public class CheckTransfer_General implements GValidator {
         return poJSON;
     }
 
+    private JSONObject validateReturn() throws SQLException {
+        poJSON = new JSONObject();
+        boolean isRequiredApproval = false;
+
+        if (poMaster.getTransactionDate() == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Invalid Transaction Date.");
+            return poJSON;
+        }
+
+        if (poMaster.getIndustryId() == null) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Industry is not set.");
+            return poJSON;
+        }
+
+        int lnDetailCount = 0;
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            if (paDetail.get(lnCtr).getSourceNo() != null
+                    && !paDetail.get(lnCtr).getSourceNo().isEmpty()) {
+
+                lnDetailCount++;
+
+            }
+        }
+
+        if (lnDetailCount <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Detail is not set.");
+            return poJSON;
+        }
+
+        poJSON.put("result", "success");
+        poJSON.put("isRequiredApproval", isRequiredApproval);
+
+        return poJSON;
+    }
 }
