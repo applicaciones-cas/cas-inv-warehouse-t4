@@ -232,7 +232,7 @@ public class CheckDeposit_Appliance implements GValidator {
 //        poJSON.put("isRequiredApproval", isRequiredApproval);
         return poJSON;
     }
-    
+
     private JSONObject validateReturn() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;

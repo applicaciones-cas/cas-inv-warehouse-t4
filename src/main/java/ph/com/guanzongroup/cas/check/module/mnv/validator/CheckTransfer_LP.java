@@ -152,7 +152,9 @@ public class CheckTransfer_LP implements GValidator {
     private JSONObject validateConfirmed() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
-
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");

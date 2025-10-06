@@ -145,7 +145,10 @@ public class CheckDeposit_MC implements GValidator {
     private JSONObject validateConfirmed() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
-
+        isRequiredApproval = poMaster.isPrintedStatus();
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
@@ -158,7 +161,6 @@ public class CheckDeposit_MC implements GValidator {
             return poJSON;
         }
 
-        isRequiredApproval = poMaster.isPrintedStatus();
 
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {

@@ -146,6 +146,10 @@ public class CheckDeposit_LP implements GValidator {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
+        isRequiredApproval = poMaster.isPrintedStatus();
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
@@ -174,7 +178,6 @@ public class CheckDeposit_LP implements GValidator {
             return poJSON;
         }
 
-        isRequiredApproval = poMaster.isPrintedStatus();
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 
@@ -187,7 +190,6 @@ public class CheckDeposit_LP implements GValidator {
         if (poGRider.getUserLevel() <= UserRight.ENCODER) {
             isRequiredApproval = true;
         }
-
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
