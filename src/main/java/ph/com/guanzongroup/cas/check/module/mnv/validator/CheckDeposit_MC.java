@@ -15,7 +15,7 @@ import org.guanzon.appdriver.base.GRiderCAS;
 import org.guanzon.appdriver.constant.UserRight;
 import org.guanzon.appdriver.iface.GValidator;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckTransferStatus;
+import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckDepositStatus;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Deposit_Detail;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Deposit_Master;
 
@@ -62,16 +62,18 @@ public class CheckDeposit_MC implements GValidator {
     public JSONObject validate() {
         try {
             switch (psTranStat) {
-                case CheckTransferStatus.OPEN:
+                case CheckDepositStatus.OPEN:
                     return validateNew();
-                case CheckTransferStatus.CONFIRMED:
+                case CheckDepositStatus.CONFIRMED:
                     return validateConfirmed();
-                case CheckTransferStatus.POSTED:
+                case CheckDepositStatus.POSTED:
                     return validatePosted();
-                case CheckTransferStatus.CANCELLED:
+                case CheckDepositStatus.CANCELLED:
                     return validateCancelled();
-                case CheckTransferStatus.VOID:
+                case CheckDepositStatus.VOID:
                     return validateVoid();
+                case CheckDepositStatus.RETURN:
+                    return validateReturn();
                 default:
                     poJSON = new JSONObject();
                     poJSON.put("result", "error");
@@ -161,7 +163,6 @@ public class CheckDeposit_MC implements GValidator {
             return poJSON;
         }
 
-
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
@@ -178,6 +179,10 @@ public class CheckDeposit_MC implements GValidator {
             return poJSON;
         }
 
+        isRequiredApproval = poMaster.isPrintedStatus();
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         poJSON.put("result", "success");
         poJSON.put("isRequiredApproval", isRequiredApproval);
 

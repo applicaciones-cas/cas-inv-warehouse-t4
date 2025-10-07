@@ -214,9 +214,10 @@ public class CheckTransfer_Car implements GValidator {
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
                     && !paDetail.get(lnCtr).getSourceNo().isEmpty()) {
+                if (paDetail.get(lnCtr).isReceived()) {
 
-                lnDetailCount++;
-
+                    lnDetailCount++;
+                }
             }
         }
 

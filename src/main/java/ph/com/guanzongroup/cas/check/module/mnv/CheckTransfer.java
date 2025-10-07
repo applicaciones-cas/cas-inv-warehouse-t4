@@ -447,6 +447,9 @@ public class CheckTransfer extends Transaction {
 
             if (loDetail.getSourceNo() != null) {
                 if (!loDetail.getSourceNo().isEmpty()) {
+                    if (!loDetail.isReceived()){
+                    continue;
+                    }
                     poJSON = new JSONObject();
                     poJSON = ReceiveCheckPaymentTransaction(lnCtr);
 

@@ -415,14 +415,7 @@ public class CheckDeposit extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poMaster.setValue("sReceived", poGRider.Encrypt(poGRider.getUserID()));
-        if (!psApprovalUser.isEmpty()) {
-            poMaster.setValue("sApproved", poGRider.Encrypt(psApprovalUser));
-        }
-        poJSON = SaveTransaction();
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
+
 
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
