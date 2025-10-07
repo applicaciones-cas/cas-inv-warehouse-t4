@@ -223,7 +223,7 @@ public class CheckTransfer_Monarch implements GValidator {
 
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Detail is not set.");
+            poJSON.put("message", " No checks have been tagged as “Received.” Please review and update the status of the checks you have received in the system to ensure accurate records.");
             return poJSON;
         }
 
