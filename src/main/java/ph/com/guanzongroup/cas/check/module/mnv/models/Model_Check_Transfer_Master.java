@@ -9,6 +9,7 @@ import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.RecordStatus;
+import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Department;
 import org.guanzon.cas.parameter.model.Model_Industry;
@@ -24,6 +25,7 @@ public class Model_Check_Transfer_Master extends Model {
 
     //reference objects
     Model_Industry poIndustry;
+    Model_Client_Master poPrepareClient;
     Model_Department poDepartment;
     Model_Branch poBranch;
     Model_Branch poBranchDestination;
@@ -312,6 +314,24 @@ public class Model_Check_Transfer_Master extends Model {
         }
         this.poIndustry.initialize();
         return this.poIndustry;
+    }
+    
+    
+    public Model_Client_Master PreparedClient() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sPrepared"))) {
+            if (this.poPrepareClient.getEditMode() == 1 && this.poPrepareClient
+                    .getClientId().equals(getValue("sIndstCdx"))) {
+                return this.poPrepareClient;
+            }
+            this.poJSON = this.poPrepareClient.openRecord((String) getValue("sIndstCdx"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poPrepareClient;
+            }
+            this.poPrepareClient.initialize();
+            return this.poPrepareClient;
+        }
+        this.poPrepareClient.initialize();
+        return this.poPrepareClient;
     }
 
 }

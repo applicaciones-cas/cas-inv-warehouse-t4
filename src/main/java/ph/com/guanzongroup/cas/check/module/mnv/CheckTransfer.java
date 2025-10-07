@@ -1129,6 +1129,11 @@ public class CheckTransfer extends Transaction {
             public void onReportPrint() {
                 System.out.println("Report printing...");
                 try {
+                    poJSON = OpenTransaction(getMaster().getTransactionNo());
+                    if ("error".equals((String) poJSON.get("result"))) {
+                        System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
+                        return;
+                    }
                     if (!getMaster().isPrintedStatus()) {
                         if (!isJSONSuccess(PrintTransaction(), "Print Record",
                                 "Initialize Record Print! ")) {
@@ -1178,7 +1183,8 @@ public class CheckTransfer extends Transaction {
         poReportJasper.addParameter("Remarks", getMaster().getRemarks());
         poReportJasper.addParameter("Destination", getMaster().BranchDestination().getBranchName());
         poReportJasper.addParameter("Department", getMaster().Department().getDescription() != null ? getMaster().Department().getDescription() : "");
-        poReportJasper.addParameter("PreparedBy", getMaster().getPreparedBy() != null ? poGRider.Decrypt(getMaster().getPreparedBy()) : "");
+//        poReportJasper.addParameter("PreparedBy", getMaster().getPreparedBy() != null ? poGRider.Decrypt(getMaster().getPreparedBy()) : "");
+        poReportJasper.addParameter("PreparedBy", "Sheryl Rabanal");
         poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
         if (getMaster()
                 .isPrintedStatus()) {
@@ -1263,7 +1269,6 @@ public class CheckTransfer extends Transaction {
 
         return poJSON;
     }
-    
 
     private boolean isJSONSuccess(JSONObject loJSON, String module, String fsModule) {
         String result = (String) loJSON.get("result");
