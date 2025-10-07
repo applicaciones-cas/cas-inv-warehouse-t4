@@ -35,9 +35,9 @@ import ph.com.guanzongroup.cas.check.module.mnv.services.CheckModels;
 public class CheckRelease extends Transaction{
     
     private String psIndustryCode = "";
-    private List<Model> paMaster;
     private List<Model> paCheckList;
-    private Model_Check_Payments loBrowseChecks;
+    private List<Model> paDetail;
+    private List<Model> paDetailCheck;
     
     public void setIndustryID(String industryId) {
         psIndustryCode = industryId;
@@ -56,13 +56,24 @@ public class CheckRelease extends Transaction{
         return (List<Model_Check_Payments>) (List<?>) paCheckList;
     }
     
+    @SuppressWarnings("unchecked")
+    public List<Model_Check_Payments> getDetailCheckList() {
+        return (List<Model_Check_Payments>) (List<?>) paDetailCheck;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Model_Check_Payments getCheckDetail(int fnRow) {
+        return (Model_Check_Payments) paDetailCheck.get(fnRow);
+    }
+    
     public JSONObject initTransaction() throws GuanzonException, SQLException{
         SOURCE_CODE = "Dlvr";
         
         poMaster = new CheckModels(poGRider).CheckReleaseMaster();
         poDetail = new CheckModels(poGRider).CheckReleaseDetail();
-        loBrowseChecks = new CashflowModels(poGRider).CheckPayments();
+        paDetail = new ArrayList<Model>();
         paCheckList = new ArrayList<Model>();
+        paDetailCheck = new ArrayList<Model>();
         
         return super.initialize();
     }
@@ -139,68 +150,6 @@ public class CheckRelease extends Transaction{
         }
     }
     
-    public JSONObject LoadDetails(String fsTransNox) throws SQLException, GuanzonException, CloneNotSupportedException{
-        
-        if(fsTransNox.isEmpty()){
-            poJSON.put("result", "error");
-            poJSON.put("message", "Transaction no is empty!");
-            return poJSON;
-        }
-        
-        if (GetMaster().getIndustryId() == null
-                || GetMaster().getIndustryId().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No cluster is set.");
-            return poJSON;
-        }
-        paCheckList.clear();
-        
-        String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
-        if (!psIndustryCode.isEmpty()) {
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
-        }
-        
-        lsSQL = MiscUtil.addCondition(lsSQL, "d.sTransNox = " + SQLUtil.toSQL(fsTransNox));
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
-        
-        ResultSet loRS = poGRider.executeQuery(lsSQL);
-        
-        if (MiscUtil.RecordCount(loRS)
-                <= 0) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "No record found.");
-            return poJSON;
-        }
-        Set<String> processedTrans = new HashSet<>();
-
-        while (loRS.next()) {
-            
-            String transNo = loRS.getString("sTransNox");
-
-            // Skip if we already processed this transaction number
-            if (processedTrans.contains(transNo)) {
-                continue;
-            }
-
-            poJSON = loBrowseChecks.openRecord(transNo);
-
-            if ("success".equals((String) poJSON.get("result"))) {
-                paCheckList.add((Model) loBrowseChecks);
-
-                // Mark this transaction as processed
-                processedTrans.add(transNo);
-            } else {
-                return poJSON;
-            }
-        }
-        
-        poJSON = new JSONObject();
-        poJSON.put("result", "success");
-        return poJSON;
-    }
-    
     public JSONObject SearchCheckTransaction(String fsValue, boolean byExact, boolean byCode){
         
         try{
@@ -226,6 +175,9 @@ public class CheckRelease extends Transaction{
             if (poJSON != null) {
                 
                 paCheckList.clear();
+                
+                Model_Check_Payments loBrowseChecks
+                    = new CashflowModels(poGRider).CheckPayments();
                 
                 poJSON = loBrowseChecks.openRecord((String) poJSON.get("sTransNox"));
                 if ("success".equals((String) poJSON.get("result"))) {
@@ -298,11 +250,12 @@ public class CheckRelease extends Transaction{
             if (processedTrans.contains(transNo)) {
                 continue;
             }
+            
+            Model_Check_Payments loBrowseChecks
+                    = new CashflowModels(poGRider).CheckPayments();
 
             poJSON = loBrowseChecks.openRecord(transNo);
             if ("success".equals((String) poJSON.get("result"))) {
-                System.out.println(loBrowseChecks.getTransactionNo());
-                System.out.println(loBrowseChecks.getCheckNo());
                 paCheckList.add((Model) loBrowseChecks);
 
                 // Mark this transaction as processed
@@ -312,6 +265,158 @@ public class CheckRelease extends Transaction{
             }
         }
 
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+    
+    public JSONObject LoadCheckTransaction(String fsTransNox, int fnEntryNo){
+        
+        try{
+            
+            if(fsTransNox.isEmpty()){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Transaction no is empty!");
+
+                return poJSON;
+            }
+            
+            if(fnEntryNo <= 0){
+                poJSON.put("result", "error");
+                poJSON.put("message", "Entry no is invalid!");
+
+                return poJSON;
+            }
+
+            String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
+
+            if (!psIndustryCode.isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+            }
+
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sTransNox = " + SQLUtil.toSQL(fsTransNox));
+            lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
+            
+            ResultSet loRS = poGRider.executeQuery(lsSQL);
+            System.out.println("Load Transaction list query is " + lsSQL);
+
+            if (MiscUtil.RecordCount(loRS)
+                    <= 0) {
+                poJSON.put("result", "error");
+                poJSON.put("message", "No record found.");
+                return poJSON;
+            }
+            Set<String> processedTrans = new HashSet<>();
+
+            while (loRS.next()) {
+                String transNo = loRS.getString("sTransNox");
+
+                // Skip if we already processed this transaction number
+                if (processedTrans.contains(transNo)) {
+                    continue;
+                }
+
+                Model_Check_Payments loBrowseChecks
+                        = new CashflowModels(poGRider).CheckPayments();
+
+                poJSON = loBrowseChecks.openRecord(transNo);
+                if ("success".equals((String) poJSON.get("result"))) {
+                    
+                    Model_Check_Release_Detail loDetail = new CheckModels(poGRider).CheckReleaseDetail();
+                    loDetail.newRecord();
+                    loDetail.setTransactionNo(GetMaster().getTransactionNo());
+                    loDetail.setSourceNo(loBrowseChecks.getTransactionNo());
+                    loDetail.setSourceCD(loBrowseChecks.getSourceCode());
+                    loDetail.setEntryNo(fnEntryNo);
+                    
+                    //check array stream if transaction number already exists
+                    if (paDetailCheck.stream().anyMatch(loTrans -> loTrans.getValue("sTransNox").equals(transNo)) || 
+                            paDetail.stream().anyMatch(loTrans -> loTrans.getValue("sTransNox").equals(transNo))) {
+                        poJSON = new JSONObject();
+                        poJSON.put("result", "error");
+                        poJSON.put("message", "Check no " + loBrowseChecks.getCheckNo() + " already added!");
+                        
+                        return poJSON;
+                    }
+                    
+                    paDetailCheck.add(loBrowseChecks);
+                    paDetail.add(loDetail);
+                    
+                    // Mark this transaction as processed
+                    processedTrans.add(transNo);
+                } else {
+                    return poJSON;
+                }
+            }
+
+            poJSON = new JSONObject();
+            poJSON.put("result", "success");
+            return poJSON;
+            
+        }catch(SQLException | GuanzonException ex){
+            Logger.getLogger(CheckRelease.class
+                    .getName()).log(Level.SEVERE, null, ex);
+            poJSON = new JSONObject();
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record loaded.");
+            return poJSON;
+        }
+    }
+    
+    public JSONObject LoadDetail(String fsTransNox) throws SQLException, GuanzonException, CloneNotSupportedException{
+        
+        if(fsTransNox.isEmpty()){
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction no is empty!");
+            return poJSON;
+        }
+
+        String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
+        if (!psIndustryCode.isEmpty()) {
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+        }
+        
+        lsSQL = MiscUtil.addCondition(lsSQL, "d.sTransNox = " + SQLUtil.toSQL(fsTransNox));
+        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
+        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
+        
+        ResultSet loRS = poGRider.executeQuery(lsSQL);
+        
+        if (MiscUtil.RecordCount(loRS)
+                <= 0) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "No record found.");
+            return poJSON;
+        }
+        Set<String> processedTrans = new HashSet<>();
+
+        while (loRS.next()) {
+            
+            String transNo = loRS.getString("sTransNox");
+
+            // Skip if we already processed this transaction number
+            if (processedTrans.contains(transNo)) {
+                continue;
+            }
+
+            Model_Check_Payments loBrowseChecks
+                    = new CashflowModels(poGRider).CheckPayments();
+            
+            poJSON = loBrowseChecks.openRecord(transNo);
+
+            if ("success".equals((String) poJSON.get("result"))) {
+                paCheckList.add((Model) loBrowseChecks);
+
+                // Mark this transaction as processed
+                processedTrans.add(transNo);
+            } else {
+                return poJSON;
+            }
+        }
+        
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         return poJSON;

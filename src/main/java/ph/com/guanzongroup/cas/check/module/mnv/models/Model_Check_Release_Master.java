@@ -26,7 +26,6 @@ import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
 public class Model_Check_Release_Master extends Model{
     
     private Model_Industry poIndustry;
-    private Model_Payee poPayee;
 
     @Override
     public void initialize() {
@@ -49,9 +48,6 @@ public class Model_Check_Release_Master extends Model{
             
             ParamModels model = new ParamModels(poGRider);
             poIndustry = model.Industry();
-            
-            CashflowModels cashFlow = new CashflowModels(poGRider);
-            poPayee = cashFlow.Payee();
             
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -175,6 +171,10 @@ public class Model_Check_Release_Master extends Model{
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+    }
+    
+    public String GetStatus(){
+        return (String) getValue("cTranStat");
     }
 
     public Model_Industry Industry() throws SQLException, GuanzonException {
