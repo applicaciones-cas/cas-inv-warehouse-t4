@@ -1,27 +1,25 @@
 package ph.com.guanzongroup.cas.purchasing.module.mnv.models;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Date;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.guanzon.appdriver.constant.RecordStatus;
-import org.guanzon.cas.client.model.Model_Client_Master;
 import org.guanzon.cas.parameter.model.Model_Branch;
 import org.guanzon.cas.parameter.model.Model_Category;
 import org.guanzon.cas.parameter.model.Model_Company;
 import org.guanzon.cas.parameter.model.Model_Department;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
+import org.guanzon.cas.purchasing.model.Model_PO_Master;
+import org.guanzon.cas.purchasing.services.PurchaseOrderModels;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckTransferStatus;
 
 /**
  *
- * @author maynevval 08-09-2025
+ * @author maynevval 10-07-2025 3PM
  */
 public class Model_PO_Cancellation_Master extends Model {
 
@@ -31,6 +29,7 @@ public class Model_PO_Cancellation_Master extends Model {
     Model_Company poCompany;
     Model_Department poDepartment;
     Model_Branch poBranch;
+    Model_PO_Master poPurchaseOrder;
 
     @Override
     public void initialize() {
@@ -73,6 +72,7 @@ public class Model_PO_Cancellation_Master extends Model {
             this.poIndustry = (new ParamModels(this.poGRider)).Industry();
             this.poCategory = (new ParamModels(this.poGRider)).Category();
             this.poCompany = (new ParamModels(this.poGRider)).Company();
+            this.poPurchaseOrder = new PurchaseOrderModels(poGRider).PurchaseOrderMaster();
 
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
@@ -475,6 +475,23 @@ public class Model_PO_Cancellation_Master extends Model {
         }
         this.poDepartment.initialize();
         return this.poDepartment;
+    }
+
+    public Model_PO_Master CheckPayment() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sOrderNox"))) {
+            if (this.poPurchaseOrder.getEditMode() == 1 && this.poPurchaseOrder
+                    .getTransactionNo().equals(getValue("sOrderNox"))) {
+                return this.poPurchaseOrder;
+            }
+            this.poJSON = this.poPurchaseOrder.openRecord((String) getValue("sOrderNox"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poPurchaseOrder;
+            }
+            this.poPurchaseOrder.initialize();
+            return this.poPurchaseOrder;
+        }
+        poPurchaseOrder.initialize();
+        return this.poPurchaseOrder;
     }
 
 }
