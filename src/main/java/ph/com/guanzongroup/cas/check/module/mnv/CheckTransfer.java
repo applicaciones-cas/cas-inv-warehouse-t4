@@ -2,6 +2,7 @@ package ph.com.guanzongroup.cas.check.module.mnv;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -215,6 +216,10 @@ public class CheckTransfer extends Transaction {
 
         getMaster().setEntryNo(lnDetailCount);
         getMaster().setTransactionTotal(lnTotalAmount);
+        getMaster().setPreparedBy(poGRider.Encrypt(poGRider.getUserID()));
+        getMaster().setPreparedDate(poGRider.getServerDate().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime());
         if (getMaster().getTransactionStatus().equals(CheckTransferStatus.RETURN)) {
             getMaster().setTransactionStatus(CheckTransferStatus.OPEN);
         }
@@ -400,6 +405,25 @@ public class CheckTransfer extends Transaction {
         return poJSON;
     }
 
+    public JSONObject ReturnCheckPaymentTransaction(int EntryNo) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        Model_Check_Transfer_Detail loDetail = (Model_Check_Transfer_Detail) paDetail.get(EntryNo);
+        Model_Check_Payments loCheckPayment = loDetail.CheckPayment();
+        if (loCheckPayment.getEditMode() == EditMode.READY) {
+            loCheckPayment.updateRecord();
+            loCheckPayment.setBranchCode(poGRider.getBranchCode());
+            loCheckPayment.setLocation("1");
+            poJSON = loCheckPayment.saveRecord();
+
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
+        return poJSON;
+    }
+
     public JSONObject PostTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
@@ -447,8 +471,8 @@ public class CheckTransfer extends Transaction {
 
             if (loDetail.getSourceNo() != null) {
                 if (!loDetail.getSourceNo().isEmpty()) {
-                    if (!loDetail.isReceived()){
-                    continue;
+                    if (!loDetail.isReceived()) {
+                        continue;
                     }
                     poJSON = new JSONObject();
                     poJSON = ReceiveCheckPaymentTransaction(lnCtr);
@@ -515,7 +539,21 @@ public class CheckTransfer extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Check_Transfer_Detail loDetail = (Model_Check_Transfer_Detail) paDetail.get(lnCtr);
 
+            if (loDetail.getSourceNo() != null) {
+                if (!loDetail.getSourceNo().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON = ReturnCheckPaymentTransaction(lnCtr);
+
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
+                }
+            }
+        }
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -569,9 +607,24 @@ public class CheckTransfer extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Check_Transfer_Detail loDetail = (Model_Check_Transfer_Detail) paDetail.get(lnCtr);
 
+            if (loDetail.getSourceNo() != null) {
+                if (!loDetail.getSourceNo().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON = ReturnCheckPaymentTransaction(lnCtr);
+
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
+                }
+            }
+        }
         poGRider.commitTrans();
 
+        openTransaction(getMaster().getTransactionNo());
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction voided successfully.");
@@ -1037,10 +1090,6 @@ public class CheckTransfer extends Transaction {
             poJSON.put("message", "Transaction was already voided.");
             return poJSON;
         }
-        poJSON = isEntryOkay(CheckTransferStatus.CONFIRMED);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
 
         ReportUtil poReportJasper = new ReportUtil(poGRider);
 
@@ -1054,6 +1103,13 @@ public class CheckTransfer extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
             return poJSON;
+        }
+
+        if (((Model_Check_Transfer_Master) poMaster).isPrintedStatus()) {
+            poJSON = isEntryOkay(CheckTransferStatus.CONFIRMED);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
         }
 
         // Attach listener
@@ -1122,6 +1178,7 @@ public class CheckTransfer extends Transaction {
         poReportJasper.addParameter("Remarks", getMaster().getRemarks());
         poReportJasper.addParameter("Destination", getMaster().BranchDestination().getBranchName());
         poReportJasper.addParameter("Department", getMaster().Department().getDescription() != null ? getMaster().Department().getDescription() : "");
+        poReportJasper.addParameter("PreparedBy", getMaster().getPreparedBy() != null ? poGRider.Decrypt(getMaster().getPreparedBy()) : "");
         poReportJasper.addParameter("DatePrinted", SQLUtil.dateFormat(poGRider.getServerDate(), SQLUtil.FORMAT_TIMESTAMP));
         if (getMaster()
                 .isPrintedStatus()) {
@@ -1174,10 +1231,10 @@ public class CheckTransfer extends Transaction {
             return poJSON;
         }
         //validator
-        poJSON = isEntryOkay(CheckTransferStatus.CONFIRMED);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
+//        poJSON = isEntryOkay(CheckTransferStatus.CONFIRMED);
+//        if ("error".equals((String) poJSON.get("result"))) {
+//            return poJSON;
+//        }
 
         poGRider.beginTrans("UPDATE STATUS", "Process Transaction Print Tag", SOURCE_CODE, getMaster().getTransactionNo());
 
@@ -1206,6 +1263,7 @@ public class CheckTransfer extends Transaction {
 
         return poJSON;
     }
+    
 
     private boolean isJSONSuccess(JSONObject loJSON, String module, String fsModule) {
         String result = (String) loJSON.get("result");

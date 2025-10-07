@@ -416,7 +416,6 @@ public class CheckDeposit extends Transaction {
             return poJSON;
         }
 
-
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
         poJSON = statusChange(poMaster.getTable(),
@@ -499,12 +498,46 @@ public class CheckDeposit extends Transaction {
             return poJSON;
         }
 
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Check_Deposit_Detail loDetail = (Model_Check_Deposit_Detail) paDetail.get(lnCtr);
+
+            if (loDetail.getSourceNo() != null) {
+                if (!loDetail.getSourceNo().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON = ReturnCheckPaymentTransaction(lnCtr);
+
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
+                }
+            }
+        }
         poGRider.commitTrans();
 
         poJSON = new JSONObject();
         poJSON.put("result", "success");
         poJSON.put("message", "Transaction cancelled successfully.");
 
+        return poJSON;
+    }
+
+    public JSONObject ReturnCheckPaymentTransaction(int EntryNo) throws SQLException, GuanzonException {
+        poJSON = new JSONObject();
+        Model_Check_Deposit_Detail loDetail = (Model_Check_Deposit_Detail) paDetail.get(EntryNo);
+        Model_Check_Payments loCheckPayment = loDetail.CheckPayment();
+        if (loCheckPayment.getEditMode() == EditMode.READY) {
+            loCheckPayment.updateRecord();
+            loCheckPayment.setBranchCode(poGRider.getBranchCode());
+            loCheckPayment.setLocation("1");
+            poJSON = loCheckPayment.saveRecord();
+
+            if (!"success".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+        poJSON = new JSONObject();
+        poJSON.put("result", "success");
         return poJSON;
     }
 
@@ -551,7 +584,21 @@ public class CheckDeposit extends Transaction {
             poGRider.rollbackTrans();
             return poJSON;
         }
+        for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
+            Model_Check_Deposit_Detail loDetail = (Model_Check_Deposit_Detail) paDetail.get(lnCtr);
 
+            if (loDetail.getSourceNo() != null) {
+                if (!loDetail.getSourceNo().isEmpty()) {
+                    poJSON = new JSONObject();
+                    poJSON = ReturnCheckPaymentTransaction(lnCtr);
+
+                    if (!"success".equals((String) poJSON.get("result"))) {
+                        poGRider.rollbackTrans();
+                        return poJSON;
+                    }
+                }
+            }
+        }
         poGRider.commitTrans();
 
         openTransaction(getMaster().getTransactionNo());
@@ -748,6 +795,7 @@ public class CheckDeposit extends Transaction {
 
             if ("success".equals((String) poJSON.get("result"))) {
                 getMaster().setBankAccount(loBrowse.getBankAccountId());
+                searchTransactionBankMasterFilter(loBrowse.getBankId(), true);
 
                 this.poJSON = new JSONObject();
                 this.poJSON.put("result", "success");
@@ -833,8 +881,8 @@ public class CheckDeposit extends Transaction {
     public Model_Banks getBanksMaster() throws SQLException, GuanzonException {
         if (poBankMaster != null) {
             if (!"".equals(poBankMaster.getBankID())) {
-                if (this.poBank.getEditMode() == 1) {
-                    return this.poBank;
+                if (this.poBankMaster.getEditMode() == 1) {
+                    return this.poBankMaster;
                 }
             }
         }
@@ -1115,11 +1163,6 @@ public class CheckDeposit extends Transaction {
             poJSON.put("message", "Transaction was already voided.");
             return poJSON;
         }
-        poJSON = isEntryOkay(CheckDepositStatus.CONFIRMED);
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
-
         if (getMaster().getTransactionNo() == null && getMaster().getTransactionNo().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "No record is Selected");
@@ -1131,25 +1174,49 @@ public class CheckDeposit extends Transaction {
             System.out.println("Print Record open transaction : " + (String) poJSON.get("message"));
             return poJSON;
         }
+
+        if (((Model_Check_Deposit_Master) poMaster).isPrintedStatus()) {
+            poJSON = isEntryOkay(CheckDepositStatus.CONFIRMED);
+            if ("error".equals((String) poJSON.get("result"))) {
+                return poJSON;
+            }
+        }
+
         if (printer == null) {
-            System.err.println("No default printer.");
+            System.err.println("No default printer detected.");
             poJSON.put("result", "error");
-            poJSON.put("message", "No default printer.");
+            poJSON.put("message", "No default printer detected. Please check printer connection.");
             return poJSON;
         }
 
         PrinterJob job = PrinterJob.createPrinterJob(printer);
         if (job == null) {
-            System.err.println("Cannot create job.");
+            System.err.println("Cannot create printer job.");
             poJSON.put("result", "error");
-            poJSON.put("message", "Cannot create job.");
+            poJSON.put("message", "Cannot create printer job.");
             return poJSON;
         }
 
-        PageLayout layout = printer.createPageLayout(Paper.A4,
-                PageOrientation.PORTRAIT,
-                Printer.MarginType.HARDWARE_MINIMUM);
+        PageLayout layout;
+        try {
+            // Get the printer's default page layout
+            layout = printer.getDefaultPageLayout();
 
+            // If the printer has no default layout (rare), fallback
+            if (layout == null) {
+                System.out.println("No default page layout found, creating one automatically.");
+                layout = printer.createPageLayout(
+                        Paper.A4,
+                        PageOrientation.PORTRAIT,
+                        Printer.MarginType.DEFAULT
+                );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            poJSON.put("result", "error");
+            poJSON.put("message", "Failed to initialize page layout: " + e.getMessage());
+            return poJSON;
+        }
         double pw = layout.getPrintableWidth();   // points
         double ph = layout.getPrintableHeight();
 
