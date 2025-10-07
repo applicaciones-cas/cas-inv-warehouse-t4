@@ -152,7 +152,9 @@ public class CheckTransfer_Car implements GValidator {
     private JSONObject validateConfirmed() throws SQLException {
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
-
+        if (poGRider.getUserLevel() <= UserRight.ENCODER) {
+            isRequiredApproval = true;
+        }
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
@@ -212,9 +214,10 @@ public class CheckTransfer_Car implements GValidator {
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
                     && !paDetail.get(lnCtr).getSourceNo().isEmpty()) {
+                if (paDetail.get(lnCtr).isReceived()) {
 
-                lnDetailCount++;
-
+                    lnDetailCount++;
+                }
             }
         }
 

@@ -311,7 +311,7 @@ public class CheckDeposit extends Transaction {
             if (loDetail.getSourceNo() != null) {
                 if (!loDetail.getSourceNo().isEmpty()) {
                     poJSON = new JSONObject();
-                    poJSON = SaveCheckPaymentTransaction(lnCtr);
+                    poJSON = ReleaseCheckPaymentTransaction(lnCtr);
 
                     if (!"success".equals((String) poJSON.get("result"))) {
                         poGRider.rollbackTrans();
@@ -372,7 +372,7 @@ public class CheckDeposit extends Transaction {
         return poJSON;
     }
 
-    public JSONObject SaveCheckPaymentTransaction(int EntryNo) throws SQLException, GuanzonException {
+    public JSONObject ReleaseCheckPaymentTransaction(int EntryNo) throws SQLException, GuanzonException {
         poJSON = new JSONObject();
         Model_Check_Deposit_Detail loDetail = (Model_Check_Deposit_Detail) paDetail.get(EntryNo);
         Model_Check_Payments loCheckPayment = loDetail.CheckPayment();
@@ -380,6 +380,7 @@ public class CheckDeposit extends Transaction {
             loCheckPayment.updateRecord();
 //            loCheckPayment.setBranchCode(getMaster().getDestination());
             loCheckPayment.setLocation("3");
+            loCheckPayment.setReleased("1");
             loCheckPayment.setModifiedDate(poGRider.getServerDate());
             loCheckPayment.setModifyingId(poGRider.Encrypt(poGRider.getUserID()));
             poJSON = loCheckPayment.saveRecord();
@@ -414,14 +415,7 @@ public class CheckDeposit extends Transaction {
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-        poMaster.setValue("sReceived", poGRider.Encrypt(poGRider.getUserID()));
-        if (!psApprovalUser.isEmpty()) {
-            poMaster.setValue("sApproved", poGRider.Encrypt(psApprovalUser));
-        }
-        poJSON = SaveTransaction();
-        if ("error".equals((String) poJSON.get("result"))) {
-            return poJSON;
-        }
+
 
         poGRider.beginTrans("UPDATE STATUS", "PostTransaction", SOURCE_CODE, getMaster().getTransactionNo());
 
@@ -591,9 +585,9 @@ public class CheckDeposit extends Transaction {
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
                     value,
-                    "Transaction No»Destination»Date",
-                    "sTransNox»xDestinat»dTransact",
-                    "a.sTransNox»c.sBranchNm»a.dTransact",
+                    "Transaction No»Bank Account No»Date",
+                    "sTransNox»sActNumbr»dTransact",
+                    "a.sTransNox»b.sActNumbr»a.dTransact",
                     byExact ? (byCode ? 0 : 1) : 2);
 
             if (poJSON != null) {
@@ -754,6 +748,9 @@ public class CheckDeposit extends Transaction {
 
             if ("success".equals((String) poJSON.get("result"))) {
                 getMaster().setBankAccount(loBrowse.getBankAccountId());
+
+                this.poJSON = new JSONObject();
+                this.poJSON.put("result", "success");
                 return poJSON;
             }
 
@@ -775,6 +772,9 @@ public class CheckDeposit extends Transaction {
 
             if ("success".equals((String) poJSON.get("result"))) {
                 poBankMaster = loBrowse.getModel();
+
+                this.poJSON = new JSONObject();
+                this.poJSON.put("result", "success");
                 return poJSON;
             }
 
@@ -796,6 +796,9 @@ public class CheckDeposit extends Transaction {
 
             if ("success".equals((String) poJSON.get("result"))) {
                 poBank = loBrowse.getModel();
+
+                this.poJSON = new JSONObject();
+                this.poJSON.put("result", "success");
                 return poJSON;
             }
 
