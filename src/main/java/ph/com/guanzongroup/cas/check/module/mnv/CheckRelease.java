@@ -71,13 +71,12 @@ public class CheckRelease extends Transaction{
         
         poMaster = new CheckModels(poGRider).CheckReleaseMaster();
         poDetail = new CheckModels(poGRider).CheckReleaseDetail();
-        paDetail = new ArrayList<Model>();
-        paCheckList = new ArrayList<Model>();
-        paDetailCheck = new ArrayList<Model>();
+        paDetail = new ArrayList<>();
+        paCheckList = new ArrayList<>();
+        paDetailCheck = new ArrayList<>();
         
         return super.initialize();
     }
-    
     
     public JSONObject OpenTransaction(String transactionNo) throws CloneNotSupportedException, SQLException, GuanzonException {
         return poMaster.openRecord(transactionNo);
@@ -89,7 +88,8 @@ public class CheckRelease extends Transaction{
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
-
+        
+ 
         GetMaster().setIndustryId(psIndustryCode);
         return poJSON;
     }
@@ -128,7 +128,7 @@ public class CheckRelease extends Transaction{
                     "Transaction No»Transaction Date»Received By", 
                     "sTransNox»dTransact»sReceived", 
                     "sTransNox»sReceived", 
-                    byExact ? (byCode ? 0 : 1) : 2);
+                    byExact ? (byCode ? 0 : 1) : 1);
             
             if (poJSON != null) {
                 return poMaster.openRecord((String) poJSON.get("sTransNox"));
@@ -169,7 +169,7 @@ public class CheckRelease extends Transaction{
                     fsValue, 
                     "Transaction No»Transaction Date»Check No»Check Amt", 
                     "a.sTransNox»a.dTransact»a.sCheckNox»a.nAmountxx", 
-                    "a.sPayeeIDx»e.sPayeeNme»a.sCheckNox", 
+                    "a.sTransNox»e.sPayeeNme»a.sCheckNox", 
                     byExact ? (byCode ? 0 : 1) : 2);
             
             if (poJSON != null) {
@@ -281,12 +281,12 @@ public class CheckRelease extends Transaction{
                 return poJSON;
             }
             
-            if(fnEntryNo <= 0){
-                poJSON.put("result", "error");
-                poJSON.put("message", "Entry no is invalid!");
-
-                return poJSON;
-            }
+//            if(fnEntryNo <= 0){
+//                poJSON.put("result", "error");
+//                poJSON.put("message", "Entry no is invalid!");
+//
+//                return poJSON;
+//            }
 
             String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
 
@@ -383,6 +383,8 @@ public class CheckRelease extends Transaction{
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
         
+        System.out.print(lsSQL);
+        
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
         if (MiscUtil.RecordCount(loRS)
@@ -393,6 +395,7 @@ public class CheckRelease extends Transaction{
         }
         Set<String> processedTrans = new HashSet<>();
 
+        paDetailCheck.clear();
         while (loRS.next()) {
             
             String transNo = loRS.getString("sTransNox");
@@ -408,7 +411,7 @@ public class CheckRelease extends Transaction{
             poJSON = loBrowseChecks.openRecord(transNo);
 
             if ("success".equals((String) poJSON.get("result"))) {
-                paCheckList.add((Model) loBrowseChecks);
+                paDetailCheck.add((Model) loBrowseChecks);
 
                 // Mark this transaction as processed
                 processedTrans.add(transNo);

@@ -15,8 +15,6 @@ import org.guanzon.appdriver.constant.RecordStatus;
 import org.guanzon.cas.parameter.model.Model_Industry;
 import org.guanzon.cas.parameter.services.ParamModels;
 import org.json.simple.JSONObject;
-import ph.com.guanzongroup.cas.cashflow.model.Model_Payee;
-import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
 
 /**
@@ -32,26 +30,29 @@ public class Model_Check_Release_Master extends Model{
         
         try{
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
+            
             poEntity.last();
             poEntity.moveToInsertRow();
             
+            MiscUtil.initRowSet(poEntity);
+            
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateDouble("nTranTotl", 0.00d);
+            poEntity.updateDouble("nTranTotl", 0.00);
             poEntity.updateString("cPrintedx", "0");
             poEntity.updateString("cTranStat", CheckReleaseStatus.OPEN);
             poEntity.updateNull("sReceived");
             poEntity.updateNull("sModified");
             poEntity.updateObject("dModified", poGRider.getServerDate());
 
-            MiscUtil.initRowSet(poEntity);
+            
             
             ParamModels model = new ParamModels(poGRider);
             poIndustry = model.Industry();
             
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
-
+            
             poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
@@ -171,10 +172,6 @@ public class Model_Check_Release_Master extends Model{
     @Override
     public String getNextCode() {
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
-    }
-    
-    public String GetStatus(){
-        return (String) getValue("cTranStat");
     }
 
     public Model_Industry Industry() throws SQLException, GuanzonException {

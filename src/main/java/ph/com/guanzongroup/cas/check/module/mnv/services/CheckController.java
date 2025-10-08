@@ -1,6 +1,8 @@
 package ph.com.guanzongroup.cas.check.module.mnv.services;
 
+import java.sql.SQLException;
 import org.guanzon.appdriver.base.GRiderCAS;
+import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.LogWrapper;
 import ph.com.guanzongroup.cas.check.module.mnv.CheckDeposit;
 import ph.com.guanzongroup.cas.check.module.mnv.CheckRelease;
@@ -58,10 +60,10 @@ public class CheckController {
         return poCheckDeposit;
     }
     
-    public CheckRelease CheckRelease(){
+    public CheckRelease CheckRelease() throws GuanzonException, SQLException{
         
         if (poGRider == null) {
-            poLogWrapper.severe("CheckController.CheckDeposit: Application driver is not set.");
+            poLogWrapper.severe("CheckController.CheckRelease: Application driver is not set.");
             return null;
         }
 
@@ -75,7 +77,6 @@ public class CheckController {
         poCheckRelease.setVerifyEntryNo(true);
         poCheckRelease.setWithParent(false);
         poCheckRelease.setLogWrapper(poLogWrapper);
-        
         return poCheckRelease;
     }
 
