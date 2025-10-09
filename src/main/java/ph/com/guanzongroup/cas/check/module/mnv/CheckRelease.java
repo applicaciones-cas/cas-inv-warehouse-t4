@@ -51,18 +51,26 @@ public class CheckRelease extends Transaction{
         return (Model_Check_Release_Detail) poDetail;
     }
     
+    public List<Model_Check_Release_Detail> GetDetailList(){
+        return (List<Model_Check_Release_Detail>) (List<?>) paDetail;
+    }
+    
+    public Model_Check_Release_Detail GetDetail(int fnRow){
+        return (Model_Check_Release_Detail) paDetail.get(fnRow);
+    }
+    
     @SuppressWarnings("unchecked")
-    public List<Model_Check_Payments> getCheckPaymentList() {
+    public List<Model_Check_Payments> GetCheckPaymentList() {
         return (List<Model_Check_Payments>) (List<?>) paCheckList;
     }
     
     @SuppressWarnings("unchecked")
-    public List<Model_Check_Payments> getDetailCheckList() {
+    public List<Model_Check_Payments> GetDetailCheckList() {
         return (List<Model_Check_Payments>) (List<?>) paDetailCheck;
     }
     
     @SuppressWarnings("unchecked")
-    public Model_Check_Payments getCheckDetail(int fnRow) {
+    public Model_Check_Payments GetCheckDetail(int fnRow) {
         return (Model_Check_Payments) paDetailCheck.get(fnRow);
     }
     
@@ -281,13 +289,6 @@ public class CheckRelease extends Transaction{
                 return poJSON;
             }
             
-//            if(fnEntryNo <= 0){
-//                poJSON.put("result", "error");
-//                poJSON.put("message", "Entry no is invalid!");
-//
-//                return poJSON;
-//            }
-
             String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
 
             if (!psIndustryCode.isEmpty()) {
@@ -324,13 +325,6 @@ public class CheckRelease extends Transaction{
                 poJSON = loBrowseChecks.openRecord(transNo);
                 if ("success".equals((String) poJSON.get("result"))) {
                     
-                    Model_Check_Release_Detail loDetail = new CheckModels(poGRider).CheckReleaseDetail();
-                    loDetail.newRecord();
-                    loDetail.setTransactionNo(GetMaster().getTransactionNo());
-                    loDetail.setSourceNo(loBrowseChecks.getTransactionNo());
-                    loDetail.setSourceCD(loBrowseChecks.getSourceCode());
-                    loDetail.setEntryNo(fnEntryNo);
-                    
                     //check array stream if transaction number already exists
                     if (paDetailCheck.stream().anyMatch(loTrans -> loTrans.getValue("sTransNox").equals(transNo)) || 
                             paDetail.stream().anyMatch(loTrans -> loTrans.getValue("sTransNox").equals(transNo))) {
@@ -341,8 +335,23 @@ public class CheckRelease extends Transaction{
                         return poJSON;
                     }
                     
-                    paDetailCheck.add(loBrowseChecks);
-                    paDetail.add(loDetail);
+                    //set max index count from list
+                    if (fnEntryNo == paDetailCheck.size()) {
+                        fnEntryNo = fnEntryNo - 1;
+                    }
+                    
+                    //replace existing row with new value
+                    Model_Check_Release_Detail loDetail = new CheckModels(poGRider).CheckReleaseDetail();
+                    loDetail.setTransactionNo(GetMaster().getTransactionNo());
+                    loDetail.setEntryNo(fnEntryNo);
+                    loDetail.setSourceNo(loBrowseChecks.getTransactionNo());
+                    loDetail.setSourceCD(loBrowseChecks.getSourceCode());
+                    
+                    paDetail.remove(fnEntryNo);
+                    paDetail.add(fnEntryNo, loBrowseChecks);
+
+                    paDetailCheck.remove(fnEntryNo);
+                    paDetailCheck.add(fnEntryNo, loBrowseChecks);
                     
                     // Mark this transaction as processed
                     processedTrans.add(transNo);
@@ -350,6 +359,22 @@ public class CheckRelease extends Transaction{
                     return poJSON;
                 }
             }
+            
+            //remove last inserted row, which is a new row
+            paDetail.remove(paDetail.size() - 1);
+            paDetailCheck.remove(paDetailCheck.size() -1);
+            
+            //add a new row
+            Model_Check_Release_Detail loDetail = new CheckModels(poGRider).CheckReleaseDetail();
+            loDetail.newRecord();
+            loDetail.setEntryNo(paDetail.size() + 1);
+            
+            paDetail.add(loDetail);
+            
+            Model_Check_Payments loCheck = new CashflowModels(poGRider).CheckPayments();
+            loCheck.newRecord();
+            
+            paDetailCheck.add(loCheck);
 
             poJSON = new JSONObject();
             poJSON.put("result", "success");
@@ -372,18 +397,9 @@ public class CheckRelease extends Transaction{
             poJSON.put("message", "Transaction no is empty!");
             return poJSON;
         }
-
-        String lsSQL = CheckReleaseRecords.CheckPaymentRecord();
-        if (!psIndustryCode.isEmpty()) {
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
-        }
         
-        lsSQL = MiscUtil.addCondition(lsSQL, "d.sTransNox = " + SQLUtil.toSQL(fsTransNox));
-        lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
-        lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
-        
-        System.out.print(lsSQL);
+        String lsSQL = CheckReleaseRecords.CheckReleaseDetail();
+        lsSQL = MiscUtil.addCondition(lsSQL, "sTransNox = " + SQLUtil.toSQL(fsTransNox));
         
         ResultSet loRS = poGRider.executeQuery(lsSQL);
         
@@ -394,31 +410,49 @@ public class CheckRelease extends Transaction{
             return poJSON;
         }
         Set<String> processedTrans = new HashSet<>();
-
+        
+        paDetail.clear();
         paDetailCheck.clear();
         while (loRS.next()) {
             
-            String transNo = loRS.getString("sTransNox");
-
+            String lsSourceno = loRS.getString("sSourceNo");
+            
             // Skip if we already processed this transaction number
-            if (processedTrans.contains(transNo)) {
+            if (processedTrans.contains(lsSourceno)) {
                 continue;
             }
-
-            Model_Check_Payments loBrowseChecks
-                    = new CashflowModels(poGRider).CheckPayments();
             
-            poJSON = loBrowseChecks.openRecord(transNo);
-
+            Model_Check_Release_Detail loDetail = new CheckModels(poGRider).CheckReleaseDetail();
+            loDetail.setTransactionNo(loRS.getString("sTransNox"));
+            loDetail.setEntryNo(loRS.getInt("nEntryNox"));
+            loDetail.setSourceCD(loRS.getString("sSourceCd"));
+            loDetail.setSourceNo(loRS.getString("sSourceNo"));
+            loDetail.setModifiedDate(loRS.getDate("dModified"));
+            
+            Model_Check_Payments loBrowseChecks = new CashflowModels(poGRider).CheckPayments();
+            poJSON = loBrowseChecks.openRecord(lsSourceno);
+            
             if ("success".equals((String) poJSON.get("result"))) {
+                paDetail.add(loDetail);
                 paDetailCheck.add((Model) loBrowseChecks);
 
                 // Mark this transaction as processed
-                processedTrans.add(transNo);
+                processedTrans.add(lsSourceno);
+                
             } else {
                 return poJSON;
             }
         }
+        
+        Model_Check_Release_Detail loDetail = new CheckModels(poGRider).CheckReleaseDetail();
+        loDetail.newRecord();
+        loDetail.setEntryNo(paDetail.size() + 1);
+
+        paDetail.add(loDetail);
+
+        Model_Check_Payments loCheck = new CashflowModels(poGRider).CheckPayments();
+        loCheck.newRecord();
+        paDetailCheck.add(loCheck);
         
         poJSON = new JSONObject();
         poJSON.put("result", "success");

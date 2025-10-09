@@ -19,6 +19,17 @@ public class CheckReleaseRecords {
                 + "FROM Check_Release_Master";
     }
     
+    public static final String CheckReleaseDetail(){
+        
+        return "SELECT "
+                + "sTransNox, "
+                + "nEntryNox, "
+                + "sSourceCd, "
+                + "sSourceNo, "
+                + "dModified, "
+                + "dTimeStmp "
+                + "FROM Check_Release_Detail";
+    }    
     public static final String CheckPaymentRecord() {
         String lsSQL = "SELECT"
                 + "  a.sTransNox,"
