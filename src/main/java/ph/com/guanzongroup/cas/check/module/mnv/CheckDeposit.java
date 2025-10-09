@@ -1205,15 +1205,13 @@ public class CheckDeposit extends Transaction {
             // Get the printer's default page layout
             layout = printer.getDefaultPageLayout();
 
-            // If the printer has no default layout (rare), fallback
-            if (layout == null) {
-                System.out.println("No default page layout found, creating one automatically.");
-                layout = printer.createPageLayout(
-                        Paper.A4,
-                        PageOrientation.PORTRAIT,
-                        Printer.MarginType.DEFAULT
-                );
-            }
+            Paper customPaper = PrintHelper.createPaper("InfinitePaper", 1000, 10000, Units.MM);
+
+            layout = printer.createPageLayout(
+                    customPaper,
+                    PageOrientation.PORTRAIT,
+                    0, 0, 0, 0 
+            );
         } catch (Exception e) {
             e.printStackTrace();
             poJSON.put("result", "error");
@@ -1264,7 +1262,7 @@ public class CheckDeposit extends Transaction {
 
         // Root container for all voucher text nodes
         Pane root = new Pane();
-        root.setPrefSize(widthPts, heightPts);
+        root.setPrefSize(widthPts * 2, heightPts * 2);
 
         for (int lnCtr = 0; lnCtr < loDocumentMapping.Detail().size(); lnCtr++) {
             String fieldName = loDocumentMapping.Detail(lnCtr).getFieldCode();
@@ -1302,7 +1300,7 @@ public class CheckDeposit extends Transaction {
 
                 case "nTotalDep":
                     textValue = getMaster().getTransactionTotalDeposit() == null ? "0.0"
-                            : CommonUtils.NumberFormat(getMaster().getTransactionTotalDeposit(), "###0.00");
+                            : CommonUtils.NumberFormat(getMaster().getTransactionTotalDeposit(), "##0.00");
                     break;
 
                 case "sBankIDxx":
@@ -1324,7 +1322,7 @@ public class CheckDeposit extends Transaction {
                         } else if (fieldName.equals("sCheckNox")) {
                             textValue = loCheck.getCheckNo();
                         } else if (fieldName.equals("nAmountxx")) {
-                            textValue = CommonUtils.NumberFormat(loCheck.getAmount(), "###0.00");
+                            textValue = CommonUtils.NumberFormat(loCheck.getAmount(), "##0.00");
                         }
 
                         double multiY = y;
