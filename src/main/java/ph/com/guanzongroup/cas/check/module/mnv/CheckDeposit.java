@@ -1,5 +1,7 @@
 package ph.com.guanzongroup.cas.check.module.mnv;
 
+import com.sun.javafx.print.PrintHelper;
+import com.sun.javafx.print.Units;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -896,7 +899,7 @@ public class CheckDeposit extends Transaction {
         if (getMaster().getIndustryId() == null
                 || getMaster().getIndustryId().isEmpty()) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No cluster is set.");
+            poJSON.put("message", "No Industry is set.");
             return poJSON;
         }
         paCheckList.clear();
@@ -1299,7 +1302,7 @@ public class CheckDeposit extends Transaction {
 
                 case "nTotalDep":
                     textValue = getMaster().getTransactionTotalDeposit() == null ? "0.0"
-                            : String.valueOf(getMaster().getTransactionTotalDeposit());
+                            : CommonUtils.NumberFormat(getMaster().getTransactionTotalDeposit(), "###0.00");
                     break;
 
                 case "sBankIDxx":
@@ -1321,7 +1324,7 @@ public class CheckDeposit extends Transaction {
                         } else if (fieldName.equals("sCheckNox")) {
                             textValue = loCheck.getCheckNo();
                         } else if (fieldName.equals("nAmountxx")) {
-                            textValue = String.valueOf(loCheck.getAmount());
+                            textValue = CommonUtils.NumberFormat(loCheck.getAmount(), "###0.00");
                         }
 
                         double multiY = y;
@@ -1332,6 +1335,10 @@ public class CheckDeposit extends Transaction {
                         // trim text if longer than maxlens
                         if (textValue != null && textValue.length() > maxlens) {
                             textValue = textValue.substring(0, maxlens);
+                        }
+
+                        if (textValue == null) {
+                            textValue = "";
                         }
 
                         // draw each character
@@ -1351,6 +1358,9 @@ public class CheckDeposit extends Transaction {
                     continue; // skip default single text creation
             }
 
+            if (textValue == null) {
+                textValue = "";
+            }
             // trim text if longer than maxlens
             if (textValue != null && textValue.length() > maxlens) {
                 textValue = textValue.substring(0, maxlens);
@@ -1368,7 +1378,7 @@ public class CheckDeposit extends Transaction {
                     charNode.setFont(fieldFont);
                     root.getChildren().add(charNode);
                     //stop the printing 
-                    if (lnRow == maxrow) {
+                    if (lnRow == maxlens) {
                         break;
                     }
                 }

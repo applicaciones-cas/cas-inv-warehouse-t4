@@ -122,6 +122,11 @@ public class CheckDeposit_MC implements GValidator {
 //            return poJSON;
 //        }
 
+        if (poMaster.getBankAccount() == null || poMaster.getBankAccount().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Bank Account is not set.");
+            return poJSON;
+        }
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getSourceNo() != null
