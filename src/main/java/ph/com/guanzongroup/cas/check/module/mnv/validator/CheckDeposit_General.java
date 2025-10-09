@@ -121,6 +121,11 @@ public class CheckDeposit_General implements GValidator {
 //            poJSON.put("message", "Branch is not set.");
 //            return poJSON;
 //        }
+        if (poMaster.getBankAccount() == null || poMaster.getBankAccount().isEmpty()) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Bank Account is not set.");
+            return poJSON;
+        }
 
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {

@@ -898,7 +898,7 @@ public class CheckTransfer extends Transaction {
         if (getMaster().getIndustryId() == null
                 || getMaster().getIndustryId().isEmpty()) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No cluster is set.");
+            poJSON.put("message", "No industry is set.");
             return poJSON;
         }
         paCheckList.clear();

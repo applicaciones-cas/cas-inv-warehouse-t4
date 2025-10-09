@@ -1,5 +1,7 @@
 package ph.com.guanzongroup.cas.check.module.mnv;
 
+import com.sun.javafx.print.PrintHelper;
+import com.sun.javafx.print.Units;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import org.guanzon.appdriver.agent.ShowDialogFX;
 import org.guanzon.appdriver.agent.ShowMessageFX;
 import org.guanzon.appdriver.agent.services.Model;
 import org.guanzon.appdriver.agent.services.Transaction;
+import org.guanzon.appdriver.base.CommonUtils;
 import org.guanzon.appdriver.base.GuanzonException;
 import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.base.SQLUtil;
@@ -896,7 +899,7 @@ public class CheckDeposit extends Transaction {
         if (getMaster().getIndustryId() == null
                 || getMaster().getIndustryId().isEmpty()) {
             poJSON.put("result", "error");
-            poJSON.put("message", "No cluster is set.");
+            poJSON.put("message", "No Industry is set.");
             return poJSON;
         }
         paCheckList.clear();
@@ -1202,15 +1205,13 @@ public class CheckDeposit extends Transaction {
             // Get the printer's default page layout
             layout = printer.getDefaultPageLayout();
 
-            // If the printer has no default layout (rare), fallback
-            if (layout == null) {
-                System.out.println("No default page layout found, creating one automatically.");
-                layout = printer.createPageLayout(
-                        Paper.A4,
-                        PageOrientation.PORTRAIT,
-                        Printer.MarginType.DEFAULT
-                );
-            }
+            Paper customPaper = PrintHelper.createPaper("InfinitePaper", 1000, 10000, Units.MM);
+
+            layout = printer.createPageLayout(
+                    customPaper,
+                    PageOrientation.PORTRAIT,
+                    0, 0, 0, 0 
+            );
         } catch (Exception e) {
             e.printStackTrace();
             poJSON.put("result", "error");
@@ -1261,7 +1262,7 @@ public class CheckDeposit extends Transaction {
 
         // Root container for all voucher text nodes
         Pane root = new Pane();
-        root.setPrefSize(widthPts, heightPts);
+        root.setPrefSize(widthPts * 2, heightPts * 2);
 
         for (int lnCtr = 0; lnCtr < loDocumentMapping.Detail().size(); lnCtr++) {
             String fieldName = loDocumentMapping.Detail(lnCtr).getFieldCode();
@@ -1299,7 +1300,7 @@ public class CheckDeposit extends Transaction {
 
                 case "nTotalDep":
                     textValue = getMaster().getTransactionTotalDeposit() == null ? "0.0"
-                            : String.valueOf(getMaster().getTransactionTotalDeposit());
+                            : CommonUtils.NumberFormat(getMaster().getTransactionTotalDeposit(), "##0.00");
                     break;
 
                 case "sBankIDxx":
@@ -1321,7 +1322,7 @@ public class CheckDeposit extends Transaction {
                         } else if (fieldName.equals("sCheckNox")) {
                             textValue = loCheck.getCheckNo();
                         } else if (fieldName.equals("nAmountxx")) {
-                            textValue = String.valueOf(loCheck.getAmount());
+                            textValue = CommonUtils.NumberFormat(loCheck.getAmount(), "##0.00");
                         }
 
                         double multiY = y;
@@ -1332,6 +1333,10 @@ public class CheckDeposit extends Transaction {
                         // trim text if longer than maxlens
                         if (textValue != null && textValue.length() > maxlens) {
                             textValue = textValue.substring(0, maxlens);
+                        }
+
+                        if (textValue == null) {
+                            textValue = "";
                         }
 
                         // draw each character
@@ -1351,6 +1356,9 @@ public class CheckDeposit extends Transaction {
                     continue; // skip default single text creation
             }
 
+            if (textValue == null) {
+                textValue = "";
+            }
             // trim text if longer than maxlens
             if (textValue != null && textValue.length() > maxlens) {
                 textValue = textValue.substring(0, maxlens);
@@ -1368,7 +1376,7 @@ public class CheckDeposit extends Transaction {
                     charNode.setFont(fieldFont);
                     root.getChildren().add(charNode);
                     //stop the printing 
-                    if (lnRow == maxrow) {
+                    if (lnRow == maxlens) {
                         break;
                     }
                 }
