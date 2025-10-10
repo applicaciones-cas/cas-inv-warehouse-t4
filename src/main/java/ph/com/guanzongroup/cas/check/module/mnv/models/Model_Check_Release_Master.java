@@ -37,15 +37,13 @@ public class Model_Check_Release_Master extends Model{
             MiscUtil.initRowSet(poEntity);
             
             poEntity.updateObject("dTransact", poGRider.getServerDate());
-            poEntity.updateObject("nEntryNox", 0);
+            poEntity.updateObject("nEntryNox", 1);
             poEntity.updateDouble("nTranTotl", 0.00);
             poEntity.updateString("cPrintedx", "0");
             poEntity.updateString("cTranStat", CheckReleaseStatus.OPEN);
             poEntity.updateNull("sReceived");
             poEntity.updateNull("sModified");
             poEntity.updateObject("dModified", poGRider.getServerDate());
-
-            
             
             ParamModels model = new ParamModels(poGRider);
             poIndustry = model.Industry();

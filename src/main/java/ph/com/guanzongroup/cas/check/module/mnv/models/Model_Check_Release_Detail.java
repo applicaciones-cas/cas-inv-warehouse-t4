@@ -20,8 +20,7 @@ import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
  * @author User
  */
 public class Model_Check_Release_Detail extends Model{
-    
-    private Model_Payee poPayee;
+
     private Model_Check_Payments poCheckPayment;
 
     @Override
@@ -33,12 +32,14 @@ public class Model_Check_Release_Detail extends Model{
             poEntity.last();
             poEntity.moveToInsertRow();
             
+            poEntity.updateNull("sSourceNo");
+            poEntity.updateNull("sSourceCd");
+            poEntity.updateObject("nEntryNox", 1);
             poEntity.updateObject("dModified", poGRider.getServerDate());
 
             MiscUtil.initRowSet(poEntity);
             
             CashflowModels cashFlow = new CashflowModels(poGRider);
-            poPayee = cashFlow.Payee();
             poCheckPayment = cashFlow.CheckPayments();
             
             poEntity.insertRow();
@@ -47,6 +48,7 @@ public class Model_Check_Release_Detail extends Model{
             poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
+            ID2 = poEntity.getMetaData().getColumnLabel(2);
 
             //add model here
             pnEditMode = EditMode.UNKNOWN;
@@ -107,4 +109,20 @@ public class Model_Check_Release_Detail extends Model{
         return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
     }
     
+    public Model_Check_Payments CheckPayment() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sSourceNo"))) {
+            if (this.poCheckPayment.getEditMode() == 1 && this.poCheckPayment
+                    .getTransactionNo().equals(getValue("sSourceNo"))) {
+                return this.poCheckPayment;
+            }
+            this.poJSON = this.poCheckPayment.openRecord((String) getValue("sSourceNo"));
+            if ("success".equals(this.poJSON.get("result"))) {
+                return this.poCheckPayment;
+            }
+            this.poCheckPayment.initialize();
+            return this.poCheckPayment;
+        }
+        poCheckPayment.initialize();
+        return this.poCheckPayment;
+    }
 }
