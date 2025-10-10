@@ -94,6 +94,7 @@ public class Model_PO_Cancellation_Master extends Model {
     //sBranchCd
     //sDeptIDxx
     //sIndstCdx*
+    //sCategrCd*
     //dTransact
     //sCompnyID*
     //sSupplier*
@@ -153,6 +154,15 @@ public class Model_PO_Cancellation_Master extends Model {
 
     public String getIndustryId() {
         return (String) getValue("sIndstCdx");
+    }
+
+    //sCategrCd 
+    public JSONObject setCategory(String categoryCode) {
+        return setValue("sCategrCd", categoryCode);
+    }
+
+    public String getCategory() {
+        return (String) getValue("sCategrCd");
     }
 
     //dTransact
