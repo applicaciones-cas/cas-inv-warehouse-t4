@@ -36,6 +36,14 @@ public class Model_Check_Release_Master extends Model{
             
             MiscUtil.initRowSet(poEntity);
             
+            ParamModels model = new ParamModels(poGRider);
+            poIndustry = model.Industry();
+            
+            poEntity.insertRow();
+            poEntity.moveToCurrentRow();
+            
+            poEntity.absolute(1);
+            
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateObject("nEntryNox", 1);
             poEntity.updateDouble("nTranTotl", 0.00);
@@ -44,14 +52,6 @@ public class Model_Check_Release_Master extends Model{
             poEntity.updateNull("sReceived");
             poEntity.updateNull("sModified");
             poEntity.updateObject("dModified", poGRider.getServerDate());
-            
-            ParamModels model = new ParamModels(poGRider);
-            poIndustry = model.Industry();
-            
-            poEntity.insertRow();
-            poEntity.moveToCurrentRow();
-            
-            poEntity.absolute(1);
 
             ID = poEntity.getMetaData().getColumnLabel(1);
 

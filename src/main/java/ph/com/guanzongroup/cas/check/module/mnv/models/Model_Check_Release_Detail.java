@@ -12,7 +12,6 @@ import org.guanzon.appdriver.base.MiscUtil;
 import org.guanzon.appdriver.constant.EditMode;
 import org.json.simple.JSONObject;
 import ph.com.guanzongroup.cas.cashflow.model.Model_Check_Payments;
-import ph.com.guanzongroup.cas.cashflow.model.Model_Payee;
 import ph.com.guanzongroup.cas.cashflow.services.CashflowModels;
 
 /**
@@ -31,24 +30,23 @@ public class Model_Check_Release_Detail extends Model{
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
             poEntity.last();
             poEntity.moveToInsertRow();
+
+            MiscUtil.initRowSet(poEntity);
+            
+            poEntity.insertRow();
+            poEntity.moveToCurrentRow();
+
+            poEntity.absolute(1);
             
             poEntity.updateNull("sSourceNo");
             poEntity.updateNull("sSourceCd");
             poEntity.updateObject("nEntryNox", 1);
             poEntity.updateObject("dModified", poGRider.getServerDate());
 
-            MiscUtil.initRowSet(poEntity);
+            ID = poEntity.getMetaData().getColumnLabel(1);
             
             CashflowModels cashFlow = new CashflowModels(poGRider);
             poCheckPayment = cashFlow.CheckPayments();
-            
-            poEntity.insertRow();
-            poEntity.moveToCurrentRow();
-
-            poEntity.absolute(1);
-
-            ID = poEntity.getMetaData().getColumnLabel(1);
-            ID2 = poEntity.getMetaData().getColumnLabel(2);
 
             //add model here
             pnEditMode = EditMode.UNKNOWN;
@@ -106,7 +104,7 @@ public class Model_Check_Release_Detail extends Model{
     
     @Override
     public String getNextCode() {
-        return MiscUtil.getNextCode(this.getTable(), ID, true, poGRider.getGConnection().getConnection(), poGRider.getBranchCode());
+        return "";
     }
     
     public Model_Check_Payments CheckPayment() throws SQLException, GuanzonException {
