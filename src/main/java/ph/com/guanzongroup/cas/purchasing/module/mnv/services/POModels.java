@@ -28,7 +28,7 @@ public class POModels {
             this.poPOCancellationMaster = new Model_PO_Cancellation_Master();
             this.poPOCancellationMaster.setApplicationDriver(this.poGRider);
             this.poPOCancellationMaster.setXML("Model_PO_Cancellation_Master");
-            this.poPOCancellationMaster.setTableName("PO_Cancellation_Maste");
+            this.poPOCancellationMaster.setTableName("PO_Cancellation_Master");
             this.poPOCancellationMaster.initialize();
         }
         return this.poPOCancellationMaster;

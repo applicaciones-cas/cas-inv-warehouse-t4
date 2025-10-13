@@ -163,7 +163,7 @@ public class Model_PO_Cancellation_Detail extends Model {
                     && poInventoryMaster.getStockId().equals((String) getValue("sStockIDx"))) {
                 return poInventoryMaster;
             } else {
-                poJSON = poInventoryMaster.openRecord((String) getValue("sStockIDx"));
+                poJSON = poInventoryMaster.openRecord((String) getValue("sStockIDx"), poGRider.getBranchCode());
 
                 if ("success".equals((String) poJSON.get("result"))) {
                     return poInventoryMaster;

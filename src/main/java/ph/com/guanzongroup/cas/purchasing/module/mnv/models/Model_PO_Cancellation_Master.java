@@ -221,11 +221,11 @@ public class Model_PO_Cancellation_Master extends Model {
 
     //dEntryDte
     public JSONObject setEntryDate(Date modifiedDate) {
-        return setValue("sEntryByx", modifiedDate);
+        return setValue("dEntryDte", modifiedDate);
     }
 
     public Date getEntryDate() {
-        return (Date) getValue("sEntryByx");
+        return (Date) getValue("dEntryDte");
     }
 
     //sModified
@@ -332,12 +332,12 @@ public class Model_PO_Cancellation_Master extends Model {
     }
 
     public Model_PO_Master PurchaseOrderMaster() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sOrderNox"))) {
+        if (!"".equals(getValue("sSourceNo"))) {
             if (this.poPurchaseOrder.getEditMode() == 1 && this.poPurchaseOrder
-                    .getTransactionNo().equals(getValue("sOrderNox"))) {
+                    .getTransactionNo().equals(getValue("sSourceNo"))) {
                 return this.poPurchaseOrder;
             }
-            this.poJSON = this.poPurchaseOrder.openRecord((String) getValue("sOrderNox"));
+            this.poJSON = this.poPurchaseOrder.openRecord((String) getValue("sSourceNo"));
             if ("success".equals(this.poJSON.get("result"))) {
                 return this.poPurchaseOrder;
             }

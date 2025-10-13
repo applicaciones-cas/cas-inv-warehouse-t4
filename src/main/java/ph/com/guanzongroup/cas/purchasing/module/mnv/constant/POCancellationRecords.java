@@ -47,9 +47,19 @@ public class POCancellationRecords {
                 + "  b.nReceived,"
                 + "  b.nCancelld,"
                 + "  c.sBranchNm xDestinat,"
+                + "  b.sStockIDx,"
+                + "  d.sBarCodex,"
+                + "  IFNULL(d.sDescript, b.sDescript) xDescript,"
+                + "  IFNULL(e.sDescript, '') xBrandNme,"
+                + "  IFNULL(f.sDescript, '') xModelNme,"
+                + "  IFNULL(g.sDescript, '') xColorNme"
                 + " FROM PO_Master a"
                 + " LEFT JOIN PO_Detail b ON a.sTransNox = b.sTransNox"
-                + " LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd";
+                + " LEFT JOIN Branch c ON a.sDestinat = c.sBranchCd"
+                + " LEFT JOIN Inventory d ON b.sStockIDx = d.sStockIDx"
+                + " LEFT JOIN Brand e ON d.sBrandIDx = e.sBrandIDx"
+                + " LEFT JOIN Model f ON d.sModelIDx = f.sModelIDx"
+                + " LEFT JOIN Color g ON d.sColorIDx = g.sColorIDx";
 
         return lsSQL;
     }
