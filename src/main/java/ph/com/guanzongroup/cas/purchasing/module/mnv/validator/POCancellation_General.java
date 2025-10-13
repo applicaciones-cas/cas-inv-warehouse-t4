@@ -104,11 +104,11 @@ public class POCancellation_General implements GValidator {
             poJSON.put("message", "Change of transaction date are not allowed.! Approval is Required");
             isRequiredApproval = true;
         }
-        if (poMaster.getIndustryId() == null || poMaster.getIndustryId().isEmpty()) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Company is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getIndustryId() == null || poMaster.getIndustryId().isEmpty()) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Company is not set.");
+//            return poJSON;
+//        }
 //        if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
 //            poJSON.put("result", "error");
 //            poJSON.put("message", "Branch is not set.");
@@ -155,11 +155,11 @@ public class POCancellation_General implements GValidator {
             return poJSON;
         }
 
-        if (poMaster.getIndustryId() == null) {
-            poJSON.put("result", "error");
-            poJSON.put("message", "Industry is not set.");
-            return poJSON;
-        }
+//        if (poMaster.getIndustryId() == null) {
+//            poJSON.put("result", "error");
+//            poJSON.put("message", "Industry is not set.");
+//            return poJSON;
+//        }
 
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {

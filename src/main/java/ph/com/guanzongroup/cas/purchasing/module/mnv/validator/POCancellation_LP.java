@@ -106,7 +106,7 @@ public class POCancellation_LP implements GValidator {
         }
         if (poMaster.getIndustryId() == null || poMaster.getIndustryId().isEmpty()) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Company is not set.");
+            poJSON.put("message", "Industry is not set.");
             return poJSON;
         }
 //        if (poMaster.getBranchCode() == null || poMaster.getBranchCode().isEmpty()) {
