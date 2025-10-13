@@ -27,7 +27,6 @@ public class Model_PO_Cancellation_Master extends Model {
     Model_Industry poIndustry;
     Model_Category poCategory;
     Model_Company poCompany;
-    Model_Department poDepartment;
     Model_Branch poBranch;
     Model_PO_Master poPurchaseOrder;
 
@@ -42,33 +41,19 @@ public class Model_PO_Cancellation_Master extends Model {
             MiscUtil.initRowSet(poEntity);
 
             poEntity.updateString("sBranchCd", poGRider.getBranchCode());
-            poEntity.updateNull("sDeptIDxx");
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateNull("sCompnyID");
             poEntity.updateNull("sSupplier");
-            poEntity.updateNull("sAddrssID");
-            poEntity.updateNull("sContctID");
-            poEntity.updateNull("sContctID");
-            poEntity.updateNull("dRefernce");
             poEntity.updateDouble("nTranTotl", 0.00d);
             poEntity.updateObject("nEntryNox", 0);
-            poEntity.updateString("cPrintedx", "0");
-            poEntity.updateString("cVATaxabl", "0");
-            poEntity.updateDouble("nVATRatex", 0.00d);
-            poEntity.updateDouble("nTWithHld", 0.00d);
-            poEntity.updateDouble("nDiscount", 0.00d);
-            poEntity.updateDouble("nAddDiscx", 0.00d);
-            poEntity.updateDouble("nFreightx", 0.00d);
             poEntity.updateNull("sSourceNo");
             poEntity.updateNull("sSourceCd");
-            poEntity.updateNull("sInvTypCd");
             poEntity.updateNull("sEntryByx");
             poEntity.updateNull("dEntryDte");
             poEntity.updateObject("dModified", poGRider.getServerDate());
             poEntity.updateString("cTranStat", "0");
 
             this.poBranch = (new ParamModels(this.poGRider)).Branch();
-            this.poDepartment = (new ParamModels(this.poGRider)).Department();
             this.poIndustry = (new ParamModels(this.poGRider)).Industry();
             this.poCategory = (new ParamModels(this.poGRider)).Category();
             this.poCompany = (new ParamModels(this.poGRider)).Company();
@@ -92,27 +77,16 @@ public class Model_PO_Cancellation_Master extends Model {
     //Getter & Setter 
     //sTransNox
     //sBranchCd
-    //sDeptIDxx
     //sIndstCdx*
+    //sCategrCd*
     //dTransact
     //sCompnyID*
     //sSupplier*
-    //sAddrssID
-    //sContctID
-    //sReferNox
-    //dRefernce
     //nTranTotl
-    //cVATaxabl
-    //nVATRatex
-    //nTWithHld
-    //nDiscount
-    //nAddDiscx
-    //nFreightx
     //sRemarksx
     //sSourceNo
     //sSourceCd
     //nEntryNox
-    //sInvTypCd
     //cTranStat
     //sEntryByx
     //dEntryDte
@@ -137,15 +111,6 @@ public class Model_PO_Cancellation_Master extends Model {
         return (String) getValue("sBranchCd");
     }
 
-    //sDeptIDxx
-    public JSONObject setDepartment(String destination) {
-        return setValue("sDeptIDxx", destination);
-    }
-
-    public String getDepartment() {
-        return (String) getValue("sDeptIDxx");
-    }
-
     //sIndstCdx
     public JSONObject setIndustryId(String industryId) {
         return setValue("sIndstCdx", industryId);
@@ -153,6 +118,15 @@ public class Model_PO_Cancellation_Master extends Model {
 
     public String getIndustryId() {
         return (String) getValue("sIndstCdx");
+    }
+
+    //sCategrCd 
+    public JSONObject setCategory(String categoryCode) {
+        return setValue("sCategrCd", categoryCode);
+    }
+
+    public String getCategory() {
+        return (String) getValue("sCategrCd");
     }
 
     //dTransact
@@ -182,42 +156,6 @@ public class Model_PO_Cancellation_Master extends Model {
         return (String) getValue("sSupplier");
     }
 
-    //sAddrssID
-    public JSONObject setAddressID(String addressID) {
-        return setValue("sAddrssID", addressID);
-    }
-
-    public String getAddressID() {
-        return (String) getValue("sAddrssID");
-    }
-
-    //sContctID
-    public JSONObject setContactID(String contactID) {
-        return setValue("sContctID", contactID);
-    }
-
-    public String getContactID() {
-        return (String) getValue("sContctID");
-    }
-
-    //sReferNox
-    public JSONObject setReference(String reference) {
-        return setValue("sReferNox", reference);
-    }
-
-    public String getReference() {
-        return (String) getValue("sReferNox");
-    }
-
-    //dRefernce
-    public JSONObject setPreparedDate(Date reference) {
-        return setValue("dRefernce", reference);
-    }
-
-    public Date getReferenceDate() {
-        return (Date) getValue("dRefernce");
-    }
-
     //nTranTotl
     public JSONObject setTransactionTotal(Double transactionTotal) {
         return setValue("nTranTotl", transactionTotal);
@@ -227,67 +165,9 @@ public class Model_PO_Cancellation_Master extends Model {
         return Double.valueOf(getValue("nTranTotl").toString());
     }
 
-    //cVATaxabl
-    public JSONObject setTaxable(String taxable) {
-        return setValue("cVATaxabl", taxable);
-    }
-
-    public String getTaxable() {
-        return (String) getValue("cVATaxabl");
-    }
-
-    public boolean isTaxable() {
-        return RecordStatus.ACTIVE.equals(getValue("cVATaxabl"));
-    }
-
-    //nVATRatex
-    public JSONObject setVATRate(Double vatrate) {
-        return setValue("nVATRatex", vatrate);
-    }
-
-    public Double getVATRate() {
-        return Double.valueOf(getValue("nVATRatex").toString());
-    }
-
-    //nTWithHld
-    public JSONObject setTaxWithHolding(Double taxWithHolding) {
-        return setValue("nTWithHld", taxWithHolding);
-    }
-
-    public Double getTaxWithHolding() {
-        return Double.valueOf(getValue("nTWithHld").toString());
-    }
-
-    //nDiscount
-    public JSONObject setDiscount(Number discount) {
-        return setValue("nDiscount", discount);
-    }
-
-    public Number getDiscount() {
-        return (Number) getValue("nDiscount");
-    }
-
-    //nAddDiscx
-    public JSONObject setAdditionalDiscount(Number additionalDiscount) {
-        return setValue("nAddDiscx", additionalDiscount);
-    }
-
-    public Number getAdditionalDiscount() {
-        return (Number) getValue("nAddDiscx");
-    }
-
-    //nFreightx
-    public JSONObject setFreight(Number freight) {
-        return setValue("nFreightx", freight);
-    }
-
-    public Number getFreight() {
-        return (Number) getValue("nFreightx");
-    }
-
     //sRemarksx
     public JSONObject setRemarks(String remarks) {
-        return setValue("cVATaxabl", remarks);
+        return setValue("sRemarksx", remarks);
     }
 
     public String getRemarks() {
@@ -321,15 +201,6 @@ public class Model_PO_Cancellation_Master extends Model {
         return (int) getValue("nEntryNox");
     }
 
-    //sInvTypCd
-    public JSONObject setInventoryTypeCode(String invTypeCode) {
-        return setValue("sInvTypCd", invTypeCode);
-    }
-
-    public String getInventoryTypeCode() {
-        return (String) getValue("sInvTypCd");
-    }
-
     //cTranStat
     public JSONObject setTransactionStatus(String transactionStatus) {
         return setValue("cTranStat", transactionStatus);
@@ -350,11 +221,11 @@ public class Model_PO_Cancellation_Master extends Model {
 
     //dEntryDte
     public JSONObject setEntryDate(Date modifiedDate) {
-        return setValue("sEntryByx", modifiedDate);
+        return setValue("dEntryDte", modifiedDate);
     }
 
     public Date getEntryDate() {
-        return (Date) getValue("sEntryByx");
+        return (Date) getValue("dEntryDte");
     }
 
     //sModified
@@ -460,30 +331,13 @@ public class Model_PO_Cancellation_Master extends Model {
         }
     }
 
-    public Model_Department Department() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sDeptIDxx"))) {
-            if (this.poDepartment.getEditMode() == 1 && this.poDepartment
-                    .getDepartmentId().equals(getValue("sDeptIDxx"))) {
-                return this.poDepartment;
-            }
-            this.poJSON = this.poDepartment.openRecord((String) getValue("sDeptIDxx"));
-            if ("success".equals(this.poJSON.get("result"))) {
-                return this.poDepartment;
-            }
-            this.poDepartment.initialize();
-            return this.poDepartment;
-        }
-        this.poDepartment.initialize();
-        return this.poDepartment;
-    }
-
-    public Model_PO_Master CheckPayment() throws SQLException, GuanzonException {
-        if (!"".equals(getValue("sOrderNox"))) {
+    public Model_PO_Master PurchaseOrderMaster() throws SQLException, GuanzonException {
+        if (!"".equals(getValue("sSourceNo"))) {
             if (this.poPurchaseOrder.getEditMode() == 1 && this.poPurchaseOrder
-                    .getTransactionNo().equals(getValue("sOrderNox"))) {
+                    .getTransactionNo().equals(getValue("sSourceNo"))) {
                 return this.poPurchaseOrder;
             }
-            this.poJSON = this.poPurchaseOrder.openRecord((String) getValue("sOrderNox"));
+            this.poJSON = this.poPurchaseOrder.openRecord((String) getValue("sSourceNo"));
             if ("success".equals(this.poJSON.get("result"))) {
                 return this.poPurchaseOrder;
             }

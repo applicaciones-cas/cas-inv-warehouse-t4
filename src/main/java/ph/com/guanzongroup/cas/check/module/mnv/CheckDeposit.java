@@ -1210,7 +1210,7 @@ public class CheckDeposit extends Transaction {
             layout = printer.createPageLayout(
                     customPaper,
                     PageOrientation.PORTRAIT,
-                    0, 0, 0, 0 
+                    0, 0, 0, 0
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -1299,8 +1299,8 @@ public class CheckDeposit extends Transaction {
                     break;
 
                 case "nTotalDep":
-                    textValue = getMaster().getTransactionTotalDeposit() == null ? "0.0"
-                            : CommonUtils.NumberFormat(getMaster().getTransactionTotalDeposit(), "##0.00");
+                    textValue = getMaster().getTransactionTotalDeposit() == null ? "0.00"
+                            : CommonUtils.NumberFormat(getMaster().getTransactionTotalDeposit(), "###,###,##0.00");
                     break;
 
                 case "sBankIDxx":
@@ -1322,7 +1322,7 @@ public class CheckDeposit extends Transaction {
                         } else if (fieldName.equals("sCheckNox")) {
                             textValue = loCheck.getCheckNo();
                         } else if (fieldName.equals("nAmountxx")) {
-                            textValue = CommonUtils.NumberFormat(loCheck.getAmount(), "##0.00");
+                            textValue = CommonUtils.NumberFormat(loCheck.getAmount(), "###,###,##0.00");
                         }
 
                         double multiY = y;
