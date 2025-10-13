@@ -44,6 +44,7 @@ public class Model_Check_Release_Detail extends Model{
             poEntity.updateObject("dModified", poGRider.getServerDate());
 
             ID = poEntity.getMetaData().getColumnLabel(1);
+            ID2 = poEntity.getMetaData().getColumnLabel(2);
             
             CashflowModels cashFlow = new CashflowModels(poGRider);
             poCheckPayment = cashFlow.CheckPayments();
