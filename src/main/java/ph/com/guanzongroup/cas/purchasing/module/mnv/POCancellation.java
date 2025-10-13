@@ -74,17 +74,16 @@ public class POCancellation extends Transaction {
             return null;
         }
 
-        //autoadd detail if empty
-        Model_PO_Cancellation_Detail lastDetail = (Model_PO_Cancellation_Detail) paDetail.get(paDetail.size() - 1);
-        String stockID = lastDetail.getStockId();
-        if (stockID != null && !stockID.trim().isEmpty()) {
-            Model_PO_Cancellation_Detail newDetail = new POModels(poGRider).POCancellationDetail();
-            newDetail.newRecord();
-            newDetail.setTransactionNo(getMaster().getTransactionNo());
-            newDetail.setEntryNo(paDetail.size() + 1);
-            paDetail.add(newDetail);
-        }
-
+//        //autoadd detail if empty
+//        Model_PO_Cancellation_Detail lastDetail = (Model_PO_Cancellation_Detail) paDetail.get(paDetail.size() - 1);
+//        String stockID = lastDetail.getStockId();
+//        if (stockID != null && !stockID.trim().isEmpty()) {
+//            Model_PO_Cancellation_Detail newDetail = new POModels(poGRider).POCancellationDetail();
+//            newDetail.newRecord();
+//            newDetail.setTransactionNo(getMaster().getTransactionNo());
+//            newDetail.setEntryNo(paDetail.size() + 1);
+//            paDetail.add(newDetail);
+//        }
         Model_PO_Cancellation_Detail loDetail;
 
         //find the detail record
@@ -194,22 +193,25 @@ public class POCancellation extends Transaction {
         int lnDetailCount = 0;
         double lnTotalAmount = 0;
 
-        //assign values needed
+        // Loop backward to safely remove
+        for (int lnCtr = paDetail.size() - 1; lnCtr >= 0; lnCtr--) {
+            Model_PO_Cancellation_Detail loDetail = (Model_PO_Cancellation_Detail) paDetail.get(lnCtr);
+
+            if (loDetail == null
+                    || loDetail.getStockId() == null || loDetail.getStockId().isEmpty()
+                    || loDetail.getQuantity() <= 0) {
+                paDetail.remove(lnCtr);
+                continue;
+            }
+
+        }
+
+        // Assign values after cleaning
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             Model_PO_Cancellation_Detail loDetail = (Model_PO_Cancellation_Detail) paDetail.get(lnCtr);
-            if (loDetail == null) {
-                paDetail.remove(lnCtr);
-            } else {
-                if (loDetail.getStockId() == null || loDetail.getStockId().isEmpty()) {
-                    paDetail.remove(lnCtr);
-                    continue;
-                }
-                lnDetailCount++;
-                loDetail.setTransactionNo(getMaster().getTransactionNo());
-                loDetail.setEntryNo(lnDetailCount);
-                lnTotalAmount += loDetail.getUnitPrice() * loDetail.getQuantity();
-
-            }
+            loDetail.setTransactionNo(getMaster().getTransactionNo());
+            loDetail.setEntryNo(lnCtr + 1);
+            lnTotalAmount += loDetail.getUnitPrice() * loDetail.getQuantity();
         }
 
         getMaster().setEntryNo(lnDetailCount);
@@ -843,6 +845,60 @@ public class POCancellation extends Transaction {
         return replaceDetail(loPurchase.getTransactionNo());
     }
 
+    public JSONObject retrieveDetail()
+            throws GuanzonException, CloneNotSupportedException, SQLException {
+        poJSON = new JSONObject();
+
+        // clone detail from Purchase Order
+        PurchaseOrder loPurchase = getPurchaseOrder(getMaster().getSourceNo());
+        if (loPurchase != null) {
+
+            for (int lnCtr = 0; lnCtr < loPurchase.getDetailCount(); lnCtr++) {
+                //unserved only
+                if (Double.valueOf(String.valueOf(loPurchase.Detail(lnCtr).getQuantity()))
+                        > Double.valueOf(String.valueOf(loPurchase.Detail(lnCtr).getCancelledQuantity())) + Double.valueOf(String.valueOf(loPurchase.Detail(lnCtr).getReceivedQuantity()))) {
+                    String lsStockId = loPurchase.Detail(lnCtr).getStockID();
+                    boolean lbExists = false;
+
+                    // 🔎 check if already exists in current transfer
+                    for (int lnRowDetail = 1; lnRowDetail <= getDetailCount(); lnRowDetail++) {
+                        Model_PO_Cancellation_Detail loExistDetail = getDetail(lnRowDetail);
+                        if (loExistDetail.getStockId() != null && loExistDetail.getStockId().equals(lsStockId)) {
+                            lbExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!lbExists) {
+                        // 🆕 add new detail
+                        int lnNewRow = getDetailCount() + 1;
+
+                        Model_PO_Cancellation_Detail loNewDetail = getDetail(lnNewRow);
+                        if (loNewDetail.getStockId() != null) {
+                            if (!loNewDetail.getStockId().isEmpty()) {
+
+                                lnNewRow = lnNewRow + 1;
+                            }
+                        }
+
+                        loNewDetail.setOrderNo(loPurchase.Master().getTransactionNo());
+                        loNewDetail.setStockId(lsStockId);
+                        loNewDetail.setUnitPrice(((Number) loPurchase.Detail(lnCtr).Inventory().getCost()).doubleValue());
+                    }
+                }
+            }
+        } else {
+            poJSON.put("result", "error");
+//            poJSON.put("message", "Unable to Retrieve Detail");
+            return poJSON;
+        }
+
+        poJSON.put(
+                "result", "success");
+        // poJSON.put("message", "Detail added successfully.");
+        return poJSON;
+    }
+
     public JSONObject loadTransactionListConfirmation(String value, String column)
             throws SQLException, GuanzonException, CloneNotSupportedException {
 
@@ -872,7 +928,7 @@ public class POCancellation extends Transaction {
         }
 
         if (!psCategorCD.isEmpty()) {
-            lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psCategorCD));
+            lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
         }
 
         lsSQL = MiscUtil.addCondition(lsSQL, "LEFT(a.sTransNox,4) =" + SQLUtil.toSQL(poGRider.getBranchCode()));

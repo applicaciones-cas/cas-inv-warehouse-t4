@@ -124,9 +124,9 @@ public class POCancellation_General implements GValidator {
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getStockId() != null
                     && !paDetail.get(lnCtr).getStockId().isEmpty()) {
-
-                lnDetailCount++;
-
+                if (paDetail.get(lnCtr).getQuantity() > 0) {
+                    lnDetailCount++;
+                }
             }
         }
 
@@ -160,7 +160,6 @@ public class POCancellation_General implements GValidator {
 //            poJSON.put("message", "Industry is not set.");
 //            return poJSON;
 //        }
-
         int lnDetailCount = 0;
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getStockId() != null

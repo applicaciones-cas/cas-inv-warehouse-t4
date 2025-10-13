@@ -124,9 +124,9 @@ public class POCancellation_Appliance implements GValidator {
         for (int lnCtr = 0; lnCtr < paDetail.size(); lnCtr++) {
             if (paDetail.get(lnCtr).getStockId() != null
                     && !paDetail.get(lnCtr).getStockId().isEmpty()) {
-
-                lnDetailCount++;
-
+                if (paDetail.get(lnCtr).getQuantity() > 0) {
+                    lnDetailCount++;
+                }
             }
         }
 
