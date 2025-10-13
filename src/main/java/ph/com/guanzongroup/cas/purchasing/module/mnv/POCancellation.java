@@ -561,6 +561,13 @@ public class POCancellation extends Transaction {
                 lsSQL = MiscUtil.addCondition(lsSQL, lsCondition);
             }
 
+            if (!psIndustryCode.isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
+            }
+
+            if (!psCategorCD.isEmpty()) {
+                lsSQL = MiscUtil.addCondition(lsSQL, "a.sCategrCd = " + SQLUtil.toSQL(psCategorCD));
+            }
             System.out.println("Search Query is = " + lsSQL);
             poJSON = ShowDialogFX.Search(poGRider,
                     lsSQL,
