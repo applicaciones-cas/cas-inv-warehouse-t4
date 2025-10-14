@@ -10,6 +10,14 @@ package ph.com.guanzongroup.cas.check.module.mnv.constant;
  */
 public class CheckReleaseRecords {
     
+    public static final String MOBILE_PHONE_REPORT = "CheckReleaseMP";
+    public static final String MOTORCYCLE_REPORT = "CheckReleaseMC";
+    public static final String CAR_REPORT = "CheckReleaseCar";
+    public static final String HOSPITALITY_REPORT = "CheckReleaseMonarch";
+    public static final String LOS_PEDRITOS_REPORT = "CheckReleaseLP";
+    public static final String GENERAL_REPORT = "CheckRelease";
+    public static final String APPLIANCE_REPORT = "CheckReleaseAppliance";
+    
     public static final String CheckReleaseMaster(){
         
         return "SELECT "
@@ -70,5 +78,40 @@ public class CheckReleaseRecords {
         return lsSQL;
         
         
+    }
+    
+    public static final String PrintRecord(){
+        return "SELECT " +
+                "a.sTransNox, " +
+                "a.dTransact, " +
+                "a.sRemarksx, " +
+                "b.sSourceNo, " +
+                "c.sCheckNox, " +
+                "c.sRemarksx, " +
+                "a.sReceived " +
+                "FROM Check_Release_Master a, Check_Release_Detail b, Check_Payments c " +
+                "WHERE a.sTransNox = b.sTransNox " +
+                "AND b.sSourceNo = c.sTransNox";
+    }
+    
+    public static String getJasperReport(String psIndustryCode) {
+        switch (psIndustryCode) {
+            case "01":
+                return MOBILE_PHONE_REPORT;
+            case "02":
+                return MOTORCYCLE_REPORT;
+            case "03":
+                return CAR_REPORT;
+            case "04":
+                return HOSPITALITY_REPORT;
+            case "05":
+                return LOS_PEDRITOS_REPORT;
+            case "06":
+                return GENERAL_REPORT;
+            case "07":
+                return APPLIANCE_REPORT;
+            default:
+                return GENERAL_REPORT;
+        }
     }
 }
