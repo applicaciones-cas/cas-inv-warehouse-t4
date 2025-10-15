@@ -96,9 +96,9 @@ public class CheckRelease_Appliance implements GValidator{
             return poJSON;
         }
 
-        //change transaction date 
+        //change transaction date , should be same day, else need approval
         if (poMaster.getTransactionDate().after((Date) poGRider.getServerDate())
-                && poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
+                || poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
             poJSON.put("message", "Change of transaction date are not allowed.! Approval is Required");
             isRequiredApproval = true;
         }

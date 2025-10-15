@@ -90,19 +90,21 @@ public class CheckRelease_MC implements GValidator{
         poJSON = new JSONObject();
         boolean isRequiredApproval = false;
 
+        //transaction date should not be empty
         if (poMaster.getTransactionDate() == null) {
             poJSON.put("result", "error");
             poJSON.put("message", "Invalid Transaction Date.");
             return poJSON;
         }
 
-        //change transaction date 
+        //change transaction date , should be same day, else need approval
         if (poMaster.getTransactionDate().after((Date) poGRider.getServerDate())
-                && poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
+                || poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
             poJSON.put("message", "Change of transaction date are not allowed.! Approval is Required");
             isRequiredApproval = true;
         }
 
+        //industry id should not be empty
         if (poMaster.getIndustryId() == null || poMaster.getIndustryId().isEmpty()) {
             poJSON.put("result", "error");
             poJSON.put("message", "Company is not set.");
@@ -119,6 +121,7 @@ public class CheckRelease_MC implements GValidator{
             }
         }
 
+        //detail should not be empty
         if (lnDetailCount <= 0) {
             poJSON.put("result", "error");
             poJSON.put("message", "Detail is not set.");

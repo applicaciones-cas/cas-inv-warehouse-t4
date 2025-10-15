@@ -87,7 +87,7 @@ public class CheckReleaseRecords {
                 "a.sRemarksx, " +
                 "b.sSourceNo, " +
                 "c.sCheckNox, " +
-                "c.sRemarksx, " +
+                "c.sRemarksx sNotesx, " +
                 "a.sReceived " +
                 "FROM Check_Release_Master a, Check_Release_Detail b, Check_Payments c " +
                 "WHERE a.sTransNox = b.sTransNox " +

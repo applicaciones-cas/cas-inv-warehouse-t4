@@ -19,7 +19,9 @@ import ph.com.guanzongroup.cas.check.module.mnv.constant.CheckReleaseStatus;
 
 /**
  *
- * @author User
+ * @author Guillier
+ * 
+ * NOTE: Procedures on initialize should be properly arranged to avoid conflicts on saving and fetching
  */
 public class Model_Check_Release_Master extends Model{
     
@@ -29,21 +31,25 @@ public class Model_Check_Release_Master extends Model{
     public void initialize() {
         
         try{
+            
+            //Step 1. get XML metada file, to get temporary data getter and setter for sql table and columns
             poEntity = MiscUtil.xml2ResultSet(System.getProperty("sys.default.path.metadata") + XML, getTable());
             
+            //Step 2. get last row inserted and move to last row
             poEntity.last();
             poEntity.moveToInsertRow();
             
+            //Step 3. initialize row
             MiscUtil.initRowSet(poEntity);
             
-            ParamModels model = new ParamModels(poGRider);
-            poIndustry = model.Industry();
-            
+            //Step 4. insert new row from initialized row
             poEntity.insertRow();
             poEntity.moveToCurrentRow();
             
+            //Step 5. move to last initialized row
             poEntity.absolute(1);
             
+            //Step 6. set row properties
             poEntity.updateObject("dTransact", poGRider.getServerDate());
             poEntity.updateObject("nEntryNox", 1);
             poEntity.updateDouble("nTranTotl", 0.00);
@@ -53,9 +59,13 @@ public class Model_Check_Release_Master extends Model{
             poEntity.updateNull("sModified");
             poEntity.updateObject("dModified", poGRider.getServerDate());
 
+            //Step 7. get primary id from metadata, and initialized to variable as row id
             ID = poEntity.getMetaData().getColumnLabel(1);
-
+            
             //add model here
+            ParamModels model = new ParamModels(poGRider);
+            poIndustry = model.Industry();
+            
             pnEditMode = EditMode.UNKNOWN;
             
         }catch(SQLException e){
