@@ -5,6 +5,10 @@
 package ph.com.guanzongroup.cas.check.module.mnv.validator;
 
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
@@ -65,7 +69,7 @@ public class CheckRelease_Car implements GValidator{
                     return validateNew();
                 case CheckReleaseStatus.CONFIRMED:
                     return validateConfirmed();
-                case CheckReleaseStatus.POSTED:
+                case CheckReleaseStatus.RELEASED:
                     return validatePosted();
                 case CheckReleaseStatus.CANCELLED:
                     return validateCancelled();
@@ -97,8 +101,14 @@ public class CheckRelease_Car implements GValidator{
         }
 
         //change transaction date , should be same day, else need approval
-        if (poMaster.getTransactionDate().after((Date) poGRider.getServerDate())
-                || poMaster.getTransactionDate().before((Date) poGRider.getServerDate())) {
+        String lsTransDate = new SimpleDateFormat("yyyy-MM-dd").format(poMaster.getTransactionDate());
+        
+        LocalDate transDate = LocalDate.parse(lsTransDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        LocalDate dateToday = poGRider.getServerDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        
+        
+        if (transDate.isAfter(dateToday)
+                || transDate.isBefore(dateToday)) {
             poJSON.put("message", "Change of transaction date are not allowed.! Approval is Required");
             isRequiredApproval = true;
         }

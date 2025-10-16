@@ -222,9 +222,16 @@ public class CheckRelease extends Transaction{
         poJSON = new JSONObject();
         
         //validate status if already released
-        if (CheckReleaseStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+        if (CheckReleaseStatus.RELEASED.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was already released.");
+            return poJSON;
+        }
+        
+        //validate tranaction if already void
+        if (CheckReleaseStatus.VOID.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was already voided.");
             return poJSON;
         }
 
@@ -560,7 +567,7 @@ public class CheckRelease extends Transaction{
         return poJSON;
     }
     
-    public JSONObject PostTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
+    public JSONObject ReleaseTransaction() throws SQLException, GuanzonException, CloneNotSupportedException {
         poJSON = new JSONObject();
 
         //check if edit mode is for update 
@@ -571,15 +578,22 @@ public class CheckRelease extends Transaction{
             return poJSON;
         }
 
-        //check status if posted already
-        if (CheckReleaseStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) {
+        //check status if released already
+        if (CheckReleaseStatus.RELEASED.equals((String) poMaster.getValue("cTranStat"))) {
             poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already posted.");
+            poJSON.put("message", "Transaction was already released.");
+            return poJSON;
+        }
+        
+        //check status if not confirmed
+        if (!CheckReleaseStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) {
+            poJSON.put("result", "error");
+            poJSON.put("message", "Transaction was not confirmed.");
             return poJSON;
         }
 
         //validator
-        poJSON = isEntryOkay(CheckReleaseStatus.POSTED);
+        poJSON = isEntryOkay(CheckReleaseStatus.RELEASED);
         if ("error".equals((String) poJSON.get("result"))) {
             return poJSON;
         }
@@ -591,7 +605,7 @@ public class CheckRelease extends Transaction{
         poJSON = statusChange(poMaster.getTable(),
                 (String) poMaster.getValue("sTransNox"),
                 "PostTransaction",
-                CheckReleaseStatus.POSTED,
+                CheckReleaseStatus.RELEASED,
                 false, true);
         
         //check result
@@ -615,11 +629,17 @@ public class CheckRelease extends Transaction{
         
         try{
             String lsSQL = CheckReleaseRecords.CheckReleaseMaster();
+            
+            //filter search with industry, if set
             if (!psIndustryCode.isEmpty()) {
                 lsSQL = MiscUtil.addCondition(lsSQL, "sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
             }
+            
+            //filter search with branchcode, using transaction no code
             lsSQL = MiscUtil.addCondition(lsSQL, "LEFT(sTransNox,4) = " + SQLUtil.toSQL(poGRider.getBranchCode()));
-            lsSQL = MiscUtil.addCondition(lsSQL, "cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
+            
+            //filter search with uncancelled transactions only
+            lsSQL = MiscUtil.addCondition(lsSQL, "cTranStat = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN) + " OR cTranStat = " + SQLUtil.toSQL(CheckReleaseStatus.CONFIRMED));
             
             System.out.print(lsSQL);
             
@@ -656,11 +676,14 @@ public class CheckRelease extends Transaction{
         
         try{
             String lsSQL = CheckReleaseRecords.CheckReleaseMaster();
+            
+            //filter search with industry, if set
             if (!psIndustryCode.isEmpty()) {
                 lsSQL = MiscUtil.addCondition(lsSQL, "sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
             }
+            
+            //filter search with branchcode, using transaction no code
             lsSQL = MiscUtil.addCondition(lsSQL, "LEFT(sTransNox,4) = " + SQLUtil.toSQL(poGRider.getBranchCode()));
-            lsSQL = MiscUtil.addCondition(lsSQL, "cTranStat = " + SQLUtil.toSQL(CheckReleaseStatus.CONFIRMED));
             
             System.out.print(lsSQL);
             
@@ -702,8 +725,13 @@ public class CheckRelease extends Transaction{
                 lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
             }
 
+            //filter search with unreleased checks
             lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
+            
+            //filter search with check that has active location
             lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
+            
+            //filter search with uncancelled checks
             lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
             
             poJSON = new JSONObject();
@@ -754,10 +782,16 @@ public class CheckRelease extends Transaction{
             lsSQL = MiscUtil.addCondition(lsSQL, "a.sIndstCdx = " + SQLUtil.toSQL(psIndustryCode));
         }
     
+        //filter search with unreleased checks
         lsSQL = MiscUtil.addCondition(lsSQL, " a.cReleased = " + SQLUtil.toSQL(CheckReleaseStatus.OPEN));
+
+        //filter search with check that has active location
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cLocation = " + SQLUtil.toSQL(RecordStatus.ACTIVE));
+
+        //filter search with uncancelled checks
         lsSQL = MiscUtil.addCondition(lsSQL, "a.cTranStat <> " + SQLUtil.toSQL(CheckReleaseStatus.CANCELLED));
-                
+            
+        //filter with date range
         if (!fsDateFrom.isEmpty() && !fsDateThru.isEmpty()) {
             lsSQL = MiscUtil.addCondition(lsSQL, " a.dCheckDte BETWEEN " + SQLUtil.toSQL(fsDateFrom) + "AND "
                     + SQLUtil.toSQL(fsDateThru));
@@ -909,15 +943,15 @@ public class CheckRelease extends Transaction{
         poJSON = new JSONObject();
 
         //validate transaction status
-        if (!CheckReleaseStatus.CONFIRMED.equals((String) poMaster.getValue("cTranStat"))) { //should be confirmed first
+        if (CheckReleaseStatus.OPEN.equals((String) poMaster.getValue("cTranStat"))) { //should be confirmed first
             poJSON.put("result", "error");
             poJSON.put("message", "Transaction was not confirmed.");
             return poJSON;
         }
         
-        if (CheckReleaseStatus.POSTED.equals((String) poMaster.getValue("cTranStat"))) { //should not be posted
+        if (CheckReleaseStatus.RELEASED.equals((String) poMaster.getValue("cTranStat"))) { //should be unreleased
             poJSON.put("result", "error");
-            poJSON.put("message", "Transaction was already Processed.");
+            poJSON.put("message", "Transaction was already released.");
             return poJSON;
         }
 
