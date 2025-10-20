@@ -3,6 +3,8 @@ package ph.com.guanzongroup.cas.check.module.mnv.services;
 import org.guanzon.appdriver.base.GRiderCAS;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Deposit_Detail;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Deposit_Master;
+import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Release_Detail;
+import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Release_Master;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Transfer_Detail;
 import ph.com.guanzongroup.cas.check.module.mnv.models.Model_Check_Transfer_Master;
 
@@ -17,6 +19,9 @@ public class CheckModels {
 
     private Model_Check_Deposit_Master poCheckDepositMaster;
     private Model_Check_Deposit_Detail poCheckDepositDetail;
+    
+    private Model_Check_Release_Master poCheckReleaseMaster;
+    private Model_Check_Release_Detail poCheckReleaseDetail;
 
     private final GRiderCAS poGRider;
 
@@ -82,5 +87,37 @@ public class CheckModels {
             this.poCheckDepositDetail.initialize();
         }
         return this.poCheckDepositDetail;
+    }
+    
+    public Model_Check_Release_Master CheckReleaseMaster(){
+        if (this.poGRider == null) {
+            System.err.println("CheckModels.CheckReleaseMaster: Application driver is not set.");
+            return null;
+        }
+        
+        if(this.poCheckReleaseMaster == null){
+            this.poCheckReleaseMaster = new Model_Check_Release_Master();
+            this.poCheckReleaseMaster.setApplicationDriver(poGRider);
+            this.poCheckReleaseMaster.setXML("Model_Check_Release_Master");
+            this.poCheckReleaseMaster.setTableName("Check_Release_Master");
+            this.poCheckReleaseMaster.initialize();
+        }
+        return this.poCheckReleaseMaster;
+    }
+    
+    public Model_Check_Release_Detail CheckReleaseDetail(){
+        if (this.poGRider == null) {
+            System.err.println("CheckModels.CheckReleasetDetail: Application driver is not set.");
+            return null;
+        }
+        
+        if(this.poCheckReleaseDetail == null){
+            this.poCheckReleaseDetail = new Model_Check_Release_Detail();
+            this.poCheckReleaseDetail.setApplicationDriver(poGRider);
+            this.poCheckReleaseDetail.setXML("Model_Check_Release_Detail");
+            this.poCheckReleaseDetail.setTableName("Check_Release_Detail");
+            this.poCheckReleaseDetail.initialize();
+        }
+        return this.poCheckReleaseDetail;
     }
 }
